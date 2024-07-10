@@ -1,15 +1,20 @@
 from settings import *
 from timecount import Timer
+from os.path import join
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, collision_sprites):
+    def __init__(self, pos, groups, collision_sprites, semi_collision_sprites):
         super().__init__(groups)
-        self.image = pygame.Surface((56, 56)) #48 e 56 era antes, pygame.Surface é usado para criar uma imagem
-        self.image.fill('blue')
+        # self.image = pygame.Surface((56, 56)) #imagem antiga, pygame.Surface é usado para criar uma imagem
+        # self.image.fill('blue')
+        self.image = pygame.image.load(join('..', 'Assets', 'Hornet', 'chibi.jpg'))
+        self.image = pygame.transform.scale(self.image, (65, 65))
 
         # Retângulos
         self.rect = self.image.get_frect(topleft = pos)
-        self.old_rect = self.rect.copy()
+        # self.hitbox_rect = self.rect.inflate(0, 0) # Acrescenta um offset no retangulo (numeros negativos)
+        self.hitbox_rect = self.rect.copy()
+        self.old_rect = self.hitbox_rect.copy()
 
         # Movimento
         self.direction = vector()
@@ -20,13 +25,15 @@ class Player(pygame.sprite.Sprite):
 
         # Colisão
         self.collision_sprites = collision_sprites
+        self.semi_collision_sprites = semi_collision_sprites
         self.on_surface = {'floor': False, 'left_wall': False, 'right_wall': False}
         self.platform = None
 
         # Temporizador
         self.timers = {
             'wall_jump': Timer(400),
-            'wall_slide_block': Timer(250)
+            'wall_slide_block': Timer(250),
+            'platform_skip': Timer(300)
         }
 
         # self.display_surface = pygame.display.get_surface() para mostrar possiveis caixas de colisão
@@ -43,6 +50,8 @@ class Player(pygame.sprite.Sprite):
                 input_vector.x += 1
             if keys[pygame.K_LEFT]: 
                 input_vector.x -= 1
+            if keys[pygame.K_DOWN]: 
+                self.timers['platform_skip'].activate()
             # Mantém a distancia do vetor e mantém o seu tamanho uniforme
             self.direction.x = input_vector.normalize().x if input_vector else 0
         
@@ -51,7 +60,7 @@ class Player(pygame.sprite.Sprite):
 
     def move(self, delta_time):
         # Horizontal
-        self.rect.x += self.direction.x * self.speed * delta_time # delta_time por conta do fps
+        self.hitbox_rect.x += self.direction.x * self.speed * delta_time # delta_time por conta do fps
         self.collision('horizontal')
 
         # Vertical
@@ -59,12 +68,12 @@ class Player(pygame.sprite.Sprite):
         # Gravidade na parede
         if not self.on_surface['floor'] and any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active:
             self.direction.y = 0
-            self.rect.y += self.gravity / 10 * delta_time
+            self.hitbox_rect.y += self.gravity / 10 * delta_time
 
         else:
             # Gravidade normal
             self.direction.y += self.gravity / 2 * delta_time # Medida para normalizar a velocidade (fps)
-            self.rect.y += self.direction.y * delta_time
+            self.hitbox_rect.y += self.direction.y * delta_time
             self.direction.y += self.gravity / 2 * delta_time 
 
         # Pulo
@@ -73,7 +82,7 @@ class Player(pygame.sprite.Sprite):
             if self.on_surface['floor']:
                 self.direction.y = -self.jump_height
                 self.timers['wall_slide_block'].activate()              
-                self.rect.bottom -= 1 # Evitar bugs com a plataforma vertical, funciona sem isso se necessário
+
             # Pulo na parede
             elif any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active:
                 self.direction.y = -self.jump_height
@@ -82,52 +91,65 @@ class Player(pygame.sprite.Sprite):
             self.jump = False
 
         self.collision('vertical')
+        self.semi_collision()
+        self.rect.center = self.hitbox_rect.center
 
     def platform_move(self, delta_time):
         if self.platform:
-            self.rect.topleft += self.platform.direction * self.platform.speed * delta_time
+            self.hitbox_rect.topleft += self.platform.direction * self.platform.speed * delta_time
+            self.rect.center = self.hitbox_rect.center
 
     def check_contact(self):
-        floor_rect = pygame.Rect(self.rect.bottomleft,(self.rect.width,2))
-        right_rect = pygame.Rect(self.rect.topright + vector(0, self.rect.height / 4),(2,self.rect.height / 2))
-        left_rect = pygame.Rect(self.rect.topleft + vector(-2, self.rect.height / 4),(2,self.rect.height / 2))
-
+        floor_rect = pygame.Rect(self.hitbox_rect.bottomleft,(self.hitbox_rect.width,2))
+        right_rect = pygame.Rect(self.hitbox_rect.topright + vector(0, self.hitbox_rect.height / 4),(2,self.hitbox_rect.height / 2))
+        left_rect = pygame.Rect(self.hitbox_rect.topleft + vector(-2, self.hitbox_rect.height / 4),(2,self.hitbox_rect.height / 2))
         collide_rects = [sprite.rect for sprite in self.collision_sprites]
+        semi_collide_rects = [sprite.rect for sprite in self.semi_collision_sprites]
 
         # collisions
-        self.on_surface['floor'] = True if floor_rect.collidelist(collide_rects) >= 0 else False
+        self.on_surface['floor'] = True if floor_rect.collidelist(collide_rects) >= 0 or floor_rect.collidelist(semi_collide_rects) >= 0 and self.direction.y >= 0 else False
         self.on_surface['right_wall'] = True if right_rect.collidelist(collide_rects) >= 0 else False
         self.on_surface['left_wall']  = True if left_rect.collidelist(collide_rects) >= 0 else False
 
         self.platform = None
-        for sprite in [sprite for sprite in self.collision_sprites.sprites() if hasattr(sprite, 'moving')]:
+        sprites = self.collision_sprites.sprites() + self.semi_collision_sprites.sprites()
+        for sprite in [sprite for sprite in sprites if hasattr(sprite, 'moving')]:
             if sprite.rect.colliderect(floor_rect):
                 self.platform = sprite
     
     def collision(self, axis):
         for sprite in self.collision_sprites:
-            if sprite.rect.colliderect(self.rect):
+            if sprite.rect.colliderect(self.hitbox_rect):
                 if axis == 'horizontal':
                     # Colisão à esquerda
-                    if self.rect.left <= sprite.rect.right and self.old_rect.left >= sprite.old_rect.right:
-                        self.rect.left = sprite.rect.right
+                    if self.hitbox_rect.left <= sprite.rect.right and int(self.old_rect.left) >= int(sprite.old_rect.right):
+                        self.hitbox_rect.left = sprite.rect.right
                     
                     # Colisão à direita
-                    if self.rect.right >= sprite.rect.left and self.old_rect.right <= sprite.old_rect.left:
-                        self.rect.right = sprite.rect.left
+                    if self.hitbox_rect.right >= sprite.rect.left and int(self.old_rect.right) <= int(sprite.old_rect.left):
+                        self.hitbox_rect.right = sprite.rect.left
 
                 if axis == 'vertical':
                     # Colisão com o chão
-                    if self.rect.bottom >= sprite.rect.top and self.old_rect.bottom <= sprite.old_rect.top:
-                        self.rect.bottom = sprite.rect.top
+                    if self.hitbox_rect.bottom >= sprite.rect.top and int(self.old_rect.bottom) <= int(sprite.old_rect.top):
+                        self.hitbox_rect.bottom = sprite.rect.top
                     
                     # Colisão com o teto
-                    if self.rect.top <= sprite.rect.bottom and self.old_rect.top >= sprite.old_rect.bottom:
-                        self.rect.top = sprite.rect.bottom
+                    if self.hitbox_rect.top <= sprite.rect.bottom and int(self.old_rect.top) >= int(sprite.old_rect.bottom):
+                        self.hitbox_rect.top = sprite.rect.bottom
                         if hasattr(sprite, 'moving'):
-                            self.rect.top += 6
+                            self.hitbox_rect.top += 6
 
                     self.direction.y = 0
+
+    def semi_collision(self):
+        if not self.timers['platform_skip'].active:
+            for sprite in self.semi_collision_sprites:
+                if sprite.rect.colliderect(self.hitbox_rect):
+                    if self.hitbox_rect.bottom >= sprite.rect.top and int(self.old_rect.bottom) <= sprite.old_rect.top:
+                            self.hitbox_rect.bottom = sprite.rect.top
+                            if self.direction.y > 0:
+                                self.direction.y = 0
 
     def update_timers(self):
         # Atualiza todos os temporizadores estabelicidos
@@ -135,7 +157,7 @@ class Player(pygame.sprite.Sprite):
             timer.update()
 
     def update(self, delta_time):
-        self.old_rect = self.rect.copy()
+        self.old_rect = self.hitbox_rect.copy()
         self.update_timers()
         self.input()
         self.move(delta_time)

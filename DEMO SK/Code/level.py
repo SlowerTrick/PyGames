@@ -1,14 +1,17 @@
 from settings import *
 from sprites import Sprite, MovingSprite
 from player import Player
+from groups import AllSprites
 
 class Level:
     def __init__(self, tmx_map):
         self.display_surface = pygame.display.get_surface() # Inicializa a partir da tela em main
 
         # Inicialização do grupo de sprites
-        self.all_sprites = pygame.sprite.Group() # Criação do grupo de sprites
+        self.all_sprites = AllSprites()
         self.collision_sprites = pygame.sprite.Group()
+        self.semi_collision_sprites = pygame.sprite.Group()
+
         self.setup(tmx_map) # 
 
     def setup(self, tmx_map):
@@ -19,7 +22,7 @@ class Level:
         # Objetos
         for obj in tmx_map.get_layer_by_name('Objects'):
             if obj.name == 'player':
-                Player((obj.x, obj.y), self.all_sprites, self.collision_sprites)
+                self.player = Player((obj.x, obj.y), self.all_sprites, self.collision_sprites, self.semi_collision_sprites)
         
         # Objetos moveis
         for obj in tmx_map.get_layer_by_name('Moving Objects'):
@@ -33,9 +36,9 @@ class Level:
                     start_pos = (obj.x + obj.width / 2, obj.y)
                     end_pos = (obj.x + obj.width / 2, obj.y + obj.height)
                 speed = obj.properties['speed']
-                MovingSprite((self.all_sprites, self.collision_sprites), start_pos, end_pos, move_dir, speed)
+                MovingSprite((self.all_sprites, self.semi_collision_sprites), start_pos, end_pos, move_dir, speed)
 
     def run(self, delta_time):
         self.display_surface.fill('black') # Preenche a tela com a cor preta
         self.all_sprites.update(delta_time) # Atualiza os sprites da tela
-        self.all_sprites.draw(self.display_surface) # Coloca todos os sprite na tela
+        self.all_sprites.draw(self.player.hitbox_rect.center) # Coloca todos os sprite na tela
