@@ -1,5 +1,5 @@
 from settings import *
-from timer import Timer
+from timecount import Timer
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos, groups, collision_sprites):
@@ -7,20 +7,27 @@ class Player(pygame.sprite.Sprite):
         self.image = pygame.Surface((56, 56)) #48 e 56 era antes, pygame.Surface é usado para criar uma imagem
         self.image.fill('blue')
 
-        # rectangles
+        # Retângulos
         self.rect = self.image.get_frect(topleft = pos)
         self.old_rect = self.rect.copy()
 
-        # movement
+        # Movimento
         self.direction = vector()
         self.speed = 200
         self.gravity = 1300
         self.jump = False
         self.jump_height = 700
 
-        # collision
+        # Colisão
         self.collision_sprites = collision_sprites
-        self.on_surface = {'floor': False, 'left': False, 'right': False}
+        self.on_surface = {'floor': False, 'left_wall': False, 'right_wall': False}
+        self.platform = None
+
+        # Temporizador
+        self.timers = {
+            'wall_jump': Timer(400),
+            'wall_slide_block': Timer(250)
+        }
 
         # self.display_surface = pygame.display.get_surface() para mostrar possiveis caixas de colisão
         # pygame.draw.rect(self.display_surface, 'red', floor_rect)
@@ -30,12 +37,14 @@ class Player(pygame.sprite.Sprite):
     def input(self):
         keys = pygame.key.get_pressed()
         input_vector = vector(0,0)
-        if keys[pygame.K_RIGHT]:
-            input_vector.x += 1
-        if keys[pygame.K_LEFT]: 
-            input_vector.x -= 1
-        # mantém a distancia do vetor e mantém o seu tamanho uniforme
-        self.direction.x = input_vector.normalize().x if input_vector else 0
+
+        if not self.timers['wall_jump'].active:
+            if keys[pygame.K_RIGHT]:
+                input_vector.x += 1
+            if keys[pygame.K_LEFT]: 
+                input_vector.x -= 1
+            # Mantém a distancia do vetor e mantém o seu tamanho uniforme
+            self.direction.x = input_vector.normalize().x if input_vector else 0
         
         if keys[pygame.K_SPACE]:
             self.jump = True
@@ -46,24 +55,37 @@ class Player(pygame.sprite.Sprite):
         self.collision('horizontal')
 
         # Vertical
-        if not self.on_surface['floor'] and any((self.on_surface['left'], self.on_surface['right'])):
+
+        # Gravidade na parede
+        if not self.on_surface['floor'] and any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active:
             self.direction.y = 0
             self.rect.y += self.gravity / 10 * delta_time
 
         else:
+            # Gravidade normal
             self.direction.y += self.gravity / 2 * delta_time # Medida para normalizar a velocidade (fps)
             self.rect.y += self.direction.y * delta_time
             self.direction.y += self.gravity / 2 * delta_time 
 
+        # Pulo
         if self.jump:
+            # Pulo normal
             if self.on_surface['floor']:
                 self.direction.y = -self.jump_height
-            elif any((self.on_surface['left'], self.on_surface['right'])):
+                self.timers['wall_slide_block'].activate()              
+                self.rect.bottom -= 1 # Evitar bugs com a plataforma vertical, funciona sem isso se necessário
+            # Pulo na parede
+            elif any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active:
                 self.direction.y = -self.jump_height
-                self.direction.x = 1 if self.on_surface['left'] else -1
+                self.direction.x = 1 if self.on_surface['left_wall'] else -1
+                self.timers['wall_jump'].activate()
             self.jump = False
 
         self.collision('vertical')
+
+    def platform_move(self, delta_time):
+        if self.platform:
+            self.rect.topleft += self.platform.direction * self.platform.speed * delta_time
 
     def check_contact(self):
         floor_rect = pygame.Rect(self.rect.bottomleft,(self.rect.width,2))
@@ -74,8 +96,13 @@ class Player(pygame.sprite.Sprite):
 
         # collisions
         self.on_surface['floor'] = True if floor_rect.collidelist(collide_rects) >= 0 else False
-        self.on_surface['right'] = True if right_rect.collidelist(collide_rects) >= 0 else False
-        self.on_surface['left']  = True if left_rect.collidelist(collide_rects) >= 0 else False
+        self.on_surface['right_wall'] = True if right_rect.collidelist(collide_rects) >= 0 else False
+        self.on_surface['left_wall']  = True if left_rect.collidelist(collide_rects) >= 0 else False
+
+        self.platform = None
+        for sprite in [sprite for sprite in self.collision_sprites.sprites() if hasattr(sprite, 'moving')]:
+            if sprite.rect.colliderect(floor_rect):
+                self.platform = sprite
     
     def collision(self, axis):
         for sprite in self.collision_sprites:
@@ -97,10 +124,20 @@ class Player(pygame.sprite.Sprite):
                     # Colisão com o teto
                     if self.rect.top <= sprite.rect.bottom and self.old_rect.top >= sprite.old_rect.bottom:
                         self.rect.top = sprite.rect.bottom
+                        if hasattr(sprite, 'moving'):
+                            self.rect.top += 6
+
                     self.direction.y = 0
+
+    def update_timers(self):
+        # Atualiza todos os temporizadores estabelicidos
+        for timer in self.timers.values():
+            timer.update()
 
     def update(self, delta_time):
         self.old_rect = self.rect.copy()
+        self.update_timers()
         self.input()
         self.move(delta_time)
+        self.platform_move(delta_time)
         self.check_contact()
