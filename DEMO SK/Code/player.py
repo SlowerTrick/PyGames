@@ -1,19 +1,23 @@
 from settings import *
 from timecount import Timer
 from os.path import join
+from math import sin
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, collision_sprites, semi_collision_sprites):
+    def __init__(self, pos, groups, collision_sprites, semi_collision_sprites, frames, data):
+        # Setup Geral
         super().__init__(groups)
-        # self.image = pygame.Surface((56, 56)) #imagem antiga, pygame.Surface é usado para criar uma imagem
-        # self.image.fill('blue')
-        self.image = pygame.image.load(join('..', 'Assets', 'Hornet', 'chibi.jpg'))
-        self.image = pygame.transform.scale(self.image, (65, 65))
+        self.z = Z_LAYERS['main']
+        self.data = data
+
+        # Imagem
+        self.frames, self.frame_index = frames, 0
+        self.state, self.facing_side = 'idle', 'right'
+        self.image = self.frames[self.state][self.frame_index]
 
         # Retângulos
         self.rect = self.image.get_frect(topleft = pos)
-        # self.hitbox_rect = self.rect.inflate(0, 0) # Acrescenta um offset no retangulo (numeros negativos)
-        self.hitbox_rect = self.rect.copy()
+        self.hitbox_rect = self.rect.inflate(-76, -36) # Acrescenta um offset no retangulo (numeros negativos)
         self.old_rect = self.hitbox_rect.copy()
 
         # Movimento
@@ -22,6 +26,7 @@ class Player(pygame.sprite.Sprite):
         self.gravity = 1300
         self.jump = False
         self.jump_height = 700
+        self.attacking = False
 
         # Colisão
         self.collision_sprites = collision_sprites
@@ -33,7 +38,9 @@ class Player(pygame.sprite.Sprite):
         self.timers = {
             'wall_jump': Timer(400),
             'wall_slide_block': Timer(250),
-            'platform_skip': Timer(300)
+            'platform_skip': Timer(100),
+            'attack_block': Timer(500),
+            'invincibility_frames': Timer(500)
         }
 
         # self.display_surface = pygame.display.get_surface() para mostrar possiveis caixas de colisão
@@ -46,50 +53,58 @@ class Player(pygame.sprite.Sprite):
         input_vector = vector(0,0)
 
         if not self.timers['wall_jump'].active:
+
             if keys[pygame.K_RIGHT]:
                 input_vector.x += 1
+                self.facing_side = 'right'
+
             if keys[pygame.K_LEFT]: 
                 input_vector.x -= 1
+                self.facing_side = 'left'
+
             if keys[pygame.K_DOWN]: 
                 self.timers['platform_skip'].activate()
+            
+            if keys[pygame.K_z]:
+                self.attack()
+
             # Mantém a distancia do vetor e mantém o seu tamanho uniforme
             self.direction.x = input_vector.normalize().x if input_vector else 0
         
         if keys[pygame.K_SPACE]:
             self.jump = True
+    
+    def attack(self):
+        if not self.timers['attack_block'].active:
+            self.attacking = True
+            self.frame_index = 0 # Reseta os frames para dar prioridade ao ataque
+            self.timers['attack_block'].activate()
 
     def move(self, delta_time):
-        # Horizontal
-        self.hitbox_rect.x += self.direction.x * self.speed * delta_time # delta_time por conta do fps
+        # Horizontal 
+        self.hitbox_rect.x += self.direction.x * self.speed * delta_time
         self.collision('horizontal')
 
-        # Vertical
-
-        # Gravidade na parede
+        # Vertical 
         if not self.on_surface['floor'] and any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active:
             self.direction.y = 0
             self.hitbox_rect.y += self.gravity / 10 * delta_time
-
         else:
-            # Gravidade normal
-            self.direction.y += self.gravity / 2 * delta_time # Medida para normalizar a velocidade (fps)
+            self.direction.y += self.gravity / 2 * delta_time
             self.hitbox_rect.y += self.direction.y * delta_time
-            self.direction.y += self.gravity / 2 * delta_time 
+            self.direction.y += self.gravity / 2 * delta_time
 
-        # Pulo
         if self.jump:
-            # Pulo normal
             if self.on_surface['floor']:
                 self.direction.y = -self.jump_height
-                self.timers['wall_slide_block'].activate()              
-
-            # Pulo na parede
+                self.timers['wall_slide_block'].activate()
+                self.hitbox_rect.bottom -= 1
             elif any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active:
+                self.timers['wall_jump'].activate()
                 self.direction.y = -self.jump_height
                 self.direction.x = 1 if self.on_surface['left_wall'] else -1
-                self.timers['wall_jump'].activate()
             self.jump = False
-
+            
         self.collision('vertical')
         self.semi_collision()
         self.rect.center = self.hitbox_rect.center
@@ -156,10 +171,56 @@ class Player(pygame.sprite.Sprite):
         for timer in self.timers.values():
             timer.update()
 
+    def animate(self, dt):
+        self.frame_index += ANIMATION_SPEED * dt
+        if self.state == 'attack' and self.frame_index >= len(self.frames[self.state]):
+            self.state = 'idle'
+        self.image = self.frames[self.state][int(self.frame_index % len(self.frames[self.state]))]
+        self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
+
+        if self.attacking and self.frame_index > len(self.frames[self.state]):
+            self.attacking = False
+
+    def get_state(self):
+        if self.on_surface['floor']:
+            if self.attacking:
+                self.state = 'attack'
+            else:
+                self.state = 'idle' if self.direction.x == 0 else 'run'
+        else:
+            if self.attacking:
+                self.state = 'air_attack'
+            else:
+                if any((self.on_surface['left_wall'], self.on_surface['right_wall'])):
+                    self.state = 'wall'
+                else:
+                    self.state = 'jump' if self.direction.y < 0 else 'fall'
+
+    def get_damage(self):
+        if not self.timers['invincibility_frames'].active:
+            self.data.health -= 1
+            self.timers['invincibility_frames'].activate()
+            print(self.data.health)
+    
+    def flicker(self):
+        if self.timers['invincibility_frames'].active and sin(pygame.time.get_ticks() * 200) >= 0:
+            white_mask = pygame.mask.from_surface(self.image)
+            white_surf = white_mask.to_surface()
+            white_surf.set_colorkey('black')
+            self.image = white_surf
+
     def update(self, delta_time):
+        # Updates de hitbox e temporizadores
         self.old_rect = self.hitbox_rect.copy()
         self.update_timers()
+
+        # Movimento do jogo e colisão
         self.input()
         self.move(delta_time)
         self.platform_move(delta_time)
         self.check_contact()
+
+        # Animação
+        self.get_state()
+        self.animate(delta_time)
+        self.flicker()
