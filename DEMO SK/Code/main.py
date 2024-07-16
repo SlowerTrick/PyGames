@@ -35,12 +35,13 @@ class Game:
             7: load_pygame(join('..', 'data', 'levels', '6.tmx'))
         }
         self.start_stage = 0
-        self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.data, self.switch_screen, self.start_stage)
-    
+        self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage)
+        self.bg_music.play(-1)
+
     def switch_screen(self, target):
         if target >= len(self.tmx_maps):
             target = 0
-        self.current_stage = Level(self.tmx_maps[target], self.level_frames, self.data, self.switch_screen, target)
+        self.current_stage = Level(self.tmx_maps[target], self.level_frames, self.audio_files, self.data, self.switch_screen, target)
 
     def import_assets(self):
         self.level_frames = {
@@ -80,13 +81,14 @@ class Game:
         }
 
         self.audio_files = {
-            'coin': pygame.mixer.Sound(join('..', 'audio', 'coin.wav')),
-            'attack': pygame.mixer.Sound(join('..', 'audio', 'attack.wav')),
-            'jump': pygame.mixer.Sound(join('..', 'audio', 'jump.wav')), 
-            'damage': pygame.mixer.Sound(join('..', 'audio', 'damage.wav')),
+            'geo': pygame.mixer.Sound(join('..', 'audio', 'geo_collect.wav')),
+            'attack': pygame.mixer.Sound(join('..', 'audio', 'hornet_sword.wav')),
+            'jump': pygame.mixer.Sound(join('..', 'audio', 'hornet_jump.wav')), 
+            'damage': pygame.mixer.Sound(join('..', 'audio', 'hero_damage.wav')),
             'pearl': pygame.mixer.Sound(join('..', 'audio', 'pearl.wav')),
+            'wall_jump': pygame.mixer.Sound(join('..', 'audio', 'hero_mantis_claw.wav')),
         }
-        self.bg_music = pygame.mixer.Sound(join('..', 'audio', 'starlight_city.mp3'))
+        self.bg_music = pygame.mixer.Sound(join('..', 'audio', 'noragami.mp3'))
         self.bg_music.set_volume(0.5)
 
     def check_game_over(self):

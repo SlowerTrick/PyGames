@@ -8,7 +8,7 @@ from enemies import Tooth, Shell, Pearl
 from random import uniform
 
 class Level:
-    def __init__(self, tmx_map, level_frames, data, switch_screen, current_stage):
+    def __init__(self, tmx_map, level_frames, audio_files, data, switch_screen, current_stage):
         self.display_surface = pygame.display.get_surface() # Inicializa a partir da tela em main
         self.data = data
         self.switch_screen = switch_screen
@@ -42,13 +42,17 @@ class Level:
         # Inicialização do grupo de sprites dos itens
         self.item_sprites = pygame.sprite.Group()
 
-        self.setup(tmx_map, level_frames)
+        self.setup(tmx_map, level_frames, audio_files)
 
         # Superficie separadas para facilitar o acesso
         self.pearl_surface = level_frames['pearl']
         self.particle_frames = level_frames['particle']
 
-    def setup(self, tmx_map, level_frames):
+        # Sons
+        self.audio_files = audio_files
+        self.audio_files['geo'].set_volume(3)
+
+    def setup(self, tmx_map, level_frames, audio_files):
         # Tiles
         for layer in ['BG', 'Terrain', 'FG', 'Platforms']:
             for x, y, surf in tmx_map.get_layer_by_name(layer).tiles():
@@ -79,7 +83,8 @@ class Level:
                     collision_sprites = self.collision_sprites, 
                     semi_collision_sprites = self.semi_collision_sprites,
                     frames = level_frames['player'],
-                    data = self.data)
+                    data = self.data,
+                    audio_files = audio_files)
             else:
                 if obj.name in ('barrel', 'crate'):
                     Sprite((int(obj.x), int(obj.y)), obj.image, (self.all_sprites, self.collision_sprites))
@@ -187,6 +192,7 @@ class Level:
 
     def create_pearl(self, pos, direction):
         Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), self.pearl_surface, direction, 150)
+        self.audio_files['pearl'].play()
 
     def pearl_collision(self):
         for sprite in self.collision_sprites:
@@ -197,7 +203,9 @@ class Level:
     def hit_collision(self):
         for sprite in self.damage_sprites:
             if sprite.rect.colliderect(self.player.hitbox_rect):
-                self.player.get_damage()
+                if not self.player.timers['invincibility_frames'].active:
+                    self.player.get_damage()
+                    self.audio_files['damage'].play()
                 if hasattr(sprite, 'pearl'):
                     sprite.kill()
                     ParticleEffectSprite((sprite.rect.center), self.particle_frames, self.all_sprites)
@@ -211,6 +219,7 @@ class Level:
             if item_sprites:
                 item_sprites[0].activate()
                 ParticleEffectSprite((item_sprites[0].rect.center), self.particle_frames, self.all_sprites)
+                self.audio_files['geo'].play()
 
     def attack_collision(self):
         for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites():
@@ -249,7 +258,7 @@ class Level:
         self.item_collision()
         self.attack_collision()
         self.check_constraint()
-        
+            
         self.all_sprites.draw(self.player.hitbox_rect.center, delta_time)
         """ 
         Exemplos de debug:

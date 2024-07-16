@@ -4,7 +4,7 @@ from os.path import join
 from math import sin
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, collision_sprites, semi_collision_sprites, frames, data):
+    def __init__(self, pos, groups, collision_sprites, semi_collision_sprites, frames, data, audio_files):
         # Setup Geral
         super().__init__(groups)
         self.z = Z_LAYERS['main']
@@ -40,8 +40,13 @@ class Player(pygame.sprite.Sprite):
             'wall_slide_block': Timer(250),
             'platform_skip': Timer(100),
             'attack_block': Timer(500),
-            'invincibility_frames': Timer(500)
+            'invincibility_frames': Timer(500),
+            'jump_sound': Timer(100)
         }
+
+        # Áudio
+        self.audio_files = audio_files
+        self.audio_files['attack'].set_volume(0.5)
 
         # self.display_surface = pygame.display.get_surface() para mostrar possiveis caixas de colisão
         # pygame.draw.rect(self.display_surface, 'red', floor_rect)
@@ -79,6 +84,7 @@ class Player(pygame.sprite.Sprite):
             self.attacking = True
             self.frame_index = 0 # Reseta os frames para dar prioridade ao ataque
             self.timers['attack_block'].activate()
+            self.audio_files['attack'].play()
 
     def move(self, delta_time):
         # Horizontal 
@@ -99,10 +105,19 @@ class Player(pygame.sprite.Sprite):
                 self.direction.y = -self.jump_height
                 self.timers['wall_slide_block'].activate()
                 self.hitbox_rect.bottom -= 1
+                if not self.timers['jump_sound'].active:
+                    self.audio_files['jump'].play()
+                    self.timers['jump_sound'].activate()
+
             elif any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active:
                 self.timers['wall_jump'].activate()
                 self.direction.y = -self.jump_height
                 self.direction.x = 1 if self.on_surface['left_wall'] else -1
+                
+                if not self.timers['jump_sound'].active:
+                    self.audio_files['wall_jump'].play()
+                    self.timers['jump_sound'].activate()
+
             self.jump = False
             
         self.collision('vertical')
@@ -197,9 +212,8 @@ class Player(pygame.sprite.Sprite):
                     self.state = 'jump' if self.direction.y < 0 else 'fall'
 
     def get_damage(self):
-        if not self.timers['invincibility_frames'].active:
-            self.data.health -= 1
-            self.timers['invincibility_frames'].activate()
+        self.data.health -= 1
+        self.timers['invincibility_frames'].activate()
     
     def flicker(self):
         if self.timers['invincibility_frames'].active and sin(pygame.time.get_ticks() * 200) >= 0:
