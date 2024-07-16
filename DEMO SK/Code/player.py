@@ -200,7 +200,6 @@ class Player(pygame.sprite.Sprite):
         if not self.timers['invincibility_frames'].active:
             self.data.health -= 1
             self.timers['invincibility_frames'].activate()
-            print(self.data.health)
     
     def flicker(self):
         if self.timers['invincibility_frames'].active and sin(pygame.time.get_ticks() * 200) >= 0:

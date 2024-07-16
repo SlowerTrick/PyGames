@@ -14,6 +14,8 @@ class Game:
         icon = pygame.image.load('../Assets/Hornet/chibi.jpg') # Icone do jogo
         pygame.display.set_icon(icon)
 
+        self.pause = True
+
         self.clock = pygame.time.Clock() # FPS
         self.import_assets()
 
@@ -22,8 +24,23 @@ class Game:
         self.data = Data(self.ui)
 
         # Carregamento dos mapas do jogo
-        self.tmx_maps = {0: load_pygame(join('..', 'data', 'levels', 'omni.tmx'))}
-        self.current_stage = Level(self.tmx_maps[0], self.level_frames, self.data)
+        self.tmx_maps = {
+            0: load_pygame(join('..', 'data', 'levels', 'omni.tmx')),
+            1: load_pygame(join('..', 'data', 'levels', '0.tmx')),
+            2: load_pygame(join('..', 'data', 'levels', '1.tmx')),
+            3: load_pygame(join('..', 'data', 'levels', '2.tmx')),
+            4: load_pygame(join('..', 'data', 'levels', '3.tmx')),
+            5: load_pygame(join('..', 'data', 'levels', '4.tmx')),
+            6: load_pygame(join('..', 'data', 'levels', '5.tmx')),
+            7: load_pygame(join('..', 'data', 'levels', '6.tmx'))
+        }
+        self.start_stage = 0
+        self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.data, self.switch_screen, self.start_stage)
+    
+    def switch_screen(self, target):
+        if target >= len(self.tmx_maps):
+            target = 0
+        self.current_stage = Level(self.tmx_maps[target], self.level_frames, self.data, self.switch_screen, target)
 
     def import_assets(self):
         self.level_frames = {
@@ -56,10 +73,26 @@ class Game:
         }
 
         self.font = pygame.font.Font(join('..', 'graphics', 'ui', 'runescape_uf.ttf'), 40)
+
         self.ui_frames = {
             'heart': import_folder('..', 'graphics', 'ui', 'heart'), 
             'coin':import_image('..', 'graphics', 'ui', 'coin')
         }
+
+        self.audio_files = {
+            'coin': pygame.mixer.Sound(join('..', 'audio', 'coin.wav')),
+            'attack': pygame.mixer.Sound(join('..', 'audio', 'attack.wav')),
+            'jump': pygame.mixer.Sound(join('..', 'audio', 'jump.wav')), 
+            'damage': pygame.mixer.Sound(join('..', 'audio', 'damage.wav')),
+            'pearl': pygame.mixer.Sound(join('..', 'audio', 'pearl.wav')),
+        }
+        self.bg_music = pygame.mixer.Sound(join('..', 'audio', 'starlight_city.mp3'))
+        self.bg_music.set_volume(0.5)
+
+    def check_game_over(self):
+        if self.data.health <= 0:
+            pygame.quit()
+            sys.exit()
 
     def run(self):
         while True:
@@ -71,6 +104,7 @@ class Game:
                     pygame.quit()
                     sys.exit()
 
+            self.check_game_over()
             self.current_stage.run(delta_time) # Atualização dos sprites do jogo a partir do arquivo "Level"
             self.ui.update(delta_time) # HUD do jogo
             pygame.display.update() # Atualização da tela

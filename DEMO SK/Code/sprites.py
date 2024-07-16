@@ -1,3 +1,4 @@
+from typing import Any
 from settings import * 
 from math import sin, cos, radians
 from random import randint
@@ -134,3 +135,16 @@ class Spike(Sprite):
         x = self.center[0] + cos(radians(self.angle)) * self.radius
         y = self.center[1] + sin(radians(self.angle)) * self.radius
         self.rect.center = (x,y)
+
+class Cloud(Sprite):
+    def __init__(self, pos, surface, groups, z=Z_LAYERS['clouds']):
+        super().__init__(pos, surface, groups, z)
+        self.speed = randint(50,120)
+        self.direction = -1
+        self.rect.midbottom = pos
+
+    def update(self, delta_time):
+        self.rect.x += self.direction * self.speed * delta_time
+
+        if self.rect.right <= 0:
+            self.kill()
