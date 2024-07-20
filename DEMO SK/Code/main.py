@@ -71,6 +71,9 @@ class Game:
             'bg_tiles': import_folder_dict('..', 'graphics', 'level', 'bg', 'tiles'),
             'cloud_small': import_folder('..', 'graphics','level', 'clouds', 'small'),
             'cloud_large': import_image('..', 'graphics','level', 'clouds', 'large_cloud'),
+
+            'player_neutral_attack': import_sub_folders('..', 'graphics', 'player', 'attack_animation'),
+            'player_throw_attack': import_image('..', 'graphics', 'player', 'throw_attack', '0'),
         }
 
         self.font = pygame.font.Font(join('..', 'graphics', 'ui', 'runescape_uf.ttf'), 40)
@@ -82,7 +85,7 @@ class Game:
 
         self.audio_files = {
             'geo': pygame.mixer.Sound(join('..', 'audio', 'geo_collect.wav')),
-            'attack': pygame.mixer.Sound(join('..', 'audio', 'hornet_sword.wav')),
+            'neutral_attack': pygame.mixer.Sound(join('..', 'audio', 'hornet_sword.wav')),
             'jump': pygame.mixer.Sound(join('..', 'audio', 'hornet_jump.wav')), 
             'damage': pygame.mixer.Sound(join('..', 'audio', 'hero_damage.wav')),
             'pearl': pygame.mixer.Sound(join('..', 'audio', 'pearl.wav')),
@@ -93,9 +96,15 @@ class Game:
         self.bg_music.set_volume(0.5)
 
     def check_game_over(self):
-        if self.data.health <= 0:
+        if self.data.player_health <= 0:
             pygame.quit()
             sys.exit()
+
+    def show_fps(self):
+        fps = self.clock.get_fps()
+        font = pygame.font.SysFont(None, 24)
+        fps_text = font.render(f"FPS: {int(fps)}", True, pygame.Color('white'))
+        self.display_surface.blit(fps_text, (10, 10))
 
     def run(self):
         while True:
@@ -110,6 +119,7 @@ class Game:
             self.check_game_over()
             self.current_stage.run(delta_time) # Atualização dos sprites do jogo a partir do arquivo "Level"
             self.ui.update(delta_time) # HUD do jogo
+            #self.show_fps()
             pygame.display.update() # Atualização da tela
 
 if __name__ == '__main__': # Verifica se o script está sendo executado diretamente (exemplo: python main.py)

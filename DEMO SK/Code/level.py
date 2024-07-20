@@ -4,6 +4,7 @@ from player import Player
 from groups import AllSprites
 from debug import debug
 from enemies import Tooth, Shell, Pearl
+from attack import Neutral_Attack, Throw_Attack
 
 from random import uniform
 
@@ -13,6 +14,11 @@ class Level:
         self.data = data
         self.switch_screen = switch_screen
         self.current_stage = current_stage
+
+        self.during_neutral_attack = False
+        self.during_throw_attack = False
+        self.player_neutral_attack_sprite = None
+        self.player_throw_attack_sprite = None
 
         # Informações da fase
         self.level_width = tmx_map.width * TILE_SIZE
@@ -31,22 +37,26 @@ class Level:
             top_limit = tmx_level_properties['top_limit'],
             clouds = {'large': level_frames['cloud_large'], 'small': level_frames['cloud_small']},
             horizon_line = tmx_level_properties['horizon_line']) 
+        
         self.collision_sprites = pygame.sprite.Group()
         self.semi_collision_sprites = pygame.sprite.Group()
         self.damage_sprites = pygame.sprite.Group()
+        self.attack_sprites = pygame.sprite.Group()
 
         # Inicialização do grupo de sprites dos inimigos que causam dano
         self.tooth_sprites = pygame.sprite.Group()
+        self.shell_sprites = pygame.sprite.Group()
         self.pearl_sprites = pygame.sprite.Group()
 
         # Inicialização do grupo de sprites dos itens
         self.item_sprites = pygame.sprite.Group()
-
         self.setup(tmx_map, level_frames, audio_files)
 
         # Superficie separadas para facilitar o acesso
         self.pearl_surface = level_frames['pearl']
         self.particle_frames = level_frames['particle']
+        self.neutral_attack_frames = level_frames['player_neutral_attack']
+        self.throw_attack_frames = level_frames['player_throw_attack']
 
         # Sons
         self.audio_files = audio_files
@@ -168,7 +178,7 @@ class Level:
                 Shell(
                     pos = (int(obj.x), int(obj.y)), 
                     frames = level_frames['shell'], 
-                    groups = (self.all_sprites, self.collision_sprites), 
+                    groups = (self.all_sprites, self.collision_sprites, self.shell_sprites), 
                     reverse = obj.properties['reverse'], 
                     player = self.player, 
                     create_pearl = self.create_pearl)
@@ -191,6 +201,7 @@ class Level:
                         Sprite((x,y), level_frames['water_body'], self.all_sprites, Z_LAYERS['water'])
 
     def create_pearl(self, pos, direction):
+        print (direction)
         Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), self.pearl_surface, direction, 150)
         self.audio_files['pearl'].play()
 
@@ -209,8 +220,8 @@ class Level:
                 if hasattr(sprite, 'pearl'):
                     sprite.kill()
                     ParticleEffectSprite((sprite.rect.center), self.particle_frames, self.all_sprites)
-                if self.data.health <= 0:
-                    self.data.health = BASE_HEALTH
+                if self.data.player_health <= 0:
+                    self.data.player_health = BASE_HEALTH
                     self.switch_screen(int(self.current_stage) + 1)
     
     def item_collision(self):
@@ -221,14 +232,44 @@ class Level:
                 ParticleEffectSprite((item_sprites[0].rect.center), self.particle_frames, self.all_sprites)
                 self.audio_files['geo'].play()
 
+    def player_attack(self):
+        # Ataque neutro
+        if self.player.neutral_attacking and not self.during_neutral_attack:
+            self.during_neutral_attack = True
+            self.player_neutral_attack_sprite = Neutral_Attack(
+                pos = (self.player.hitbox_rect.x, self.player.hitbox_rect.y),
+                groups = (self.all_sprites, self.attack_sprites),
+                frames = self.neutral_attack_frames,
+                facing_side = self.player.facing_side,
+                vertical_sight = self.player.vertical_sight,
+                jumping = self.player.jumping
+            )
+        if not self.player.neutral_attacking:
+            self.during_neutral_attack = False
+        
+        # Ataque lançável
+        if self.player.throw_attacking and not self.during_throw_attack:
+            self.during_throw_attack = True
+            self.player_throw_attack_sprite = Throw_Attack(
+                pos = (self.player.hitbox_rect.x, self.player.hitbox_rect.y),
+                groups = (self.all_sprites, self.attack_sprites),
+                frames = self.throw_attack_frames,
+                facing_side = self.player.facing_side,
+                vertical_sight = self.player.vertical_sight,
+            )
+        # Caso o sprite exista e ele deve sumir da tela
+        if self.player_throw_attack_sprite and not self.player_throw_attack_sprite.alive():
+            self.during_throw_attack = False
+            self.player.throw_attacking = False
+
     def attack_collision(self):
-        for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites():
-            facing_target = self.player.rect.centerx < target.rect.centerx and self.player.facing_side == 'right' or\
-                            self.player.rect.centerx > target.rect.centerx and self.player.facing_side == 'left'
-            
-            if target.rect.colliderect(self.player.rect) and self.player.attacking and facing_target:
-                target.reverse()
-    
+        if self.player.neutral_attacking:
+            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites():
+                if target.rect.colliderect(self.player_neutral_attack_sprite.rect):
+                    target.get_damage()
+                    if not hasattr(target, 'pearl'):
+                        target.is_alive()
+        
     def check_constraint(self):
         # Método para limitar o jogador dentro da fase específica
 
@@ -242,12 +283,12 @@ class Level:
         # Limitação da parte de baixo
         if self.player.hitbox_rect.bottom > self.level_bottom:
             self.switch_screen(int(self.current_stage) + 1)
-            self.data.health = BASE_HEALTH
+            self.data.player_health = BASE_HEALTH
         
         # Passou de fase
         if self.player.hitbox_rect.colliderect(self.level_finish_rect):
             self.switch_screen(int(self.current_stage) + 1)
-            self.data.health = BASE_HEALTH
+            self.data.player_health = BASE_HEALTH
 
     def run(self, delta_time):
         self.display_surface.fill('black') # Preenche a tela com a cor preta
@@ -256,10 +297,16 @@ class Level:
         self.pearl_collision()
         self.hit_collision()
         self.item_collision()
-        self.attack_collision()
+
+        self.player_attack()
+        if self.during_neutral_attack and self.player_neutral_attack_sprite:
+            self.player_neutral_attack_sprite.update_position((self.player.hitbox_rect.x, self.player.hitbox_rect.y))
+            self.attack_collision()
+
         self.check_constraint()
-            
+
         self.all_sprites.draw(self.player.hitbox_rect.center, delta_time)
+        debug (self.player.throw_attack_is_available, 30)
         """ 
         Exemplos de debug:
         debug(f"x: {int(self.player.hitbox_rect.x)}")

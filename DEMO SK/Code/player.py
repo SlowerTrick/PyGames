@@ -1,18 +1,16 @@
 from settings import *
 from timecount import Timer
-from os.path import join
 from math import sin
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos, groups, collision_sprites, semi_collision_sprites, frames, data, audio_files):
         # Setup Geral
         super().__init__(groups)
-        self.z = Z_LAYERS['main']
-        self.data = data
 
         # Imagem
         self.frames, self.frame_index = frames, 0
         self.state, self.facing_side = 'idle', 'right'
+        self.vertical_sight = 'none'
         self.image = self.frames[self.state][self.frame_index]
 
         # Retângulos
@@ -25,18 +23,24 @@ class Player(pygame.sprite.Sprite):
         self.speed = 200
         self.gravity = 1300
         self.jump_height = 700
-        self.keys_pressed = {'jump': False, 'attack': False, 'dash': False}
+        self.keys_pressed = {'jump': False, 'neutral_attack': False, 'throw_attack': False, 'dash': False}
 
         # Dash
         self.dash_speed = 700
         self.dash_distance = 150
         self.dash_progress = self.dash_distance
         self.dash_is_available = True
-
-        # Variaveis de movimento
-        self.jump = False
-        self.attacking = False
         self.dashing = False
+
+        # Pulo
+        self.jumping = False
+        self.jump_key_held = False
+        self.jump = False
+
+        # Ataque
+        self.neutral_attacking = False
+        self.throw_attacking = False
+        self.throw_attack_is_available = True
 
         # Colisão
         self.collision_sprites = collision_sprites
@@ -44,72 +48,104 @@ class Player(pygame.sprite.Sprite):
         self.on_surface = {'floor': False, 'left_wall': False, 'right_wall': False}
         self.platform = None
 
-        # Temporizador
+        # Temporizadores
         self.timers = {
             'wall_jump': Timer(200),
             'wall_slide_block': Timer(250),
             'jump_buffer': Timer(150),
             'platform_skip': Timer(100),
-            'attack_block': Timer(500),
+            'neutral_attack_block': Timer(400),
             'dash_block': Timer(500),
             'invincibility_frames': Timer(500),
             'jump_sound': Timer(100)
         }
-        # Áudio
+        # Áudio, data e etc
+        self.data = data
         self.audio_files = audio_files
-        self.audio_files['attack'].set_volume(0.5)
+        self.audio_files['neutral_attack'].set_volume(0.5)
+        self.z = Z_LAYERS['main']
+        
+        self.display_surface = pygame.display.get_surface()
+
+        # Debug, caso necessário
+        # self.display_surface = pygame.display.get_surface() #para mostrar possiveis caixas de colisão
+        """ pygame.draw.rect(self.display_surface, 'red', floor_rect)
+        pygame.draw.rect(self.display_surface, 'red', right_rect)
+        pygame.draw.rect(self.display_surface, 'red', left_rect) """
 
     def input(self):
-        keys = pygame.key.get_pressed()
-        input_vector = vector(0, 0)
+        if not self.throw_attacking:
+            keys = pygame.key.get_pressed()
+            input_vector = vector(0, 0)
+            self.vertical_sight = 'none'
 
-        if not self.timers['wall_jump'].active and self.dash_progress == self.dash_distance:
-            # Movimentação Horizontal
-            if keys[pygame.K_RIGHT]:
-                input_vector.x += 1
-                self.facing_side = 'right'
-            if keys[pygame.K_LEFT]:
-                input_vector.x -= 1
-                self.facing_side = 'left'
+            if not self.timers['wall_jump'].active and self.dash_progress == self.dash_distance:
+                # Movimentação Horizontal
+                if keys[pygame.K_d]:
+                    input_vector.x += 1
+                    self.facing_side = 'right'
+                if keys[pygame.K_a]:
+                    input_vector.x -= 1
+                    self.facing_side = 'left'
 
-            # Mantém a distancia do vetor e mantém o seu tamanho uniforme
-            self.direction.x = input_vector.normalize().x if input_vector else 0
+                # Mantém a distancia do vetor e mantém o seu tamanho uniforme
+                self.direction.x = input_vector.normalize().x if input_vector else 0
+            
+            if keys[pygame.K_w]:
+                self.vertical_sight = 'up'
+            if keys[pygame.K_s]:
+                self.timers['platform_skip'].activate()
+                self.vertical_sight = 'down'
 
-        # Ataque e Dash
-        if keys[pygame.K_z]:
-            if not self.keys_pressed['attack']:
-                self.attack()
-                self.keys_pressed['attack'] = True
-        else:
-            self.keys_pressed['attack'] = False
+            # Ataque e Dash
+            if keys[pygame.K_p]:
+                if not self.keys_pressed['neutral_attack']:
+                    self.neutral_attack()
+                    self.keys_pressed['neutral_attack'] = True
+            else:
+                self.keys_pressed['neutral_attack'] = False
 
-        if keys[pygame.K_x]:
-            if not self.keys_pressed['dash']:
-                if self.dash_is_available:
-                    self.dash()
-                    self.keys_pressed['dash'] = True
-        else:
-            self.keys_pressed['dash'] = False
+            if keys[pygame.K_o]:
+                if not self.keys_pressed['throw_attack']:
+                    if self.throw_attack_is_available:
+                        self.throw_attack()
+                        self.keys_pressed['throw_attack'] = True
+            else:
+                self.keys_pressed['throw_attack'] = False
 
-        # Movimentação vertical
-        if keys[pygame.K_SPACE] and self.dash_progress == self.dash_distance:
-            if not self.keys_pressed['jump']:
-                self.jump = True
-                if not self.timers['jump_buffer'].active:
-                    self.timers['jump_buffer'].activate()
-                self.keys_pressed['jump'] = True
-        else:
-            self.keys_pressed['jump'] = False
+            if keys[pygame.K_i]:
+                if not self.keys_pressed['dash']:
+                    if self.dash_is_available:
+                        self.dash()
+                        self.keys_pressed['dash'] = True
+            else:
+                self.keys_pressed['dash'] = False
 
-        if keys[pygame.K_DOWN]:
-            self.timers['platform_skip'].activate()
+            # Movimentação vertical
+            if keys[pygame.K_SPACE] and self.dash_progress == self.dash_distance:
+                self.jump_key_held = True
+                if not self.keys_pressed['jump']:
+                    self.jump = True
+                    if not self.timers['jump_buffer'].active:
+                        self.timers['jump_buffer'].activate()
+                    self.keys_pressed['jump'] = True
+            else:
+                self.keys_pressed['jump'] = False
+                self.jump_key_held = False
     
-    def attack(self):
-        if not self.timers['attack_block'].active:
-            self.attacking = True
+    def neutral_attack(self):
+        if not self.timers['neutral_attack_block'].active:
+            self.neutral_attacking = True
             self.frame_index = 0 # Reseta os frames para dar prioridade ao ataque
-            self.timers['attack_block'].activate()
-            self.audio_files['attack'].play()
+            self.timers['neutral_attack_block'].activate()
+            self.audio_files['neutral_attack'].play()
+    
+    def throw_attack(self):
+        if not self.throw_attacking:
+            self.throw_attacking = True
+            self.throw_attack_is_available = False
+            self.frame_index = 0
+            self.audio_files['neutral_attack'].play()
     
     def dash(self):
         if not self.timers['dash_block'].active:
@@ -157,11 +193,13 @@ class Player(pygame.sprite.Sprite):
                 self.direction.y += self.gravity / 2 * delta_time
                 if self.on_surface['floor']:
                     self.dash_is_available = True
+                    self.throw_attack_is_available = True
 
         # Pulo do jogador
         if self.jump or self.timers['jump_buffer'].active:
             # Pulo normal
             if self.on_surface['floor']:
+                self.jumping = True
                 self.direction.y = -self.jump_height
                 self.timers['wall_slide_block'].activate()
                 self.hitbox_rect.bottom -= 1
@@ -184,6 +222,13 @@ class Player(pygame.sprite.Sprite):
                     self.audio_files['wall_jump'].play()
                     self.timers['jump_sound'].activate()
             self.jump = False
+        
+        # Verifique se a tecla de pulo foi solta para parar a subida
+        if self.jumping and not self.jump_key_held:
+            if self.direction.y < 0:
+                self.direction.y += self.gravity * delta_time * 4
+            else:
+                self.jumping = False
         
         self.collision('vertical')
         self.semi_collision()
@@ -258,26 +303,28 @@ class Player(pygame.sprite.Sprite):
         self.image = self.frames[self.state][int(self.frame_index % len(self.frames[self.state]))]
         self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
 
-        if self.attacking and self.frame_index > len(self.frames[self.state]):
-            self.attacking = False
+        if self.neutral_attacking and not self.timers['neutral_attack_block'].active:
+            self.neutral_attacking = False
 
     def get_state(self):
         if self.on_surface['floor']:
-            if self.attacking:
+            if self.neutral_attacking:
                 self.state = 'attack'
             else:
                 self.state = 'idle' if self.direction.x == 0 else 'run'
         else:
-            if self.attacking:
+            if self.neutral_attacking:
                 self.state = 'air_attack'
             else:
                 if any((self.on_surface['left_wall'], self.on_surface['right_wall'])):
                     self.state = 'wall'
                 else:
                     self.state = 'jump' if self.direction.y < 0 else 'fall'
+        if self.timers['invincibility_frames'].active:
+            self.state = 'hit'
 
     def get_damage(self):
-        self.data.health -= 1
+        self.data.player_health -= 1
         self.timers['invincibility_frames'].activate()
     
     def flicker(self):
@@ -286,6 +333,7 @@ class Player(pygame.sprite.Sprite):
             white_surf = white_mask.to_surface()
             white_surf.set_colorkey('black')
             self.image = white_surf
+            self.state = 'hit'
 
     def update(self, delta_time):
         # Updates de hitbox e temporizadores
@@ -294,7 +342,8 @@ class Player(pygame.sprite.Sprite):
 
         # Movimento do jogo e colisão
         self.input()
-        self.move(delta_time)
+        if not self.throw_attacking:
+            self.move(delta_time)
         self.platform_move(delta_time)
         self.check_contact()
 
@@ -302,9 +351,3 @@ class Player(pygame.sprite.Sprite):
         self.get_state()
         self.animate(delta_time)
         self.flicker()
-
-        # Debug, caso necessário
-        # self.display_surface = pygame.display.get_surface() para mostrar possiveis caixas de colisão
-        # pygame.draw.rect(self.display_surface, 'red', floor_rect)
-        # pygame.draw.rect(self.display_surface, 'red', right_rect)
-        #pygame.draw.rect(self.display_surface, 'red', left_rect)
