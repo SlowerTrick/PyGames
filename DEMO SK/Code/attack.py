@@ -48,7 +48,7 @@ class Neutral_Attack(pygame.sprite.Sprite):
 
 class Throw_Attack(pygame.sprite.Sprite):
     def __init__(self, pos, groups, frames, facing_side, vertical_sight):
-        self.pearl = True
+        self.on_wall = False
         super().__init__(groups)
 
         # Setup do objeto
@@ -85,7 +85,7 @@ class Throw_Attack(pygame.sprite.Sprite):
             timer.update()
 
         self.rect.x += self.direction * self.speed * dt
-        if not self.timers['travel_time'].active and self.going == 'forward':
+        if not self.timers['travel_time'].active and self.going == 'forward' and not self.speed == 0:
             self.going = 'backward'
             self.direction *= -1
 

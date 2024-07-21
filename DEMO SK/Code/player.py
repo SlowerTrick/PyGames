@@ -98,14 +98,14 @@ class Player(pygame.sprite.Sprite):
                 self.vertical_sight = 'down'
 
             # Ataque e Dash
-            if keys[pygame.K_p]:
+            if keys[pygame.K_p] and not self.throw_attacking:
                 if not self.keys_pressed['neutral_attack']:
                     self.neutral_attack()
                     self.keys_pressed['neutral_attack'] = True
             else:
                 self.keys_pressed['neutral_attack'] = False
 
-            if keys[pygame.K_o]:
+            if keys[pygame.K_o] and not self.neutral_attacking:
                 if not self.keys_pressed['throw_attack']:
                     if self.throw_attack_is_available:
                         self.throw_attack()

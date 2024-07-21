@@ -201,7 +201,6 @@ class Level:
                         Sprite((x,y), level_frames['water_body'], self.all_sprites, Z_LAYERS['water'])
 
     def create_pearl(self, pos, direction):
-        print (direction)
         Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), self.pearl_surface, direction, 150)
         self.audio_files['pearl'].play()
 
@@ -269,7 +268,26 @@ class Level:
                     target.get_damage()
                     if not hasattr(target, 'pearl'):
                         target.is_alive()
-        
+
+        if self.player.throw_attacking:
+            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.collision_sprites.sprites():
+                if target.rect.colliderect(self.player_throw_attack_sprite.rect):
+                    if hasattr(target, 'is_enemy'):
+                        target.get_damage()
+                        if not hasattr(target, 'pearl'):
+                            target.is_alive()
+                    else:
+                        self.player_throw_attack_sprite.on_wall = True
+                        self.player_throw_attack_sprite.speed = 0
+
+    def throw_attack_movement(self, delta_time):
+        self.player.hitbox_rect.x += self.player_throw_attack_sprite.direction * 1000 * delta_time
+        self.player.rect.center = self.player.hitbox_rect.center
+        self.player.collision('horizontal')
+        if self.player.on_surface['right_wall'] or self.player.on_surface['left_wall']:
+            self.player_throw_attack_sprite.kill()
+            self.player.throw_attacking = False
+    
     def check_constraint(self):
         # Método para limitar o jogador dentro da fase específica
 
@@ -298,19 +316,15 @@ class Level:
         self.hit_collision()
         self.item_collision()
 
+        # Ataque do player
         self.player_attack()
-        if self.during_neutral_attack and self.player_neutral_attack_sprite:
-            self.player_neutral_attack_sprite.update_position((self.player.hitbox_rect.x, self.player.hitbox_rect.y))
+        if (self.during_neutral_attack and self.player_neutral_attack_sprite) or (self.during_throw_attack and self.player_throw_attack_sprite):
+            if self.during_neutral_attack and self.player_neutral_attack_sprite:
+                self.player_neutral_attack_sprite.update_position((self.player.hitbox_rect.x, self.player.hitbox_rect.y))
+            elif self.player_throw_attack_sprite.on_wall:
+                self.throw_attack_movement(delta_time)
             self.attack_collision()
 
+        # Limitação do mapa e desenho dos sprites
         self.check_constraint()
-
         self.all_sprites.draw(self.player.hitbox_rect.center, delta_time)
-        debug (self.player.throw_attack_is_available, 30)
-        """ 
-        Exemplos de debug:
-        debug(f"x: {int(self.player.hitbox_rect.x)}")
-        debug(f"y: {int(self.player.hitbox_rect.y)}", 30) 
-        debug(f"On_floor: {self.player.on_surface['floor']}", 50) 
-        debug('Eu vou te seguir!', pygame.mouse.get_pos()[1], pygame.mouse.get_pos()[0]) # 1 para Y e 0 para X
-        """

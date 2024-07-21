@@ -6,6 +6,7 @@ from random import choice
 class Tooth(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, collision_sprites):
         super().__init__(groups)
+        self.is_enemy = True
         self.frames, self.frame_index = frames, 0
         self.image = self.frames[self.frame_index]
         self.rect = self.image.get_frect(topleft = pos)
@@ -53,6 +54,7 @@ class Shell(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, reverse, player, create_pearl):
         # self.pearl = True "Caso algo de errado, vc tirou isso"
         super().__init__(groups)
+        self.is_enemy = True
 
         if reverse:
             self.frames = {}
@@ -119,6 +121,7 @@ class Shell(pygame.sprite.Sprite):
 
 class Pearl(pygame.sprite.Sprite):
     def __init__(self, pos, groups, surf, direction, speed):
+        self.is_enemy = True
         self.pearl = True
         super().__init__(groups)
         self.image = surf
