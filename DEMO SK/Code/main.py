@@ -11,7 +11,7 @@ class Game:
         pygame.init() # Inicialização do pygame
         self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.FULLSCREEN) # Tela
         pygame.display.set_caption('DEMO SilkSong') # Nome do jogo
-        icon = pygame.image.load('../Assets/Hornet/chibi.jpg') # Icone do jogo
+        icon = pygame.image.load('../graphics/icon/chibi.jpg') # Icone do jogo
         pygame.display.set_icon(icon)
 
         self.pause = True
@@ -25,14 +25,16 @@ class Game:
 
         # Carregamento dos mapas do jogo
         self.tmx_maps = {
-            0: load_pygame(join('..', 'data', 'levels', 'omni.tmx')),
-            1: load_pygame(join('..', 'data', 'levels', '0.tmx')),
-            2: load_pygame(join('..', 'data', 'levels', '1.tmx')),
-            3: load_pygame(join('..', 'data', 'levels', '2.tmx')),
-            4: load_pygame(join('..', 'data', 'levels', '3.tmx')),
-            5: load_pygame(join('..', 'data', 'levels', '4.tmx')),
-            6: load_pygame(join('..', 'data', 'levels', '5.tmx')),
-            7: load_pygame(join('..', 'data', 'levels', '6.tmx'))
+            #0: load_pygame(join('..', 'data', 'levels', 'omni.tmx')),
+            0: load_pygame(join('..', 'data', 'levels', '0.tmx')),
+            1: load_pygame(join('..', 'data', 'levels', '1.tmx')),
+            2: load_pygame(join('..', 'data', 'levels', '2.tmx')),
+            3: load_pygame(join('..', 'data', 'levels', '3.tmx')),
+            4: load_pygame(join('..', 'data', 'levels', '4.tmx')),
+            5: load_pygame(join('..', 'data', 'levels', '5.tmx')),
+            6: load_pygame(join('..', 'data', 'levels', '6.tmx')),
+            7: load_pygame(join('..', 'data', 'levels', '7.tmx')),
+            8: load_pygame(join('..', 'data', 'levels', '8.tmx')),
         }
         self.start_stage = 0
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage)
@@ -62,7 +64,8 @@ class Game:
             'spike': import_image('..',  'graphics', 'enemies', 'spike_ball', 'Spiked Ball'),
             'spike_chain': import_image('..',  'graphics', 'enemies', 'spike_ball', 'spiked_chain'),
             'tooth': import_folder('..', 'graphics','enemies', 'tooth', 'run'),
-            'shell': import_sub_folders('..', 'graphics','enemies', 'shell'),
+            'shell': import_sub_folders('..', 'graphics', 'enemies', 'shell'),
+            'slime': import_sub_folders('..', 'graphics', 'enemies', 'slime'),
             'pearl': import_image('..',  'graphics', 'enemies', 'bullets', 'pearl'),
             'items': import_sub_folders('..', 'graphics', 'items'),
             'particle': import_folder('..', 'graphics', 'effects', 'particle'),
@@ -71,11 +74,9 @@ class Game:
             'bg_tiles': import_folder_dict('..', 'graphics', 'level', 'bg', 'tiles'),
             'cloud_small': import_folder('..', 'graphics','level', 'clouds', 'small'),
             'cloud_large': import_image('..', 'graphics','level', 'clouds', 'large_cloud'),
-
             'player_neutral_attack': import_sub_folders('..', 'graphics', 'player', 'attack_animation'),
             'player_throw_attack': import_image('..', 'graphics', 'player', 'throw_attack', '0'),
         }
-
         self.font = pygame.font.Font(join('..', 'graphics', 'ui', 'runescape_uf.ttf'), 40)
 
         self.ui_frames = {

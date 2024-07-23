@@ -3,18 +3,19 @@ from sprites import Sprite, AnimatedSprite, MovingSprite, Spike, Item, ParticleE
 from player import Player
 from groups import AllSprites
 from debug import debug
-from enemies import Tooth, Shell, Pearl
+from enemies import Tooth, Shell, Pearl, Slime
 from attack import Neutral_Attack, Throw_Attack
 
 from random import uniform
 
 class Level:
     def __init__(self, tmx_map, level_frames, audio_files, data, switch_screen, current_stage):
+        # Setup geral
         self.display_surface = pygame.display.get_surface() # Inicializa a partir da tela em main
         self.data = data
         self.switch_screen = switch_screen
-        self.current_stage = current_stage
 
+        # Ataques
         self.during_neutral_attack = False
         self.during_throw_attack = False
         self.player_neutral_attack_sprite = None
@@ -29,7 +30,15 @@ class Level:
         else:
             bg_tile = None
 
-        # groups 
+        self.current_stage = current_stage
+        self.adjacent_stage = {
+            'up': tmx_level_properties['next_room_up'], 
+            'left': tmx_level_properties['next_room_left'], 
+            'right': tmx_level_properties['next_room_right'], 
+            'down': tmx_level_properties['next_room_down']
+        }
+
+        # Grupos
         self.all_sprites = AllSprites(
             width = tmx_map.width, 
             height = tmx_map.height,
@@ -47,6 +56,7 @@ class Level:
         self.tooth_sprites = pygame.sprite.Group()
         self.shell_sprites = pygame.sprite.Group()
         self.pearl_sprites = pygame.sprite.Group()
+        self.slime_sprites = pygame.sprite.Group()
 
         # Inicialização do grupo de sprites dos itens
         self.item_sprites = pygame.sprite.Group()
@@ -63,143 +73,173 @@ class Level:
         self.audio_files['geo'].set_volume(3)
 
     def setup(self, tmx_map, level_frames, audio_files):
+        def get_layer(tmx_map, layer_name):
+            try:
+                return tmx_map.get_layer_by_name(layer_name)
+            except ValueError:
+                return None
+
         # Tiles
         for layer in ['BG', 'Terrain', 'FG', 'Platforms']:
-            for x, y, surf in tmx_map.get_layer_by_name(layer).tiles():
-                groups = [self.all_sprites]
-                if layer == 'Terrain': groups.append(self.collision_sprites)
-                if layer == 'Platforms': groups.append(self.semi_collision_sprites)
-                match layer:
-                    case 'BG': z = Z_LAYERS['bg tiles']
-                    case 'FG': z = Z_LAYERS['bg tiles']
-                    case _: z = Z_LAYERS['main'] # Default
-                Sprite((x * TILE_SIZE,y * TILE_SIZE), surf, groups, z)
-        
+            tile_layer = get_layer(tmx_map, layer)
+            if tile_layer:
+                for x, y, surf in tile_layer.tiles():
+                    groups = [self.all_sprites]
+                    if layer == 'Terrain': groups.append(self.collision_sprites)
+                    if layer == 'Platforms': groups.append(self.semi_collision_sprites)
+                    match layer:
+                        case 'BG': z = Z_LAYERS['bg tiles']
+                        case 'FG': z = Z_LAYERS['bg tiles']
+                        case _: z = Z_LAYERS['main']  # Default
+                    Sprite((x * TILE_SIZE, y * TILE_SIZE), surf, groups, z)
+
         # Detalhes do background
-        for obj in tmx_map.get_layer_by_name('BG details'):
-            if obj.name == 'static':
-                 Sprite((int(obj.x), int(obj.y)), obj.image, self.all_sprites, z = Z_LAYERS['bg tiles'])
-            else:
-                AnimatedSprite((int(obj.x), int(obj.y)), level_frames[obj.name], self.all_sprites, Z_LAYERS['bg tiles'])
-                if obj.name == 'candle':
-                    AnimatedSprite((int(obj.x), int(obj.y)) + vector(-20, -20), level_frames['candle_light'], self.all_sprites, Z_LAYERS['bg tiles'])
+        bg_details_layer = get_layer(tmx_map, 'BG details')
+        if bg_details_layer:
+            for obj in bg_details_layer:
+                if obj.name == 'static':
+                    Sprite((int(obj.x), int(obj.y)), obj.image, self.all_sprites, z=Z_LAYERS['bg tiles'])
+                else:
+                    AnimatedSprite((int(obj.x), int(obj.y)), level_frames[obj.name], self.all_sprites, Z_LAYERS['bg tiles'])
+                    if obj.name == 'candle':
+                        AnimatedSprite((int(obj.x), int(obj.y)) + vector(-20, -20), level_frames['candle_light'], self.all_sprites, Z_LAYERS['bg tiles'])
 
         # Player
-        for obj in tmx_map.get_layer_by_name('Objects'):
-            if obj.name == 'player':
-                self.player = Player(
-                    pos = (int(obj.x), int(obj.y)), 
-                    groups = self.all_sprites, 
-                    collision_sprites = self.collision_sprites, 
-                    semi_collision_sprites = self.semi_collision_sprites,
-                    frames = level_frames['player'],
-                    data = self.data,
-                    audio_files = audio_files)
-            else:
-                if obj.name in ('barrel', 'crate'):
-                    Sprite((int(obj.x), int(obj.y)), obj.image, (self.all_sprites, self.collision_sprites))
+        objects_layer = get_layer(tmx_map, 'Objects')
+        if objects_layer:
+            for obj in objects_layer:
+                if obj.name == 'player':
+                    self.player = Player(
+                        pos=(int(obj.x), int(obj.y)),
+                        groups=self.all_sprites,
+                        collision_sprites=self.collision_sprites,
+                        semi_collision_sprites=self.semi_collision_sprites,
+                        frames=level_frames['player'],
+                        data=self.data,
+                        audio_files=audio_files)
                 else:
-                    # Frames
-                    frames = level_frames[obj.name] if not 'palm' in obj.name else level_frames['palms'][obj.name]
-                    if obj.name == 'floor_spike' and obj.properties['inverted']:
-                        # Virar o objeto a 180°
-                        frames = [pygame.transform.flip(frame, False, True) for frame in frames]
-
-                    # Grupos
-                    groups = [self.all_sprites]
-                    if obj.name in('palm_small', 'palm_large'): groups.append(self.semi_collision_sprites)
-                    if obj.name in('saw', 'floor_spike'): groups.append(self.damage_sprites)
-
-                    # Z index
-                    z = Z_LAYERS['main'] if not 'bg' in obj.name else Z_LAYERS['bg details']
-
-                    # Animation speed
-                    animation_speed = ANIMATION_SPEED if not 'palm' in obj.name else ANIMATION_SPEED + uniform(-1, 1)
-
-                    # Criar os sprites
-                    AnimatedSprite((int(obj.x), int(obj.y)), frames, groups, z, animation_speed)
-
-            if obj.name == 'flag':
-                self.level_finish_rect = pygame.FRect((int(obj.x), int(obj.y)), (int(obj.width), int(obj.height)))
-              
-        # Objetos moveis
-        for obj in tmx_map.get_layer_by_name('Moving Objects'):
-            if obj.name == 'spike':
-                Spike(
-                    pos = (int(obj.x) + int(obj.width) / 2, int(obj.y) + int(obj.height) / 2),
-                    surface = level_frames['spike'],
-                    radius = obj.properties['radius'],
-                    speed = obj.properties['speed'],
-                    start_angle = obj.properties['start_angle'],
-                    end_angle = obj.properties['end_angle'],
-                    groups = (self.all_sprites, self.damage_sprites))
-                for radius in range(0, obj.properties['radius'], 20):
-                    Spike(
-                        pos = (int(obj.x) + int(obj.width) / 2, int(obj.y) + int(obj.height) / 2),
-                        surface = level_frames['spike_chain'],
-                        radius = radius,
-                        speed = obj.properties['speed'],
-                        start_angle = obj.properties['start_angle'],
-                        end_angle = obj.properties['end_angle'],
-                        groups = self.all_sprites,
-                        z = Z_LAYERS['bg details'])
-
-            else:
-                frames = level_frames[obj.name]
-                groups = (self.all_sprites, self.semi_collision_sprites) if obj.properties['platform'] else (self.all_sprites, self.damage_sprites)
-                if obj.width > obj.height: # Horizontal
-                    move_dir = 'x'
-                    start_pos = (int(obj.x), int(obj.y) + int(obj.height) / 2)
-                    end_pos = (int(obj.x) + int(obj.width), int(obj.y) + int(obj.height) / 2)
-                else: # Vertical
-                    move_dir = 'y'
-                    start_pos = (int(obj.x) + int(obj.width) / 2, int(obj.y))
-                    end_pos = (int(obj.x) + int(obj.width) / 2, int(obj.y) + int(obj.height))
-                speed = obj.properties['speed']
-                MovingSprite(frames, groups, start_pos, end_pos, move_dir, speed, obj.properties['flip'])
-
-                if obj.name == 'saw':
-                    if move_dir == 'x':
-                        y = start_pos[1] - level_frames['saw_chain'].get_height() / 2
-                        left_side, right_side = int(start_pos[0]), int(end_pos[0])
-                        for x in range(left_side, right_side, 20):
-                            Sprite((x, y), level_frames['saw_chain'], (self.all_sprites), Z_LAYERS['bg details'])
+                    if obj.name in ('barrel', 'crate'):
+                        Sprite((int(obj.x), int(obj.y)), obj.image, (self.all_sprites, self.collision_sprites))
                     else:
-                        x = start_pos[0] - level_frames['saw_chain'].get_width() / 2
-                        top, bottom = int(start_pos[1]), int(end_pos[1])
-                        for y in range(top, bottom, 20):
-                            Sprite((x, y), level_frames['saw_chain'], (self.all_sprites), Z_LAYERS['bg details'])
+                        if obj.name in level_frames:
+                            frames = level_frames[obj.name] if not 'palm' in obj.name else level_frames['palms'][obj.name]
+                            if obj.name == 'floor_spike' and obj.properties['inverted']:
+                                frames = [pygame.transform.flip(frame, False, True) for frame in frames]
+
+                            groups = [self.all_sprites]
+                            if obj.name in ('palm_small', 'palm_large'): groups.append(self.semi_collision_sprites)
+                            if obj.name in ('saw', 'floor_spike'): groups.append(self.damage_sprites)
+
+                            z = Z_LAYERS['main'] if not 'bg' in obj.name else Z_LAYERS['bg details']
+
+                            animation_speed = ANIMATION_SPEED if not 'palm' in obj.name else ANIMATION_SPEED + uniform(-1, 1)
+
+                            AnimatedSprite((int(obj.x), int(obj.y)), frames, groups, z, animation_speed)
+
+                if obj.name == 'flag':
+                    self.level_finish_rect = pygame.FRect((int(obj.x), int(obj.y)), (int(obj.width), int(obj.height)))
+
+        # Objetos moveisc / Objetos com dano
+        moving_objects_layer = get_layer(tmx_map, 'Moving Objects')
+        if moving_objects_layer:
+            for obj in moving_objects_layer:
+                if obj.name == 'spike':
+                    Spike(
+                        pos=(int(obj.x) + int(obj.width) / 2, int(obj.y) + int(obj.height) / 2),
+                        surface=level_frames['spike'],
+                        radius=obj.properties['radius'],
+                        speed=obj.properties['speed'],
+                        start_angle=obj.properties['start_angle'],
+                        end_angle=obj.properties['end_angle'],
+                        groups=(self.all_sprites, self.damage_sprites))
+                    for radius in range(0, obj.properties['radius'], 20):
+                        Spike(
+                            pos=(int(obj.x) + int(obj.width) / 2, int(obj.y) + int(obj.height) / 2),
+                            surface=level_frames['spike_chain'],
+                            radius=radius,
+                            speed=obj.properties['speed'],
+                            start_angle=obj.properties['start_angle'],
+                            end_angle=obj.properties['end_angle'],
+                            groups=self.all_sprites,
+                            z=Z_LAYERS['bg details'])
+
+                else:
+                    if obj.name in level_frames:
+                        frames = level_frames[obj.name]
+                        groups = (self.all_sprites, self.semi_collision_sprites) if obj.properties['platform'] else (self.all_sprites, self.damage_sprites)
+                        if obj.width > obj.height:  # Horizontal
+                            move_dir = 'x'
+                            start_pos = (int(obj.x), int(obj.y) + int(obj.height) / 2)
+                            end_pos = (int(obj.x) + int(obj.width), int(obj.y) + int(obj.height) / 2)
+                        else:  # Vertical
+                            move_dir = 'y'
+                            start_pos = (int(obj.x) + int(obj.width) / 2, int(obj.y))
+                            end_pos = (int(obj.x) + int(obj.width) / 2, int(obj.y) + int(obj.height))
+                        speed = obj.properties['speed']
+                        MovingSprite(frames, groups, start_pos, end_pos, move_dir, speed, obj.properties['flip'])
+
+                        if obj.name == 'saw':
+                            if move_dir == 'x':
+                                y = start_pos[1] - level_frames['saw_chain'].get_height() / 2
+                                left_side, right_side = int(start_pos[0]), int(end_pos[0])
+                                for x in range(left_side, right_side, 20):
+                                    Sprite((x, y), level_frames['saw_chain'], (self.all_sprites), Z_LAYERS['bg details'])
+                            else:
+                                x = start_pos[0] - level_frames['saw_chain'].get_width() / 2
+                                top, bottom = int(start_pos[1]), int(end_pos[1])
+                                for y in range(top, bottom, 20):
+                                    Sprite((x, y), level_frames['saw_chain'], (self.all_sprites), Z_LAYERS['bg details'])
 
         # Inimigos
-        for obj in tmx_map.get_layer_by_name('Enemies'):
-            if obj.name == 'tooth':
-                Tooth((int(obj.x), int(obj.y)), level_frames['tooth'], (self.all_sprites, self.damage_sprites, self.tooth_sprites), self.collision_sprites)
-            if obj.name == 'shell':
-                Shell(
-                    pos = (int(obj.x), int(obj.y)), 
-                    frames = level_frames['shell'], 
-                    groups = (self.all_sprites, self.collision_sprites, self.shell_sprites), 
-                    reverse = obj.properties['reverse'], 
-                    player = self.player, 
-                    create_pearl = self.create_pearl)
-                
-        # Itens
-        for obj in tmx_map.get_layer_by_name('Items'):
-            Item(obj.name, (int(obj.x) + TILE_SIZE / 2, int(obj.y) + TILE_SIZE / 2), level_frames['items'][obj.name], (self.all_sprites, self.item_sprites), self.data)
-        
-        # Água
-        for obj in tmx_map.get_layer_by_name('Water'):
-            rows = int(obj.height / TILE_SIZE) 
-            cols = int(obj.width / TILE_SIZE) 
-            for row in range(rows):
-                for col in range(cols):
-                    x = int(obj.x) + col * TILE_SIZE
-                    y = int(obj.y) + row * TILE_SIZE
-                    if row == 0:
-                        AnimatedSprite((x,y), level_frames['water_top'], self.all_sprites, Z_LAYERS['water'])
-                    else:
-                        Sprite((x,y), level_frames['water_body'], self.all_sprites, Z_LAYERS['water'])
+        enemies_layer = get_layer(tmx_map, 'Enemies')
+        if enemies_layer:
+            for obj in enemies_layer:
+                if obj.name == 'tooth':
+                    Tooth(
+                        pos = (int(obj.x), int(obj.y)), 
+                        frames = level_frames['tooth'], 
+                        groups = (self.all_sprites, self.damage_sprites, self.tooth_sprites), 
+                        collision_sprites = self.collision_sprites)
+                    
+                if obj.name == 'shell':
+                    Shell(
+                        pos = (int(obj.x), int(obj.y)),
+                        frames = level_frames['shell'],
+                        groups = (self.all_sprites, self.collision_sprites, self.shell_sprites),
+                        reverse = obj.properties['reverse'],
+                        player = self.player,
+                        create_pearl = self.create_pearl)
+                    
+                if obj.name == 'slime':
+                    Slime(
+                        pos = (int(obj.x), int(obj.y)),
+                        frames = level_frames['slime'],
+                        groups = (self.all_sprites, self.damage_sprites, self.slime_sprites),
+                        player = self.player,
+                        collision_sprites = self.collision_sprites)
 
+        # Itens
+        items_layer = get_layer(tmx_map, 'Items')
+        if items_layer:
+            for obj in items_layer:
+                if obj.name in level_frames['items']:
+                    Item(obj.name, (int(obj.x) + TILE_SIZE / 2, int(obj.y) + TILE_SIZE / 2), level_frames['items'][obj.name], (self.all_sprites, self.item_sprites), self.data)
+
+        # Água
+        water_layer = get_layer(tmx_map, 'Water')
+        if water_layer:
+            for obj in water_layer:
+                rows = int(obj.height / TILE_SIZE)
+                cols = int(obj.width / TILE_SIZE)
+                for row in range(rows):
+                    for col in range(cols):
+                        x = int(obj.x) + col * TILE_SIZE
+                        y = int(obj.y) + row * TILE_SIZE
+                        if row == 0:
+                            AnimatedSprite((x, y), level_frames['water_top'], self.all_sprites, Z_LAYERS['water'])
+                        else:
+                            Sprite((x, y), level_frames['water_body'], self.all_sprites, Z_LAYERS['water'])
+    
     def create_pearl(self, pos, direction):
         Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), self.pearl_surface, direction, 150)
         self.audio_files['pearl'].play()
@@ -241,7 +281,7 @@ class Level:
                 frames = self.neutral_attack_frames,
                 facing_side = self.player.facing_side,
                 vertical_sight = self.player.vertical_sight,
-                jumping = self.player.jumping
+                jumping = not self.player.on_surface['floor']
             )
         if not self.player.neutral_attacking:
             self.during_neutral_attack = False
@@ -263,14 +303,31 @@ class Level:
 
     def attack_collision(self):
         if self.player.neutral_attacking:
-            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites():
+            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.damage_sprites.sprites():
                 if target.rect.colliderect(self.player_neutral_attack_sprite.rect):
-                    target.get_damage()
-                    if not hasattr(target, 'pearl'):
+                    is_enemy = hasattr(target, 'is_enemy')
+                    is_pearl = hasattr(target, 'pearl')
+                    
+                    if is_enemy and not is_pearl:
                         target.is_alive()
+                        handle_knockback = not self.player.timers['during_knockback'].active and not target.hit_timer.active
+                    else:
+                        handle_knockback = not self.player.timers['during_knockback'].active
+
+                    if handle_knockback:
+                        if self.player_neutral_attack_sprite.facing_side in ['right', 'left']:
+                            self.player.knockback_direction = 'left' if self.player_neutral_attack_sprite.facing_side == 'right' else 'right'
+                        else:
+                            self.player.knockback_direction = 'up' if self.player_neutral_attack_sprite.facing_side == 'down' else 'down'
+                        self.player.timers['during_knockback'].activate()
+                        
+                        if not is_enemy:
+                            self.player.dash_is_available = True
+                        else:
+                            target.get_damage()
 
         if self.player.throw_attacking:
-            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.collision_sprites.sprites():
+            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.collision_sprites.sprites():
                 if target.rect.colliderect(self.player_throw_attack_sprite.rect):
                     if hasattr(target, 'is_enemy'):
                         target.get_damage()
@@ -279,6 +336,14 @@ class Level:
                     else:
                         self.player_throw_attack_sprite.on_wall = True
                         self.player_throw_attack_sprite.speed = 0
+
+    def attack_logic(self, delta_time):
+        if (self.during_neutral_attack and self.player_neutral_attack_sprite) or (self.during_throw_attack and self.player_throw_attack_sprite):
+            if self.during_neutral_attack and self.player_neutral_attack_sprite:
+                self.player_neutral_attack_sprite.update_position((self.player.hitbox_rect.x, self.player.hitbox_rect.y))
+            elif self.player_throw_attack_sprite.on_wall:
+                self.throw_attack_movement(delta_time)
+            self.attack_collision()
 
     def throw_attack_movement(self, delta_time):
         self.player.hitbox_rect.x += self.player_throw_attack_sprite.direction * 1000 * delta_time
@@ -289,41 +354,31 @@ class Level:
             self.player.throw_attacking = False
     
     def check_constraint(self):
-        # Método para limitar o jogador dentro da fase específica
-
-        # Limitação à esquerda e à direita
-        if self.player.hitbox_rect.left <= 0:
-            self.player.hitbox_rect.left = 0
-
-        if self.player.hitbox_rect.right >= self.level_width:
-            self.player.hitbox_rect.right = self.level_width
-
-        # Limitação da parte de baixo
-        if self.player.hitbox_rect.bottom > self.level_bottom:
-            self.switch_screen(int(self.current_stage) + 1)
-            self.data.player_health = BASE_HEALTH
-        
-        # Passou de fase
-        if self.player.hitbox_rect.colliderect(self.level_finish_rect):
-            self.switch_screen(int(self.current_stage) + 1)
-            self.data.player_health = BASE_HEALTH
+        # Metodo para limitar o jogador na tela e mudar a tela
+        bottom_limit = self.level_bottom + 200
+        top_limit = 0
+        right_limit = self.level_width
+        left_limit = 0
+        if self.player.hitbox_rect.bottom >= bottom_limit:
+            self.switch_screen(int(self.adjacent_stage['down']))
+        if self.player.hitbox_rect.bottom <= top_limit:
+            self.switch_screen(int(self.adjacent_stage['top']))
+        elif self.player.hitbox_rect.right >= right_limit:
+            self.switch_screen(int(self.adjacent_stage['right']))
+        elif self.player.hitbox_rect.left <= left_limit:
+            self.switch_screen(int(self.adjacent_stage['left']))
 
     def run(self, delta_time):
-        self.display_surface.fill('black') # Preenche a tela com a cor preta
+        self.display_surface.fill('black')  # Preenche a tela com a cor preta
 
-        self.all_sprites.update(delta_time) # Atualiza os sprites da tela
+        self.all_sprites.update(delta_time)  # Atualiza os sprites da tela
         self.pearl_collision()
         self.hit_collision()
         self.item_collision()
 
         # Ataque do player
         self.player_attack()
-        if (self.during_neutral_attack and self.player_neutral_attack_sprite) or (self.during_throw_attack and self.player_throw_attack_sprite):
-            if self.during_neutral_attack and self.player_neutral_attack_sprite:
-                self.player_neutral_attack_sprite.update_position((self.player.hitbox_rect.x, self.player.hitbox_rect.y))
-            elif self.player_throw_attack_sprite.on_wall:
-                self.throw_attack_movement(delta_time)
-            self.attack_collision()
+        self.attack_logic(delta_time)
 
         # Limitação do mapa e desenho dos sprites
         self.check_constraint()

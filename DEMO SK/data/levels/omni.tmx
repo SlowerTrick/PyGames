@@ -211,6 +211,10 @@
     <property name="death_border_bottom" type="int" value="0"/>
     <property name="horizon_line" type="int" value="600"/>
     <property name="level_unlock" type="int" value="1"/>
+    <property name="next_room_down" type="int" value="0"/>
+    <property name="next_room_left" type="int" value="0"/>
+    <property name="next_room_right" type="int" value="0"/>
+    <property name="next_room_up" type="int" value="0"/>
     <property name="top_limit" type="int" value="100"/>
    </properties>
   </object>

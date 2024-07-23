@@ -14,13 +14,10 @@ class Neutral_Attack(pygame.sprite.Sprite):
         self.jumping = jumping
 
         self.z = Z_LAYERS['main']
-        self.timers = {'lifetime': Timer(400)}
+        self.timers = {'lifetime': Timer(200)}
         self.timers['lifetime'].activate()
 
         self.image = self.frames[self.facing_side][self.frame_index]
-        self.rect = self.image.get_rect()
-
-        # Chama update_position para definir a posição inicial corretamente
         self.update_position(pos)
 
     def update_position(self, pos):
@@ -33,6 +30,7 @@ class Neutral_Attack(pygame.sprite.Sprite):
         else:
             attack_pos = (pos[0] + 40, pos[1] - 10) if self.facing_side == 'right' else (pos[0] - 40, pos[1] - 10)
         
+        self.rect = self.image.get_rect()
         self.rect.topleft = attack_pos
 
     def update(self, dt):
@@ -42,7 +40,7 @@ class Neutral_Attack(pygame.sprite.Sprite):
             self.kill()
 
         # Atualizar a animação
-        self.frame_index += ANIMATION_SPEED * dt * 2
+        self.frame_index += ANIMATION_SPEED * dt * 4
         self.frame_index = self.frame_index if self.frame_index < len(self.frames[self.facing_side]) else 0
         self.image = self.frames[self.facing_side][int(self.frame_index)]
 
@@ -55,6 +53,7 @@ class Throw_Attack(pygame.sprite.Sprite):
         self.image = frames
         self.rect = self.image.get_frect(center = pos)
         self.initial_x = pos[0]
+        self.initial_y = pos[1]
 
         if facing_side == 'right':
             self.rect.y += 30

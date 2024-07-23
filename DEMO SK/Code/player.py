@@ -41,6 +41,8 @@ class Player(pygame.sprite.Sprite):
         self.neutral_attacking = False
         self.throw_attacking = False
         self.throw_attack_is_available = True
+        self.knockback_value = 250
+        self.knockback_direction = 'none'
 
         # Colisão
         self.collision_sprites = collision_sprites
@@ -57,7 +59,8 @@ class Player(pygame.sprite.Sprite):
             'neutral_attack_block': Timer(400),
             'dash_block': Timer(500),
             'invincibility_frames': Timer(500),
-            'jump_sound': Timer(100)
+            'jump_sound': Timer(100),
+            'during_knockback': Timer(200),
         }
         # Áudio, data e etc
         self.data = data
@@ -147,6 +150,25 @@ class Player(pygame.sprite.Sprite):
             self.frame_index = 0
             self.audio_files['neutral_attack'].play()
     
+    def knockback(self, delta_time):
+        if self.timers['during_knockback'].active:
+            # Horizontal
+            if self.knockback_direction == 'left':
+                self.hitbox_rect.x += -1 * self.knockback_value * delta_time
+                self.collision('horizontal')
+            elif self.knockback_direction == 'right':
+                self.hitbox_rect.x += 1 * self.knockback_value * delta_time
+                self.collision('horizontal')
+            
+            # Vertical
+            elif self.knockback_direction == 'up':
+                self.direction.y = 0
+                self.hitbox_rect.y += -1 * self.knockback_value * delta_time * 1.5
+                self.collision('vertical')
+            elif self.knockback_direction == 'down':
+                self.hitbox_rect.y += 1 * self.knockback_value * delta_time
+                self.collision('vertical')
+
     def dash(self):
         if not self.timers['dash_block'].active:
             self.direction.x = 0
@@ -232,6 +254,7 @@ class Player(pygame.sprite.Sprite):
         
         self.collision('vertical')
         self.semi_collision()
+        self.knockback(delta_time)
         self.rect.center = self.hitbox_rect.center
 
     def platform_move(self, delta_time):
@@ -239,10 +262,11 @@ class Player(pygame.sprite.Sprite):
             self.hitbox_rect.topleft += self.platform.direction * self.platform.speed * delta_time
             self.rect.center = self.hitbox_rect.center
 
-    def check_contact(self):
+    def check_contact(self, wall_rect_size):
+        # Wall rect size para evitar bugs com o ataque de lançar
         floor_rect = pygame.Rect(self.hitbox_rect.bottomleft,(self.hitbox_rect.width,2))
-        right_rect = pygame.Rect(self.hitbox_rect.topright + vector(0, self.hitbox_rect.height / 4),(2,self.hitbox_rect.height / 2))
-        left_rect = pygame.Rect(self.hitbox_rect.topleft + vector(-2, self.hitbox_rect.height / 4),(2,self.hitbox_rect.height / 2))
+        right_rect = pygame.Rect(self.hitbox_rect.topright + vector(0, self.hitbox_rect.height / 4),(2,self.hitbox_rect.height / wall_rect_size))
+        left_rect = pygame.Rect(self.hitbox_rect.topleft + vector(-2, self.hitbox_rect.height / 4),(2,self.hitbox_rect.height / wall_rect_size))
         collide_rects = [sprite.rect for sprite in self.collision_sprites]
         semi_collide_rects = [sprite.rect for sprite in self.semi_collision_sprites]
 
@@ -281,6 +305,7 @@ class Player(pygame.sprite.Sprite):
                             self.hitbox_rect.top += 6
 
                     self.direction.y = 0
+                    break
 
     def semi_collision(self):
         if not self.timers['platform_skip'].active:
@@ -345,7 +370,10 @@ class Player(pygame.sprite.Sprite):
         if not self.throw_attacking:
             self.move(delta_time)
         self.platform_move(delta_time)
-        self.check_contact()
+        if self.throw_attacking and not self.on_surface['floor']:
+            self.check_contact(1.1)
+        else:
+            self.check_contact(2)
 
         # Animação
         self.get_state()

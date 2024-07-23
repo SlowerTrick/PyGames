@@ -57,7 +57,7 @@ class Heart(AnimatedSprite):
             self.image = self.frames[int(self.frame_index)]
         else:
             self.active = False
-            self.frame_index = 0
+            self.frame_index = 0 
 
     def update(self, dt):
         if self.active:

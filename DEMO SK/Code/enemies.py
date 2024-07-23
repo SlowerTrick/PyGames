@@ -1,7 +1,7 @@
-
 from settings import *
 from timecount import Timer
 from random import choice
+from math import sin
 
 class Tooth(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, collision_sprites):
@@ -17,7 +17,7 @@ class Tooth(pygame.sprite.Sprite):
         self.collision_rects = [sprite.rect for sprite in collision_sprites]
         self.speed = 200
 
-        self.hit_timer = Timer(450)
+        self.hit_timer = Timer(300)
 
     def get_damage(self):
         if not self.hit_timer.active:
@@ -29,6 +29,13 @@ class Tooth(pygame.sprite.Sprite):
         if self.tooth_health <= 0:
             self.kill()
 
+    def flicker(self):
+        if self.hit_timer.active and sin(pygame.time.get_ticks() * 100) >= 0:
+            white_mask = pygame.mask.from_surface(self.image)
+            white_surf = white_mask.to_surface()
+            white_surf.set_colorkey('black')
+            self.image = white_surf
+
     def update(self, dt):
         self.hit_timer.update()
 
@@ -36,6 +43,7 @@ class Tooth(pygame.sprite.Sprite):
         self.frame_index += ANIMATION_SPEED * dt
         self.image = self.frames[int(self.frame_index % len(self.frames))]
         self.image = pygame.transform.flip(self.image, True, False) if self.direction < 0 else self.image
+        self.flicker()
 
         # movimento
         self.rect.x += self.direction * self.speed * dt
@@ -43,7 +51,7 @@ class Tooth(pygame.sprite.Sprite):
         # inverter direção
         floor_rect_right = pygame.FRect(self.rect.bottomright, (1,1))
         floor_rect_left = pygame.FRect(self.rect.bottomleft, (-1,1))
-        wall_rect = pygame.FRect(self.rect.topleft + vector(-1,0), (self.rect.width + 2, 1))
+        wall_rect = pygame.FRect(self.rect.topleft + vector(-1,0), (self.rect.width + 5, 2))
 
         if floor_rect_right.collidelist(self.collision_rects) < 0 and self.direction > 0 or\
         floor_rect_left.collidelist(self.collision_rects) < 0 and self.direction < 0 or \
@@ -73,10 +81,10 @@ class Shell(pygame.sprite.Sprite):
         self.z = Z_LAYERS['main']
         self.player = player
         self.shoot_timer = Timer(3000)
-        self.hit_timer = Timer(800)
+        self.hit_timer = Timer(500)
         self.has_fired = False
         self.create_pearl = create_pearl
-        self.shell_health = 4
+        self.shell_health = 5
     
     def state_management(self):
         player_pos, shell_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
@@ -98,6 +106,13 @@ class Shell(pygame.sprite.Sprite):
         if self.shell_health <= 0:
             self.kill()
 
+    def flicker(self):
+        if self.hit_timer.active and sin(pygame.time.get_ticks() * 300) >= 0:
+            white_mask = pygame.mask.from_surface(self.image)
+            white_surf = white_mask.to_surface()
+            white_surf.set_colorkey('black')
+            self.image = white_surf
+
     def update(self, dt):
         self.shoot_timer.update()
         self.hit_timer.update()
@@ -118,6 +133,7 @@ class Shell(pygame.sprite.Sprite):
             if self.state == 'fire':
                 self.state = 'idle'
                 self.has_fired = False
+        self.flicker()
 
 class Pearl(pygame.sprite.Sprite):
     def __init__(self, pos, groups, surf, direction, speed):
@@ -144,3 +160,116 @@ class Pearl(pygame.sprite.Sprite):
         self.rect.x += self.direction * self.speed * dt
         if not self.timers['lifetime'].active:
             self.kill()
+
+class Slime(pygame.sprite.Sprite):
+    def __init__(self, pos, frames, groups, player, collision_sprites):
+        # Setup geral
+        super().__init__(groups)
+        self.is_enemy = True
+        self.frame_index = 0
+        self.frames = frames 
+        self.state = 'idle'
+
+        # Frames 
+        self.image = self.frames[self.state][self.frame_index]
+        self.rect = self.image.get_frect(topleft = pos)
+        self.hitbox_rect = self.rect
+        self.old_rect = self.rect.copy()
+        self.z = Z_LAYERS['main']
+        self.player = player
+
+        # Status
+        self.direction = vector()
+        self.speed = 150
+        self.jump_height = 450
+        self.slime_heath = 2
+        self.gravity = 1300
+        self.knockback = 1
+        self.on_ground = False
+        self.player_near = False
+
+        # Colisões e timers
+        self.collision_rects = [sprite.rect for sprite in collision_sprites]
+        self.hit_timer = Timer(500)
+
+    def collisions(self, axis):
+        floor_rect = pygame.FRect(self.rect.bottomright, (1,1))
+        right_rect = pygame.FRect(self.rect.midleft, (1,1))
+        left_rect = pygame.FRect(self.rect.midright, (1,1))
+        
+        if axis == 'horizontal':
+            for sprite in self.collision_rects:
+                if right_rect.colliderect(sprite) or left_rect.colliderect(sprite):
+                    if right_rect.x < sprite.x:
+                        self.hitbox_rect.right = sprite.left
+                    else:
+                        self.hitbox_rect.left = sprite.right
+                    break
+
+        if axis == 'vertical':
+            for sprite in self.collision_rects:
+                if floor_rect.colliderect(sprite):
+                    self.hitbox_rect.bottom = sprite.top
+                    if self.player_near:
+                        self.direction.y = -self.jump_height
+                    break
+
+    def move(self, dt):
+        # Movimentação Horizontal
+        self.hitbox_rect.x += self.direction.x * self.speed * dt
+        self.collisions('horizontal')
+
+        # Movimentação Vertical
+        self.direction.y += self.gravity / 2 * dt
+        self.hitbox_rect.y += self.direction.y * dt
+        self.direction.y += self.gravity / 2 * dt
+        self.collisions('vertical')
+
+        # Finalização do movimento
+        self.rect.center = self.hitbox_rect.center
+
+    def state_management(self):
+        player_pos, slime_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
+        self.player_near = slime_pos.distance_to(player_pos) < 400
+        player_level = abs(slime_pos.y - player_pos.y) < 200
+
+        if self.player_near and player_level:
+            if player_pos.x <= slime_pos.x:
+                self.direction.x = -1
+                self.speed = 150
+            else:
+                self.direction.x = 1
+                self.speed = 150
+        else:
+            self.speed = 0
+
+    def get_damage(self):
+        if not self.hit_timer.active:
+            self.hit_timer.activate()
+            self.slime_heath -= 1
+
+    def is_alive(self):
+        if self.slime_heath <= 0:
+            self.kill()
+
+    def flicker(self):
+        if self.hit_timer.active and sin(pygame.time.get_ticks() * 100) >= 0:
+            white_mask = pygame.mask.from_surface(self.image)
+            white_surf = white_mask.to_surface()
+            white_surf.set_colorkey('black')
+            self.image = white_surf
+
+    def update(self, dt):
+        self.hit_timer.update()
+        self.state_management()
+
+        # Animação
+        self.frame_index += ANIMATION_SPEED * dt
+        if self.frame_index < len(self.frames[self.state]):
+            self.image = self.frames[self.state][int(self.frame_index)]
+        else:
+            self.frame_index = 0
+        self.image = pygame.transform.flip(self.image, True, False) if self.direction.x < 0 else self.image
+        self.flicker()
+
+        self.move(dt)
