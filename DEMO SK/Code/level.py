@@ -290,11 +290,12 @@ class Level:
         if self.player.throw_attacking and not self.during_throw_attack:
             self.during_throw_attack = True
             self.player_throw_attack_sprite = Throw_Attack(
-                pos = (self.player.hitbox_rect.x, self.player.hitbox_rect.y),
+                pos = (self.player.hitbox_rect.centerx, self.player.hitbox_rect.centery),
                 groups = (self.all_sprites, self.attack_sprites),
                 frames = self.throw_attack_frames,
                 facing_side = self.player.facing_side,
                 vertical_sight = self.player.vertical_sight,
+                audio_files = self.audio_files
             )
         # Caso o sprite exista e ele deve sumir da tela
         if self.player_throw_attack_sprite and not self.player_throw_attack_sprite.alive():
@@ -309,6 +310,8 @@ class Level:
                     is_pearl = hasattr(target, 'pearl')
                     
                     if is_enemy and not is_pearl:
+                        if not target.hit_timer.active:
+                            self.data.string_bar += 1
                         target.is_alive()
                         handle_knockback = not self.player.timers['during_knockback'].active and not target.hit_timer.active
                     else:
@@ -317,6 +320,9 @@ class Level:
                     if handle_knockback:
                         if self.player_neutral_attack_sprite.facing_side in ['right', 'left']:
                             self.player.knockback_direction = 'left' if self.player_neutral_attack_sprite.facing_side == 'right' else 'right'
+                            if hasattr(target, 'knockback_direction'):
+                                target.knockback_direction = 'left' if self.player.knockback_direction == 'right' else 'right'
+                                target.during_knockback.activate()
                         else:
                             self.player.knockback_direction = 'up' if self.player_neutral_attack_sprite.facing_side == 'down' else 'down'
                         self.player.timers['during_knockback'].activate()
@@ -332,6 +338,8 @@ class Level:
                     if hasattr(target, 'is_enemy'):
                         target.get_damage()
                         if not hasattr(target, 'pearl'):
+                            if not target.hit_timer.active:
+                                self.data.string_bar += 1
                             target.is_alive()
                     else:
                         self.player_throw_attack_sprite.on_wall = True
@@ -350,6 +358,7 @@ class Level:
         self.player.rect.center = self.player.hitbox_rect.center
         self.player.collision('horizontal')
         if self.player.on_surface['right_wall'] or self.player.on_surface['left_wall']:
+            self.audio_files['catch'].play()
             self.player_throw_attack_sprite.kill()
             self.player.throw_attacking = False
     
@@ -383,3 +392,9 @@ class Level:
         # Limitação do mapa e desenho dos sprites
         self.check_constraint()
         self.all_sprites.draw(self.player.hitbox_rect.center, delta_time)
+
+        # Desenhar a linha caso exista
+        if self.during_throw_attack:
+            attack_pos = ((self.player_throw_attack_sprite.rect.centerx + self.all_sprites.offset.x, self.player_throw_attack_sprite.rect.centery + self.all_sprites.offset.y))
+            player_pos =((self.player.rect.centerx + self.all_sprites.offset.x, self.player.rect.centery + 10 + self.all_sprites.offset.y))
+            self.player_throw_attack_sprite.draw_rope(self.display_surface, player_pos, attack_pos)

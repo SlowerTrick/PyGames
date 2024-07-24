@@ -37,12 +37,13 @@ class Player(pygame.sprite.Sprite):
         self.jump_key_held = False
         self.jump = False
 
-        # Ataque
+        # Combate
         self.neutral_attacking = False
         self.throw_attacking = False
         self.throw_attack_is_available = True
         self.knockback_value = 250
         self.knockback_direction = 'none'
+        self.healing = True
 
         # Colisão
         self.collision_sprites = collision_sprites
@@ -61,6 +62,7 @@ class Player(pygame.sprite.Sprite):
             'invincibility_frames': Timer(500),
             'jump_sound': Timer(100),
             'during_knockback': Timer(200),
+            'healing_timer': Timer (1500),
         }
         # Áudio, data e etc
         self.data = data
@@ -77,12 +79,12 @@ class Player(pygame.sprite.Sprite):
         pygame.draw.rect(self.display_surface, 'red', left_rect) """
 
     def input(self):
-        if not self.throw_attacking:
-            keys = pygame.key.get_pressed()
-            input_vector = vector(0, 0)
-            self.vertical_sight = 'none'
+        keys = pygame.key.get_pressed()
+        input_vector = vector(0, 0)
+        self.vertical_sight = 'none'
 
-            if not self.timers['wall_jump'].active and self.dash_progress == self.dash_distance:
+        if not self.throw_attacking and not self.healing:
+            if not self.timers['wall_jump'].active and not self.dashing:
                 # Movimentação Horizontal
                 if keys[pygame.K_d]:
                     input_vector.x += 1
@@ -110,7 +112,8 @@ class Player(pygame.sprite.Sprite):
 
             if keys[pygame.K_o] and not self.neutral_attacking:
                 if not self.keys_pressed['throw_attack']:
-                    if self.throw_attack_is_available:
+                    if self.throw_attack_is_available and self.data.string_bar > 0:
+                        self.data.string_bar -= 1
                         self.throw_attack()
                         self.keys_pressed['throw_attack'] = True
             else:
@@ -125,7 +128,7 @@ class Player(pygame.sprite.Sprite):
                 self.keys_pressed['dash'] = False
 
             # Movimentação vertical
-            if keys[pygame.K_SPACE] and self.dash_progress == self.dash_distance:
+            if keys[pygame.K_SPACE] and not self.dashing:
                 self.jump_key_held = True
                 if not self.keys_pressed['jump']:
                     self.jump = True
@@ -135,6 +138,23 @@ class Player(pygame.sprite.Sprite):
             else:
                 self.keys_pressed['jump'] = False
                 self.jump_key_held = False
+
+        if not self.throw_attacking:
+            if keys[pygame.K_u] and self.data.health_regen == True and self.on_surface['floor']:
+                if not self.timers['healing_timer'].active:
+                    self.timers['healing_timer'].activate()
+                    self.audio_files['focus_charge'].play()
+                    self.frame_index = 0
+                    self.state = 'healing'
+                    self.healing = True
+                    self.dash_progress = self.dash_distance
+                if self.timers['healing_timer'].time_passed() >= 1400:
+                    self.heal()
+                    self.timers['healing_timer'].deactivate()
+            else:
+                self.healing = False
+                self.audio_files['focus_charge'].stop()
+                self.timers['healing_timer'].deactivate()
     
     def neutral_attack(self):
         if not self.timers['neutral_attack_block'].active:
@@ -148,7 +168,7 @@ class Player(pygame.sprite.Sprite):
             self.throw_attacking = True
             self.throw_attack_is_available = False
             self.frame_index = 0
-            self.audio_files['neutral_attack'].play()
+            self.audio_files['throw'].play()
     
     def knockback(self, delta_time):
         if self.timers['during_knockback'].active:
@@ -176,9 +196,17 @@ class Player(pygame.sprite.Sprite):
             self.frame_index = 0
             self.dashing = True
             self.dash_is_available = False
+            self.start_dash_on_wall = any((self.on_surface['left_wall'], self.on_surface['right_wall']))
             self.dash_progress = 0
             self.timers['dash_block'].activate()
             self.audio_files['dash'].play()
+
+    def heal(self):
+        self.audio_files['focus_heal'].play()
+        self.data.health_regen = False
+        self.data.player_health += 3
+        self.data.string_bar -= 3
+        self.state = 'idle'
 
     def move(self, delta_time):
         # Dash
@@ -187,7 +215,11 @@ class Player(pygame.sprite.Sprite):
                 dash_increment = self.dash_speed * delta_time
                 if self.dash_progress + dash_increment > self.dash_distance:
                     dash_increment = self.dash_distance - self.dash_progress
-                self.hitbox_rect.x += dash_increment if self.facing_side == 'right' else -dash_increment
+                elif any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and self.timers['dash_block'].time_passed() > 10:
+                    self.dashing = False
+                    self.dash_progress = self.dash_distance
+                else:
+                    self.hitbox_rect.x += dash_increment if self.facing_side == 'right' else -dash_increment
                 self.dash_progress += dash_increment
             else:
                 self.dashing = False
@@ -200,11 +232,9 @@ class Player(pygame.sprite.Sprite):
 
         # Gravidade Paredes
         if not self.on_surface['floor'] and any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active:
-            self.dash_progress = self.dash_distance
+            self.dash_is_available = True
             self.direction.y = 0
             self.hitbox_rect.y += self.gravity / 10 * delta_time
-            self.dashing = False
-            self.dash_is_available = True
         else:
             # Gravidade aerea
             if not self.dashing:
@@ -235,10 +265,8 @@ class Player(pygame.sprite.Sprite):
                 self.direction.y = -self.jump_height
                 if self.on_surface['left_wall']:
                     self.direction.x = 1
-                    self.facing_side = 'right'
                 else:
                     self.direction.x = -1
-                    self.facing_side = 'left'
                 
                 if not self.timers['jump_sound'].active:
                     self.audio_files['wall_jump'].play()
@@ -251,7 +279,11 @@ class Player(pygame.sprite.Sprite):
                 self.direction.y += self.gravity * delta_time * 4
             else:
                 self.jumping = False
-        
+
+        # Verificação para posicionar no lado correto em relação a parede
+        if any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.on_surface['floor']:
+            self.facing_side = 'right' if self.on_surface['left_wall'] else 'left'
+
         self.collision('vertical')
         self.semi_collision()
         self.knockback(delta_time)
@@ -345,6 +377,8 @@ class Player(pygame.sprite.Sprite):
                     self.state = 'wall'
                 else:
                     self.state = 'jump' if self.direction.y < 0 else 'fall'
+        if self.healing:
+            self.state = 'healing'
         if self.timers['invincibility_frames'].active:
             self.state = 'hit'
 
@@ -367,7 +401,7 @@ class Player(pygame.sprite.Sprite):
 
         # Movimento do jogo e colisão
         self.input()
-        if not self.throw_attacking:
+        if not self.throw_attacking and not self.healing:
             self.move(delta_time)
         self.platform_move(delta_time)
         if self.throw_attacking and not self.on_surface['floor']:

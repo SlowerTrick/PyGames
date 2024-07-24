@@ -3,7 +3,13 @@ class Data:
         self.ui = ui
         self._coins = 0
         self._player_health = 5
-        self.ui.create_hearts(self._player_health)
+        self._max_player_heath = 5
+        self._health_regen = False
+        self._string_bar = 0
+        self._max_string_bar = 6
+        self.ui.create_ui_bar(self._health_regen)
+        self.ui.create_hearts(self._player_health, self._max_player_heath)
+        self.ui.create_string_bar(self._string_bar)
 
         self.unlocked_level = 0
         self.current_level = 0
@@ -27,4 +33,30 @@ class Data:
     @player_health.setter
     def player_health(self, value):
         self._player_health = value
-        self.ui.create_hearts(value)
+        if self._player_health >= self._max_player_heath:
+            self._player_health = self._max_player_heath
+        self.ui.create_hearts(value, self._max_player_heath)
+    
+    @property
+    def health_regen(self):
+        return self._health_regen
+
+    @health_regen.setter
+    def health_regen(self, value):
+        self._health_regen = value
+        self.ui.create_ui_bar(self._health_regen)
+        self.player_health = self._player_health
+    
+    @property
+    def string_bar(self):
+        return self._string_bar
+
+    @string_bar.setter
+    def string_bar(self, value):
+        self._string_bar = value
+        if self._string_bar >= self._max_string_bar:
+            self.health_regen = True
+            self._string_bar = self._max_string_bar
+        if self._string_bar < 0:
+            self._string_bar = 0
+        self.ui.create_string_bar(self._string_bar)

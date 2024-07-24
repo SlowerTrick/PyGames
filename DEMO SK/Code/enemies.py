@@ -182,15 +182,17 @@ class Slime(pygame.sprite.Sprite):
         self.direction = vector()
         self.speed = 150
         self.jump_height = 450
-        self.slime_heath = 2
+        self.slime_heath = 99
         self.gravity = 1300
-        self.knockback = 1
+        self.knockback_value = 350
+        self.knockback_direction = 'none'
         self.on_ground = False
         self.player_near = False
 
         # Colisões e timers
         self.collision_rects = [sprite.rect for sprite in collision_sprites]
         self.hit_timer = Timer(500)
+        self.during_knockback = Timer(500)
 
     def collisions(self, axis):
         floor_rect = pygame.FRect(self.rect.bottomright, (1,1))
@@ -224,9 +226,19 @@ class Slime(pygame.sprite.Sprite):
         self.hitbox_rect.y += self.direction.y * dt
         self.direction.y += self.gravity / 2 * dt
         self.collisions('vertical')
+        self.knockback(dt)
 
         # Finalização do movimento
         self.rect.center = self.hitbox_rect.center
+
+    def knockback(self, delta_time):
+        if self.during_knockback.active:
+            if self.knockback_direction == 'left':
+                self.hitbox_rect.x += -1 * self.knockback_value * delta_time
+                self.collisions('horizontal')
+            elif self.knockback_direction == 'right':
+                self.hitbox_rect.x += 1 * self.knockback_value * delta_time
+                self.collisions('horizontal')
 
     def state_management(self):
         player_pos, slime_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
@@ -261,6 +273,7 @@ class Slime(pygame.sprite.Sprite):
 
     def update(self, dt):
         self.hit_timer.update()
+        self.during_knockback.update()
         self.state_management()
 
         # Animação

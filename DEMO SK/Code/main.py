@@ -81,7 +81,10 @@ class Game:
 
         self.ui_frames = {
             'heart': import_folder('..', 'graphics', 'ui', 'heart'), 
-            'coin':import_image('..', 'graphics', 'ui', 'coin')
+            'heartless': import_image('..', 'graphics', 'ui', 'heartless', '0'), 
+            'coin':import_image('..', 'graphics', 'ui', 'coin'),
+            'ui_bar': import_folder('..', 'graphics', 'ui', 'bar'), 
+            'string_bar': import_folder('..', 'graphics', 'ui', 'string'), 
         }
 
         self.audio_files = {
@@ -92,6 +95,10 @@ class Game:
             'pearl': pygame.mixer.Sound(join('..', 'audio', 'pearl.wav')),
             'wall_jump': pygame.mixer.Sound(join('..', 'audio', 'hero_mantis_claw.wav')),
             'dash': pygame.mixer.Sound(join('..', 'audio', 'hero_dash.wav')),
+            'throw': pygame.mixer.Sound(join('..', 'audio', 'hornet_needle_thow.wav')),
+            'catch': pygame.mixer.Sound(join('..', 'audio', 'hornet_needle_catch.wav')),
+            'focus_heal': pygame.mixer.Sound(join('..', 'audio', 'focus_health_heal.wav')),
+            'focus_charge': pygame.mixer.Sound(join('..', 'audio', 'focus_health_charging.wav')),
         }
         self.bg_music = pygame.mixer.Sound(join('..', 'audio', 'noragami.mp3'))
         self.bg_music.set_volume(0.5)

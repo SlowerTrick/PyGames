@@ -45,7 +45,7 @@ class Neutral_Attack(pygame.sprite.Sprite):
         self.image = self.frames[self.facing_side][int(self.frame_index)]
 
 class Throw_Attack(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, frames, facing_side, vertical_sight):
+    def __init__(self, pos, groups, frames, facing_side, vertical_sight, audio_files):
         self.on_wall = False
         super().__init__(groups)
 
@@ -56,12 +56,12 @@ class Throw_Attack(pygame.sprite.Sprite):
         self.initial_y = pos[1]
 
         if facing_side == 'right':
-            self.rect.y += 30
-            self.rect.x += 50
+            self.rect.y += 10
+            self.rect.x += 70
         else:
-            self.rect.y += 30
-            self.rect.x -= 50
-            self.initial_x -= 60
+            self.rect.y += 10
+            self.rect.x -= 70
+            self.initial_x -= 70 
 
         # Movimento e suas nuances
         self.speed = 1000
@@ -78,6 +78,21 @@ class Throw_Attack(pygame.sprite.Sprite):
         self.z = Z_LAYERS['main']
         self.timers = {'travel_time': Timer(500), 'reverse': Timer(500)}
         self.timers['travel_time'].activate()
+        self.audio_files = audio_files
+
+    def draw_rope(self, surface, player_pos, attack_pos):
+        rope_color = (255, 255, 255)
+        rope_width = 2
+
+        player_pos = list(player_pos)
+        attack_pos = list(attack_pos)
+
+        if self.initial_facing_side == 'right':
+            attack_pos[0] -= 45
+        else:
+            attack_pos[0] += 45
+
+        pygame.draw.line(surface, rope_color, player_pos, attack_pos, rope_width)
 
     def update(self, dt):
         for timer in self.timers.values():
@@ -91,6 +106,8 @@ class Throw_Attack(pygame.sprite.Sprite):
         if self.initial_facing_side == 'right':
             if self.going == 'backward' and self.rect.x <= self.initial_x:
                 self.kill()
+                self.audio_files['catch'].play()
         else:
             if self.going == 'backward' and self.rect.x >= self.initial_x:
                 self.kill()
+                self.audio_files['catch'].play()
