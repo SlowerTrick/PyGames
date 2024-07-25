@@ -37,13 +37,14 @@ class Game:
             8: load_pygame(join('..', 'data', 'levels', '8.tmx')),
         }
         self.start_stage = 0
-        self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage)
+        self.player_spawn = 'left'
+        self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
         self.bg_music.play(-1)
 
-    def switch_screen(self, target):
+    def switch_screen(self, target, player_spawn):
         if target >= len(self.tmx_maps):
             target = 0
-        self.current_stage = Level(self.tmx_maps[target], self.level_frames, self.audio_files, self.data, self.switch_screen, target)
+        self.current_stage = Level(self.tmx_maps[target], self.level_frames, self.audio_files, self.data, self.switch_screen, target, player_spawn)
 
     def import_assets(self):
         self.level_frames = {
@@ -66,6 +67,7 @@ class Game:
             'tooth': import_folder('..', 'graphics','enemies', 'tooth', 'run'),
             'shell': import_sub_folders('..', 'graphics', 'enemies', 'shell'),
             'slime': import_sub_folders('..', 'graphics', 'enemies', 'slime'),
+            'fly': import_sub_folders('..', 'graphics', 'enemies', 'fly'),
             'pearl': import_image('..',  'graphics', 'enemies', 'bullets', 'pearl'),
             'items': import_sub_folders('..', 'graphics', 'items'),
             'particle': import_folder('..', 'graphics', 'effects', 'particle'),

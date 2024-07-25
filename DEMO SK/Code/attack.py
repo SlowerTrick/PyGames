@@ -76,8 +76,9 @@ class Throw_Attack(pygame.sprite.Sprite):
 
         # Posição na tela e temporizadores
         self.z = Z_LAYERS['main']
-        self.timers = {'travel_time': Timer(500), 'reverse': Timer(500)}
+        self.timers = {'travel_time': Timer(500), 'max_time': Timer(2000)}
         self.timers['travel_time'].activate()
+        self.timers['max_time'].activate()
         self.audio_files = audio_files
 
     def draw_rope(self, surface, player_pos, attack_pos):
@@ -111,3 +112,6 @@ class Throw_Attack(pygame.sprite.Sprite):
             if self.going == 'backward' and self.rect.x >= self.initial_x:
                 self.kill()
                 self.audio_files['catch'].play()
+        if not self.timers['max_time']:
+            self.kill()
+            self.audio_files['catch'].play()

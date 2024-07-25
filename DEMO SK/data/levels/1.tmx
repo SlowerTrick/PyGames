@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="30" height="25" tilewidth="64" tileheight="64" infinite="0" nextlayerid="15" nextobjectid="11">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="30" height="25" tilewidth="64" tileheight="64" infinite="0" nextlayerid="16" nextobjectid="25">
  <tileset firstgid="1" source="../tilesets/outside.tsx"/>
  <tileset firstgid="49" source="../tilesets/extra.tsx"/>
  <tileset firstgid="115" source="../tilesets/objects.tsx"/>
+ <tileset firstgid="146" source="../tilesets/tileset2.tsx"/>
  <layer id="1" name="Terrain" width="30" height="25">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -24,16 +25,20 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,61,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,61,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,61,61,61,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-1,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,3,
-13,14,14,14,14,14,14,14,14,14,14,14,14,14,0,0,14,14,14,14,14,14,14,14,14,14,14,14,14,15,
-25,26,26,26,26,26,26,26,26,26,26,26,26,26,0,0,26,26,26,26,26,26,26,26,26,26,26,26,26,27
+0,0,0,0,0,0,146,148,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,161,163,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,161,163,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+146,147,147,147,147,147,147,147,147,147,147,147,147,148,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,3,
+161,162,162,162,162,162,162,162,162,162,162,162,162,163,0,0,14,14,14,14,14,14,14,14,14,14,14,14,14,15,
+176,177,177,177,177,177,177,177,177,177,177,177,177,178,0,0,26,26,26,26,26,26,26,26,26,26,26,26,26,27
 </data>
  </layer>
  <objectgroup id="12" name="Objects">
-  <object id="5" name="player" gid="122" x="393.303" y="1385.58" width="74" height="56"/>
+  <object id="11" name="player" gid="145" x="3.33333" y="1418" width="96" height="96">
+   <properties>
+    <property name="spawn" value="left"/>
+   </properties>
+  </object>
  </objectgroup>
  <objectgroup id="13" name="Data">
   <properties>
@@ -58,5 +63,12 @@
     <property name="top_limit" type="int" value="100"/>
    </properties>
   </object>
+ </objectgroup>
+ <objectgroup id="15" name="Enemies">
+  <object id="19" name="slime" gid="143" x="697.5" y="1385" width="36" height="32"/>
+  <object id="20" name="fly" gid="144" x="840.5" y="1343" width="48" height="42"/>
+  <object id="21" name="slime" gid="143" x="775.5" y="1376" width="36" height="32"/>
+  <object id="22" name="slime" gid="143" x="643.5" y="1345" width="36" height="32"/>
+  <object id="23" name="fly" gid="144" x="762.5" y="1311" width="48" height="42"/>
  </objectgroup>
 </map>

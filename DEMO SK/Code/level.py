@@ -3,13 +3,13 @@ from sprites import Sprite, AnimatedSprite, MovingSprite, Spike, Item, ParticleE
 from player import Player
 from groups import AllSprites
 from debug import debug
-from enemies import Tooth, Shell, Pearl, Slime
+from enemies import Tooth, Shell, Pearl, Slime, Fly
 from attack import Neutral_Attack, Throw_Attack
 
 from random import uniform
 
 class Level:
-    def __init__(self, tmx_map, level_frames, audio_files, data, switch_screen, current_stage):
+    def __init__(self, tmx_map, level_frames, audio_files, data, switch_screen, current_stage, player_spawn):
         # Setup geral
         self.display_surface = pygame.display.get_surface() # Inicializa a partir da tela em main
         self.data = data
@@ -30,7 +30,9 @@ class Level:
         else:
             bg_tile = None
 
+        # Caso vc consiga implementar o banco, basta mudar player_spawn para "bench"
         self.current_stage = current_stage
+        self.player_spawn = player_spawn
         self.adjacent_stage = {
             'up': tmx_level_properties['next_room_up'], 
             'left': tmx_level_properties['next_room_left'], 
@@ -57,6 +59,7 @@ class Level:
         self.shell_sprites = pygame.sprite.Group()
         self.pearl_sprites = pygame.sprite.Group()
         self.slime_sprites = pygame.sprite.Group()
+        self.fly_sprites = pygame.sprite.Group()
 
         # Inicialização do grupo de sprites dos itens
         self.item_sprites = pygame.sprite.Group()
@@ -108,20 +111,20 @@ class Level:
         objects_layer = get_layer(tmx_map, 'Objects')
         if objects_layer:
             for obj in objects_layer:
-                if obj.name == 'player':
+                if obj.name == 'player' and obj.properties['spawn'] == self.player_spawn:
                     self.player = Player(
-                        pos=(int(obj.x), int(obj.y)),
-                        groups=self.all_sprites,
-                        collision_sprites=self.collision_sprites,
-                        semi_collision_sprites=self.semi_collision_sprites,
-                        frames=level_frames['player'],
-                        data=self.data,
-                        audio_files=audio_files)
+                        pos = (int(obj.x), int(obj.y)),
+                        groups = self.all_sprites,
+                        collision_sprites = self.collision_sprites,
+                        semi_collision_sprites = self.semi_collision_sprites,
+                        frames = level_frames['player'],
+                        data = self.data,
+                        audio_files = audio_files)
                 else:
                     if obj.name in ('barrel', 'crate'):
                         Sprite((int(obj.x), int(obj.y)), obj.image, (self.all_sprites, self.collision_sprites))
                     else:
-                        if obj.name in level_frames:
+                        if obj.name in level_frames and obj.name != 'player':
                             frames = level_frames[obj.name] if not 'palm' in obj.name else level_frames['palms'][obj.name]
                             if obj.name == 'floor_spike' and obj.properties['inverted']:
                                 frames = [pygame.transform.flip(frame, False, True) for frame in frames]
@@ -217,6 +220,14 @@ class Level:
                         groups = (self.all_sprites, self.damage_sprites, self.slime_sprites),
                         player = self.player,
                         collision_sprites = self.collision_sprites)
+                
+                if obj.name == 'fly':
+                    Fly(
+                        pos = (int(obj.x), int(obj.y)),
+                        frames = level_frames['fly'],
+                        groups = (self.all_sprites, self.damage_sprites, self.fly_sprites),
+                        player = self.player,
+                        collision_sprites = self.collision_sprites)
 
         # Itens
         items_layer = get_layer(tmx_map, 'Items')
@@ -261,7 +272,7 @@ class Level:
                     ParticleEffectSprite((sprite.rect.center), self.particle_frames, self.all_sprites)
                 if self.data.player_health <= 0:
                     self.data.player_health = BASE_HEALTH
-                    self.switch_screen(int(self.current_stage) + 1)
+                    self.switch_screen(int(self.current_stage), self.player_spawn)
     
     def item_collision(self):
         if self.item_sprites:
@@ -304,8 +315,9 @@ class Level:
 
     def attack_collision(self):
         if self.player.neutral_attacking:
-            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.damage_sprites.sprites():
+            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.damage_sprites.sprites():
                 if target.rect.colliderect(self.player_neutral_attack_sprite.rect):
+                    self.player.dash_is_available = True
                     is_enemy = hasattr(target, 'is_enemy')
                     is_pearl = hasattr(target, 'pearl')
                     
@@ -333,7 +345,7 @@ class Level:
                             target.get_damage()
 
         if self.player.throw_attacking:
-            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.collision_sprites.sprites():
+            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.collision_sprites.sprites():
                 if target.rect.colliderect(self.player_throw_attack_sprite.rect):
                     if hasattr(target, 'is_enemy'):
                         target.get_damage()
@@ -368,14 +380,15 @@ class Level:
         top_limit = 0
         right_limit = self.level_width
         left_limit = 0
+        # Logica para mudar a fase e posicionar o jogador na posição correta
         if self.player.hitbox_rect.bottom >= bottom_limit:
-            self.switch_screen(int(self.adjacent_stage['down']))
+            self.switch_screen(int(self.adjacent_stage['down']), 'top')
         if self.player.hitbox_rect.bottom <= top_limit:
-            self.switch_screen(int(self.adjacent_stage['top']))
+            self.switch_screen(int(self.adjacent_stage['top']), 'bottom')
         elif self.player.hitbox_rect.right >= right_limit:
-            self.switch_screen(int(self.adjacent_stage['right']))
+            self.switch_screen(int(self.adjacent_stage['right']), 'left')
         elif self.player.hitbox_rect.left <= left_limit:
-            self.switch_screen(int(self.adjacent_stage['left']))
+            self.switch_screen(int(self.adjacent_stage['left']), 'right')
 
     def run(self, delta_time):
         self.display_surface.fill('black')  # Preenche a tela com a cor preta

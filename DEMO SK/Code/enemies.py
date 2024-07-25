@@ -182,7 +182,7 @@ class Slime(pygame.sprite.Sprite):
         self.direction = vector()
         self.speed = 150
         self.jump_height = 450
-        self.slime_heath = 99
+        self.slime_heath = 2
         self.gravity = 1300
         self.knockback_value = 350
         self.knockback_direction = 'none'
@@ -286,3 +286,134 @@ class Slime(pygame.sprite.Sprite):
         self.flicker()
 
         self.move(dt)
+
+class Fly(pygame.sprite.Sprite):
+    def __init__(self, pos, frames, groups, player, collision_sprites):
+        super().__init__(groups)
+        self.is_enemy = True
+        self.frame_index = 0
+        self.frames = frames 
+        self.state = 'idle'
+
+        # Frames 
+        self.image = self.frames[self.state][self.frame_index]
+        self.rect = self.image.get_frect(topleft=pos)
+        self.hitbox_rect = self.rect
+        self.old_rect = self.rect.copy()
+        self.z = Z_LAYERS['main']
+        self.player = player
+
+        # Status
+        self.direction = vector()
+        self.speed = 200
+        self.max_speed = 150
+        self.acceleration = 10
+        self.deceleration = 10
+        self.jump_height = 450
+        self.fly_health = 2
+        self.gravity = 1300
+        self.knockback_value = 350
+        self.knockback_direction = 'none'
+        self.on_ground = False
+        self.player_near = False
+
+        # Colisões e timers
+        self.collision_rects = [sprite.rect for sprite in collision_sprites]
+        self.hit_timer = Timer(500)
+        self.during_knockback = Timer(500)
+
+    def collisions(self, axis):
+        floor_rect = pygame.FRect(self.rect.bottomright, (1, 1))
+        right_rect = pygame.FRect(self.rect.midleft, (1, 1))
+        left_rect = pygame.FRect(self.rect.midright, (1, 1))
+
+        if axis == 'horizontal':
+            for sprite in self.collision_rects:
+                if right_rect.colliderect(sprite) or left_rect.colliderect(sprite):
+                    if right_rect.x < sprite.x:
+                        self.hitbox_rect.right = sprite.left
+                    else:
+                        self.hitbox_rect.left = sprite.right
+                    break
+
+        if axis == 'vertical':
+            for sprite in self.collision_rects:
+                if floor_rect.colliderect(sprite):
+                    self.hitbox_rect.bottom = sprite.top
+                    break
+
+    def move(self, dt):
+        # Movimentação Horizontal
+        self.hitbox_rect.x += self.direction.x * self.speed * dt
+        self.collisions('horizontal')
+        self.collisions('vertical')
+
+        # Movimentação Vertical
+        self.hitbox_rect.y += self.direction.y * self.speed * dt
+        self.collisions('horizontal')
+        self.collisions('vertical')
+        self.knockback(dt)
+
+        # Finalização do movimento
+        self.rect.center = self.hitbox_rect.center
+
+    def knockback(self, delta_time):
+        if self.during_knockback.active:
+            if self.knockback_direction == 'left':
+                self.hitbox_rect.x += self.knockback_value * delta_time
+                self.collisions('horizontal')
+            elif self.knockback_direction == 'right':
+                self.hitbox_rect.x += self.knockback_value * delta_time
+                self.collisions('horizontal')
+
+    def state_management(self, dt):
+        player_pos, fly_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
+        self.player_near = fly_pos.distance_to(player_pos) < 400
+        player_level = abs(fly_pos.y - player_pos.y) < 450
+
+        if self.player_near and player_level:
+            target_direction = (player_pos - fly_pos).normalize()
+            self.direction.x += target_direction.x * self.acceleration
+            self.direction.y += target_direction.y * self.acceleration
+
+            if self.direction.length() > 1:
+                self.direction = self.direction.normalize()
+        else:
+            self.direction.x *= (1 - self.deceleration * dt)
+            self.direction.y *= (1 - self.deceleration * dt)
+
+        if self.direction.length() < 0.1:
+            self.direction.x = 0
+            self.direction.y = 0
+
+    def get_damage(self):
+        if not self.hit_timer.active:
+            self.hit_timer.activate()
+            self.fly_health -= 1
+
+    def is_alive(self):
+        if self.fly_health <= 0:
+            self.kill()
+
+    def flicker(self):
+        if self.hit_timer.active and sin(pygame.time.get_ticks() * 100) >= 0:
+            white_mask = pygame.mask.from_surface(self.image)
+            white_surf = white_mask.to_surface()
+            white_surf.set_colorkey('black')
+            self.image = white_surf
+
+    def update(self, dt):
+        self.hit_timer.update()
+        self.state_management(dt)
+
+        # Animação
+        self.frame_index += ANIMATION_SPEED * dt
+        if self.frame_index < len(self.frames[self.state]):
+            self.image = self.frames[self.state][int(self.frame_index)]
+        else:
+            self.frame_index = 0
+        self.image = pygame.transform.flip(self.image, True, False) if self.direction.x < 0 else self.image
+        self.flicker()
+
+        self.move(dt)
+        self.knockback(dt)
