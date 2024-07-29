@@ -30,6 +30,9 @@ class AnimatedSprite(Sprite):
 class Item(AnimatedSprite):
     def __init__(self, item_type, pos, frames, groups, data):
         super().__init__(pos, frames, groups)
+        self.initial_pos = list(pos)
+        self.pos = list(pos)
+        self.direction = 1
         self.rect.center = pos
         self.item_type = item_type
         self.data = data
@@ -45,6 +48,23 @@ class Item(AnimatedSprite):
             self.data.coins += 50
         if self.item_type == 'potion':
             self.data.player_health += 1
+        if self.item_type == 'wall_jump':
+            self.data.unlocked_wall_jump = True
+        if self.item_type == 'dash':
+            self.data.unlocked_dash = True
+        if self.item_type == 'throw_attack':
+            self.data.unlocked_throw_attack = True
+    
+    def update(self, delta_time):
+        if self.item_type in ('wall_jump', 'dash', 'throw_attack') :
+            if self.pos[1] >= self.initial_pos[1] or self.pos[1] <= self.initial_pos[1] - 100:
+                self.direction *= -1
+            self.pos[1] += self.direction / 3
+
+        self.rect.center = self.pos
+
+        self.frame_index += self.animation_speed * delta_time
+        self.image = self.frames[int(self.frame_index % len(self.frames))]
 
 class ParticleEffectSprite(AnimatedSprite):
     def __init__(self, pos, frames, groups):

@@ -1,45 +1,113 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="30" height="25" tilewidth="64" tileheight="64" infinite="0" nextlayerid="16" nextobjectid="25">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="35" height="26" tilewidth="64" tileheight="64" infinite="0" nextlayerid="18" nextobjectid="53">
  <tileset firstgid="1" source="../tilesets/outside.tsx"/>
  <tileset firstgid="49" source="../tilesets/extra.tsx"/>
- <tileset firstgid="115" source="../tilesets/objects.tsx"/>
- <tileset firstgid="146" source="../tilesets/tileset2.tsx"/>
- <layer id="1" name="Terrain" width="30" height="25">
-  <data encoding="csv">
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,61,61,61,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,61,0,0,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,61,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,61,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,61,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,61,61,61,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,146,148,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,161,163,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,161,163,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-146,147,147,147,147,147,147,147,147,147,147,147,147,148,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,3,
-161,162,162,162,162,162,162,162,162,162,162,162,162,163,0,0,14,14,14,14,14,14,14,14,14,14,14,14,14,15,
-176,177,177,177,177,177,177,177,177,177,177,177,177,178,0,0,26,26,26,26,26,26,26,26,26,26,26,26,26,27
-</data>
- </layer>
- <objectgroup id="12" name="Objects">
-  <object id="11" name="player" gid="145" x="3.33333" y="1418" width="96" height="96">
-   <properties>
-    <property name="spawn" value="left"/>
-   </properties>
-  </object>
- </objectgroup>
+ <tileset firstgid="115" name="objects" tilewidth="156" tileheight="186" tilecount="32" columns="0">
+  <grid orientation="orthogonal" width="1" height="1"/>
+  <tile id="0">
+   <image source="../../graphics/objects/barrel.png" width="46" height="50"/>
+  </tile>
+  <tile id="1">
+   <image source="../../graphics/objects/bg_palm_1.png" width="128" height="128"/>
+  </tile>
+  <tile id="2">
+   <image source="../../graphics/objects/crate.png" width="50" height="36"/>
+  </tile>
+  <tile id="3">
+   <image source="../../graphics/objects/flag.png" width="68" height="186"/>
+  </tile>
+  <tile id="4">
+   <image source="../../graphics/objects/large_1.png" width="78" height="136"/>
+  </tile>
+  <tile id="5">
+   <image source="../../graphics/objects/ship.png" width="156" height="44"/>
+  </tile>
+  <tile id="6">
+   <image source="../../graphics/objects/small_1.png" width="80" height="103"/>
+  </tile>
+  <tile id="7">
+   <image source="../../graphics/objects/player.png" width="74" height="56"/>
+  </tile>
+  <tile id="8">
+   <image source="../../graphics/objects/shell.png" width="76" height="46"/>
+  </tile>
+  <tile id="9">
+   <image source="../../graphics/objects/tooth.png" width="48" height="46"/>
+  </tile>
+  <tile id="10">
+   <image source="../../graphics/objects/floor_spikes.png" width="64" height="64"/>
+  </tile>
+  <tile id="11">
+   <image source="../../graphics/objects/spike_ball.png" width="64" height="64"/>
+  </tile>
+  <tile id="12">
+   <image source="../../graphics/objects/bg_palm_left.png" width="104" height="106"/>
+  </tile>
+  <tile id="13">
+   <image source="../../graphics/objects/bg_palm_right.png" width="104" height="106"/>
+  </tile>
+  <tile id="14">
+   <image source="../../graphics/objects/bg_crate.png" width="42" height="32"/>
+  </tile>
+  <tile id="15">
+   <image source="../../graphics/objects/candle.png" width="64" height="64"/>
+  </tile>
+  <tile id="16">
+   <image source="../../graphics/objects/window.png" width="64" height="64"/>
+  </tile>
+  <tile id="17">
+   <image source="../../graphics/objects/big_chain.png" width="64" height="116"/>
+  </tile>
+  <tile id="18">
+   <image source="../../graphics/objects/small_chain.png" width="64" height="62"/>
+  </tile>
+  <tile id="19">
+   <image source="../../graphics/objects/green_bottle1.png" width="14" height="34"/>
+  </tile>
+  <tile id="20">
+   <image source="../../graphics/objects/green_bottle2.png" width="30" height="14"/>
+  </tile>
+  <tile id="21">
+   <image source="../../graphics/objects/blue_bottle1.png" width="14" height="28"/>
+  </tile>
+  <tile id="22">
+   <image source="../../graphics/objects/blue_bottle2.png" width="24" height="14"/>
+  </tile>
+  <tile id="23">
+   <image source="../../graphics/objects/bg_barrel.png" width="42" height="44"/>
+  </tile>
+  <tile id="24">
+   <image source="../../graphics/objects/bg_barrel_2.png" width="42" height="44"/>
+  </tile>
+  <tile id="25">
+   <image source="../../graphics/objects/curtain1.png" width="52" height="178"/>
+  </tile>
+  <tile id="26">
+   <image source="../../graphics/objects/curtain2.png" width="52" height="178"/>
+  </tile>
+  <tile id="27">
+   <image source="../../graphics/objects/door.png" width="82" height="98"/>
+  </tile>
+  <tile id="28">
+   <image source="../../graphics/enemies/slime/0.png" width="36" height="32"/>
+  </tile>
+  <tile id="29">
+   <image source="../../graphics/enemies/fly/0.png" width="48" height="42"/>
+  </tile>
+  <tile id="30">
+   <image source="../../graphics/player/idle/0.png" width="96" height="96"/>
+  </tile>
+  <tile id="31">
+   <image source="../../graphics/enemies/floor_spikes/left/0.png" width="26" height="64"/>
+  </tile>
+ </tileset>
+ <tileset firstgid="147" name="tileset2" tilewidth="64" tileheight="64" tilecount="60" columns="15">
+  <image source="../../graphics/tilesets/tileset2.png" width="960" height="256"/>
+ </tileset>
+ <tileset firstgid="207" source="../tilesets/platforms.tsx"/>
+ <tileset firstgid="215" source="../tilesets/tileset3.tsx"/>
+ <tileset firstgid="230" source="../tilesets/tileset2.tsx"/>
+ <tileset firstgid="290" source="../tilesets/objects.tsx"/>
  <objectgroup id="13" name="Data">
   <properties>
    <property name="bg" value=""/>
@@ -49,26 +117,136 @@
    <property name="level_unlock" type="int" value="1"/>
    <property name="top_limit" type="int" value="100"/>
   </properties>
-  <object id="4" name="Data" x="0" y="0" width="64" height="64">
+  <object id="4" name="Data" x="0" y="64" width="64" height="64">
    <properties>
     <property name="bg" value=""/>
-    <property name="bottom_limit" type="int" value="200"/>
+    <property name="bottom_limit" type="int" value="0"/>
     <property name="death_border_bottom" type="int" value="0"/>
-    <property name="horizon_line" type="int" value="100"/>
+    <property name="horizon_line" type="int" value="0"/>
     <property name="level_unlock" type="int" value="1"/>
-    <property name="next_room_down" value="0"/>
+    <property name="next_room_down" value="3"/>
     <property name="next_room_left" value="0"/>
     <property name="next_room_right" value="2"/>
-    <property name="next_room_up" value="0"/>
-    <property name="top_limit" type="int" value="100"/>
+    <property name="next_room_up" value="6"/>
+    <property name="top_limit" type="int" value="0"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <layer id="1" name="Terrain" width="35" height="26">
+  <data encoding="csv">
+175,151,190,190,190,190,190,190,190,190,190,190,190,190,221,221,0,0,0,0,221,221,178,190,190,190,190,190,190,190,152,175,175,258,258,
+175,176,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,174,175,175,258,258,
+175,176,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,147,149,0,0,0,0,0,0,0,0,0,0,0,174,175,175,258,258,
+175,176,0,0,0,0,0,0,0,0,0,0,0,0,0,0,242,216,215,244,0,0,0,0,0,0,0,0,0,0,174,175,175,258,258,
+175,176,0,0,0,0,242,243,160,160,160,160,160,160,160,160,216,258,258,215,160,160,160,160,160,160,160,160,160,160,216,175,175,258,258,
+175,176,0,0,0,0,257,258,151,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,273,273,273,273,273,
+175,176,0,0,0,0,257,258,176,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+175,176,0,0,0,0,257,258,176,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+175,176,0,0,0,0,257,258,176,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,242,243,243,243,243,
+175,176,0,0,0,0,257,175,215,243,243,243,244,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,174,175,175,258,258,
+175,176,0,0,0,0,257,258,151,273,273,273,274,0,0,0,0,0,0,0,0,0,0,0,0,242,243,243,244,0,174,175,175,258,258,
+175,176,0,0,0,0,257,258,176,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,272,273,273,274,0,174,175,175,258,258,
+175,176,0,0,0,0,257,258,176,0,0,0,0,0,0,0,242,243,243,243,243,243,244,0,0,0,0,0,0,0,174,175,175,258,258,
+175,176,0,0,0,0,257,258,176,0,0,0,0,0,0,0,272,273,273,273,273,273,274,0,0,0,0,0,0,0,174,175,175,258,258,
+175,176,0,0,0,0,257,258,176,0,0,242,243,244,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,174,175,175,258,258,
+175,176,0,0,0,0,257,258,176,0,0,272,273,274,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,174,175,175,258,258,
+175,176,0,0,0,0,257,258,176,0,0,0,0,0,0,159,160,160,160,160,160,160,160,161,0,0,0,0,0,0,174,175,175,258,258,
+175,176,0,0,0,0,257,258,215,160,160,160,160,160,160,216,175,175,175,175,175,175,175,215,160,161,0,0,0,0,174,175,175,258,258,
+175,176,0,0,0,0,272,273,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,190,191,0,0,0,0,174,175,175,258,258,
+175,176,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,159,160,216,175,175,258,258,
+190,191,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,159,216,175,175,175,175,258,258,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,159,216,175,175,175,175,175,258,258,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,159,216,175,175,175,175,175,175,258,258,
+160,160,160,160,160,160,160,160,160,160,160,160,160,244,0,0,242,160,160,160,160,160,160,160,160,216,175,175,175,175,175,175,175,258,258,
+175,175,175,175,175,175,175,175,175,175,175,175,175,259,0,0,257,175,175,175,175,175,175,175,175,175,175,175,175,175,175,175,175,258,258,
+175,175,175,175,175,175,175,175,175,175,175,175,175,259,0,0,257,175,175,175,175,175,175,175,175,175,175,175,175,175,175,175,175,258,258
+</data>
+ </layer>
+ <layer id="16" name="Platforms" width="35" height="26">
+  <data encoding="csv">
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,212,212,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+</data>
+ </layer>
+ <objectgroup id="12" name="Objects">
+  <object id="27" name="floor_spike" gid="206" x="962.5" y="117" width="64" height="64">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="28" name="floor_spike" gid="206" x="900" y="117" width="64" height="64">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="29" name="floor_spike" gid="158" x="1024" y="64" width="64" height="64">
+   <properties>
+    <property name="direction" value="right"/>
+   </properties>
+  </object>
+  <object id="31" name="floor_spike" gid="206" x="1275.36" y="120.091" width="64" height="64">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="32" name="floor_spike" gid="206" x="1338.14" y="120.136" width="64" height="64">
+   <properties>
+    <property name="direction" value="down"/>
+   </properties>
+  </object>
+  <object id="34" name="floor_spike" gid="146" x="1254.33" y="64" width="26" height="64">
+   <properties>
+    <property name="direction" value="left"/>
+   </properties>
+  </object>
+  <object id="33" name="player" gid="145" x="-20" y="1490" width="96" height="96">
+   <properties>
+    <property name="spawn" value="left"/>
+   </properties>
+  </object>
+  <object id="50" name="player" gid="145" x="908.667" y="1487.67" width="96" height="96">
+   <properties>
+    <property name="spawn" value="down"/>
+   </properties>
+  </object>
+  <object id="51" name="player" gid="145" x="2166" y="528.879" width="96" height="96">
+   <properties>
+    <property name="spawn" value="right"/>
+   </properties>
+  </object>
+  <object id="52" name="player" gid="145" x="1104" y="77" width="96" height="96">
+   <properties>
+    <property name="spawn" value="top"/>
    </properties>
   </object>
  </objectgroup>
  <objectgroup id="15" name="Enemies">
-  <object id="19" name="slime" gid="143" x="697.5" y="1385" width="36" height="32"/>
-  <object id="20" name="fly" gid="144" x="840.5" y="1343" width="48" height="42"/>
-  <object id="21" name="slime" gid="143" x="775.5" y="1376" width="36" height="32"/>
-  <object id="22" name="slime" gid="143" x="643.5" y="1345" width="36" height="32"/>
-  <object id="23" name="fly" gid="144" x="762.5" y="1311" width="48" height="42"/>
+  <object id="35" name="fly" gid="144" x="772" y="873" width="48" height="42"/>
+  <object id="36" name="fly" gid="144" x="1240" y="717" width="48" height="42"/>
  </objectgroup>
+ <objectgroup id="17" name="Items"/>
 </map>

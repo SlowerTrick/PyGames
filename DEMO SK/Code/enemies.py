@@ -88,7 +88,7 @@ class Shell(pygame.sprite.Sprite):
     
     def state_management(self):
         player_pos, shell_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
-        player_near = shell_pos.distance_to(player_pos) < 500
+        player_near = shell_pos.distance_to(player_pos) < 750
         player_front = shell_pos.x < player_pos.x if self.bullet_direction > 0 else shell_pos.x > player_pos.x
         player_level = abs(shell_pos.y - player_pos.y) < 30
 
@@ -161,6 +161,30 @@ class Pearl(pygame.sprite.Sprite):
         if not self.timers['lifetime'].active:
             self.kill()
 
+class Breakable_wall(pygame.sprite.Sprite):
+    def __init__(self, pos, groups, surf):
+        self.is_enemy = True
+        super().__init__(groups)
+        self.image = surf
+        self.rect = self.image.get_frect(topleft = pos)
+        self.old_rect = self.rect
+        self.z = Z_LAYERS['main']
+        self.wall_health = 3
+        self.hit_timer = Timer(1000)
+
+    def is_alive(self):
+        if self.wall_health <= 0:
+            self.kill()
+
+    def get_damage(self):
+        if not self.hit_timer.active:
+            self.hit_timer.activate()
+            self.wall_health -= 1
+
+    def update(self, dt):
+        self.hit_timer.update()
+        self.is_alive()
+
 class Slime(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, player, collision_sprites):
         # Setup geral
@@ -182,7 +206,7 @@ class Slime(pygame.sprite.Sprite):
         self.direction = vector()
         self.speed = 150
         self.jump_height = 450
-        self.slime_heath = 2
+        self.slime_heath = 3
         self.gravity = 1300
         self.knockback_value = 350
         self.knockback_direction = 'none'
@@ -195,10 +219,11 @@ class Slime(pygame.sprite.Sprite):
         self.during_knockback = Timer(500)
 
     def collisions(self, axis):
-        floor_rect = pygame.FRect(self.rect.bottomright, (1,1))
-        right_rect = pygame.FRect(self.rect.midleft, (1,1))
-        left_rect = pygame.FRect(self.rect.midright, (1,1))
-        
+        top_rect = pygame.FRect(self.rect.midtop, (1, 1))
+        floor_rect = pygame.FRect(self.rect.midbottom, (1, 1))
+        right_rect = pygame.FRect(self.rect.midleft, (1, 1))
+        left_rect = pygame.FRect(self.rect.midright, (1, 1))
+
         if axis == 'horizontal':
             for sprite in self.collision_rects:
                 if right_rect.colliderect(sprite) or left_rect.colliderect(sprite):
@@ -206,14 +231,23 @@ class Slime(pygame.sprite.Sprite):
                         self.hitbox_rect.right = sprite.left
                     else:
                         self.hitbox_rect.left = sprite.right
+                    self.during_knockback.deactivate()
                     break
 
         if axis == 'vertical':
             for sprite in self.collision_rects:
                 if floor_rect.colliderect(sprite):
                     self.hitbox_rect.bottom = sprite.top
+                    self.direction.y = 0
                     if self.player_near:
                         self.direction.y = -self.jump_height
+                    if self.knockback_direction == 'down':
+                        self.during_knockback.deactivate()
+                    break
+                if top_rect.colliderect(sprite):
+                    self.hitbox_rect.top = sprite.bottom
+                    self.direction.y = 0
+                    self.during_knockback.deactivate()
                     break
 
     def move(self, dt):
@@ -239,6 +273,9 @@ class Slime(pygame.sprite.Sprite):
             elif self.knockback_direction == 'right':
                 self.hitbox_rect.x += 1 * self.knockback_value * delta_time
                 self.collisions('horizontal')
+            elif self.knockback_direction == 'down':
+                self.hitbox_rect.y += 1 * self.knockback_value * delta_time
+                self.collisions('vertical')
 
     def state_management(self):
         player_pos, slime_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
@@ -310,9 +347,9 @@ class Fly(pygame.sprite.Sprite):
         self.acceleration = 10
         self.deceleration = 10
         self.jump_height = 450
-        self.fly_health = 2
+        self.fly_health = 3
         self.gravity = 1300
-        self.knockback_value = 350
+        self.knockback_value = 250
         self.knockback_direction = 'none'
         self.on_ground = False
         self.player_near = False
@@ -320,10 +357,11 @@ class Fly(pygame.sprite.Sprite):
         # Colisões e timers
         self.collision_rects = [sprite.rect for sprite in collision_sprites]
         self.hit_timer = Timer(500)
-        self.during_knockback = Timer(500)
+        self.during_knockback = Timer(300)
 
     def collisions(self, axis):
-        floor_rect = pygame.FRect(self.rect.bottomright, (1, 1))
+        top_rect = pygame.FRect(self.rect.midtop, (1, 1))
+        floor_rect = pygame.FRect(self.rect.midbottom, (1, 1))
         right_rect = pygame.FRect(self.rect.midleft, (1, 1))
         left_rect = pygame.FRect(self.rect.midright, (1, 1))
 
@@ -331,9 +369,11 @@ class Fly(pygame.sprite.Sprite):
             for sprite in self.collision_rects:
                 if right_rect.colliderect(sprite) or left_rect.colliderect(sprite):
                     if right_rect.x < sprite.x:
-                        self.hitbox_rect.right = sprite.left
+                        self.hitbox_rect.right = sprite.left - 1
+                        self.during_knockback.deactivate()
                     else:
-                        self.hitbox_rect.left = sprite.right
+                        self.hitbox_rect.left = sprite.right + 1
+                        self.during_knockback.deactivate()
                     break
 
         if axis == 'vertical':
@@ -341,6 +381,9 @@ class Fly(pygame.sprite.Sprite):
                 if floor_rect.colliderect(sprite):
                     self.hitbox_rect.bottom = sprite.top
                     break
+                if top_rect.colliderect(sprite):
+                    self.hitbox_rect.top = sprite.bottom
+                    break                 
 
     def move(self, dt):
         # Movimentação Horizontal
@@ -360,11 +403,17 @@ class Fly(pygame.sprite.Sprite):
     def knockback(self, delta_time):
         if self.during_knockback.active:
             if self.knockback_direction == 'left':
-                self.hitbox_rect.x += self.knockback_value * delta_time
+                self.hitbox_rect.x += -1 * self.knockback_value * delta_time
                 self.collisions('horizontal')
             elif self.knockback_direction == 'right':
-                self.hitbox_rect.x += self.knockback_value * delta_time
+                self.hitbox_rect.x += 1 * self.knockback_value * delta_time
                 self.collisions('horizontal')
+            elif self.knockback_direction == 'up':
+                self.hitbox_rect.y += -1 * self.knockback_value * delta_time
+                self.collisions('vertical')
+            elif self.knockback_direction == 'down':
+                self.hitbox_rect.y += 1 * self.knockback_value * delta_time
+                self.collisions('vertical')
 
     def state_management(self, dt):
         player_pos, fly_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
@@ -404,6 +453,7 @@ class Fly(pygame.sprite.Sprite):
 
     def update(self, dt):
         self.hit_timer.update()
+        self.during_knockback.update()
         self.state_management(dt)
 
         # Animação

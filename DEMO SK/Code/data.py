@@ -5,14 +5,16 @@ class Data:
         self._player_health = 5
         self._max_player_heath = 5
         self._health_regen = False
-        self._string_bar = 0
+        self._string_bar = 6
         self._max_string_bar = 6
         self.ui.create_ui_bar(self._health_regen)
         self.ui.create_hearts(self._player_health, self._max_player_heath)
         self.ui.create_string_bar(self._string_bar)
 
-        self.unlocked_level = 0
-        self.current_level = 0
+        # Habilidades desbloqueaveis
+        self.unlocked_wall_jump = True
+        self.unlocked_dash = True
+        self.unlocked_throw_attack = False
 
     @property
     def coins(self):

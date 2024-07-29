@@ -1,9 +1,56 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="30" height="25" tilewidth="64" tileheight="64" infinite="0" nextlayerid="15" nextobjectid="11">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="30" height="40" tilewidth="64" tileheight="64" infinite="0" nextlayerid="21" nextobjectid="43">
  <tileset firstgid="1" source="../tilesets/outside.tsx"/>
  <tileset firstgid="49" source="../tilesets/extra.tsx"/>
  <tileset firstgid="115" source="../tilesets/objects.tsx"/>
- <layer id="1" name="Terrain" width="30" height="25">
+ <tileset firstgid="151" source="../tilesets/tileset2.tsx"/>
+ <tileset firstgid="211" source="../tilesets/tileset3.tsx"/>
+ <tileset firstgid="213" source="../tilesets/platforms.tsx"/>
+ <layer id="1" name="Terrain" width="30" height="40">
+  <data encoding="csv">
+179,179,180,0,0,193,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,156,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,211,165,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,179,211,164,164,164,164,164,164,164,164,164,164,164,164,164,164,164,164,164,164,165,0,0,0,0,178,179,179,
+179,179,155,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,195,0,163,165,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,193,195,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,163,164,164,164,164,164,164,164,164,164,164,164,164,164,164,164,164,164,164,164,212,179,179,
+179,179,180,0,163,165,0,193,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,194,156,179,179,
+179,179,180,0,193,195,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,163,164,164,164,164,164,164,165,0,0,163,164,164,164,164,164,164,165,0,0,0,178,179,179,
+179,179,180,0,0,0,178,179,179,179,179,179,179,180,0,0,178,179,179,179,179,179,179,180,0,0,0,178,179,179,
+179,179,180,0,0,0,193,194,194,194,194,194,194,195,0,0,193,194,194,194,194,194,194,195,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+179,179,180,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,179,179,
+182,182,183,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,181,182,182,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+164,164,164,164,164,164,165,0,0,0,151,152,152,152,152,152,152,152,152,153,0,0,0,151,152,152,152,152,152,152,
+167,167,167,167,167,167,168,0,0,0,181,182,182,182,182,182,182,182,182,183,0,0,0,166,167,167,167,167,167,167,
+167,167,167,167,167,167,168,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,178,167,167,167,167,167,167
+</data>
+ </layer>
+ <layer id="19" name="Platforms" width="30" height="40">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -18,45 +65,173 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,61,0,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,61,0,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,61,61,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,61,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,218,218,219,0,0,0,0,0,0,0,0,218,218,0,0,0,0,0,0,0,0,217,218,218,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-1,2,2,2,2,2,2,2,2,2,2,2,2,2,0,0,2,2,2,2,2,2,2,2,2,2,2,2,2,3,
-13,14,14,14,14,14,14,14,14,14,14,14,14,14,0,0,14,14,14,14,14,14,14,14,14,14,14,14,14,15,
-25,26,26,26,26,26,26,26,26,26,26,26,26,26,0,0,26,26,26,26,26,26,26,26,26,26,26,26,26,27
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <objectgroup id="12" name="Objects">
-  <object id="5" name="player" gid="122" x="393.303" y="1385.58" width="74" height="56"/>
- </objectgroup>
- <objectgroup id="13" name="Data">
-  <properties>
-   <property name="bg" value=""/>
-   <property name="bottom_limit" type="int" value="200"/>
-   <property name="death_border_bottom" type="int" value="0"/>
-   <property name="horizon_line" type="int" value="600"/>
-   <property name="level_unlock" type="int" value="1"/>
-   <property name="top_limit" type="int" value="100"/>
-  </properties>
-  <object id="4" name="Data" x="0" y="0" width="64" height="64">
+ <objectgroup id="17" name="Enemies">
+  <object id="20" name="tooth" gid="124" x="857.333" y="2368" width="48" height="46"/>
+  <object id="21" name="tooth" gid="124" x="941" y="2368" width="48" height="46"/>
+  <object id="22" name="tooth" gid="124" x="1021" y="2368" width="48" height="46"/>
+  <object id="23" name="shell" gid="123" x="375" y="2369" width="76" height="46">
    <properties>
-    <property name="bg" value=""/>
-    <property name="bottom_limit" type="int" value="200"/>
-    <property name="death_border_bottom" type="int" value="0"/>
-    <property name="horizon_line" type="int" value="100"/>
-    <property name="level_unlock" type="int" value="1"/>
-    <property name="next_room_down" value="6"/>
-    <property name="next_room_left" value="0"/>
-    <property name="next_room_right" value="4"/>
-    <property name="next_room_up" value="0"/>
-    <property name="top_limit" type="int" value="100"/>
+    <property name="reverse" type="bool" value="false"/>
    </properties>
   </object>
+  <object id="24" name="shell" gid="123" x="375" y="2330" width="76" height="46">
+   <properties>
+    <property name="reverse" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="25" name="shell" gid="123" x="375" y="2290" width="76" height="46">
+   <properties>
+    <property name="reverse" type="bool" value="false"/>
+   </properties>
+  </object>
+  <object id="26" name="shell" gid="123" x="1476.83" y="2370.5" width="76" height="46">
+   <properties>
+    <property name="reverse" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="27" name="shell" gid="123" x="1476.83" y="2331.5" width="76" height="46">
+   <properties>
+    <property name="reverse" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="28" name="shell" gid="123" x="1476.83" y="2291.5" width="76" height="46">
+   <properties>
+    <property name="reverse" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="29" name="fly" gid="144" x="1101.33" y="2274.33" width="48" height="42"/>
+  <object id="30" name="fly" gid="144" x="934.667" y="2262.33" width="48" height="42"/>
+  <object id="31" name="fly" gid="144" x="781.333" y="2274.33" width="48" height="42"/>
+  <object id="34" name="shell" gid="123" x="1659.33" y="833.667" width="76" height="46">
+   <properties>
+    <property name="reverse" type="bool" value="true"/>
+   </properties>
+  </object>
+  <object id="35" name="shell" gid="123" x="190" y="833.667" width="76" height="46">
+   <properties>
+    <property name="reverse" type="bool" value="false"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="20" name="Moving Objects">
+  <object id="36" name="spike" gid="126" x="184.167" y="1151" width="64" height="64">
+   <properties>
+    <property name="end_angle" type="int" value="90"/>
+    <property name="platform" type="bool" value="false"/>
+    <property name="radius" type="int" value="100"/>
+    <property name="speed" type="int" value="50"/>
+    <property name="start_angle" type="int" value="-90"/>
+   </properties>
+  </object>
+  <object id="38" name="spike" gid="126" x="185" y="1477" width="64" height="64">
+   <properties>
+    <property name="end_angle" type="int" value="90"/>
+    <property name="platform" type="bool" value="false"/>
+    <property name="radius" type="int" value="100"/>
+    <property name="speed" type="int" value="50"/>
+    <property name="start_angle" type="int" value="-90"/>
+   </properties>
+  </object>
+  <object id="39" name="spike" gid="126" x="187" y="1794" width="64" height="64">
+   <properties>
+    <property name="end_angle" type="int" value="90"/>
+    <property name="platform" type="bool" value="false"/>
+    <property name="radius" type="int" value="100"/>
+    <property name="speed" type="int" value="50"/>
+    <property name="start_angle" type="int" value="-90"/>
+   </properties>
+  </object>
+  <object id="40" name="spike" gid="126" x="1670.83" y="1151.65" width="64" height="64">
+   <properties>
+    <property name="end_angle" type="int" value="270"/>
+    <property name="platform" type="bool" value="false"/>
+    <property name="radius" type="int" value="100"/>
+    <property name="speed" type="int" value="50"/>
+    <property name="start_angle" type="int" value="90"/>
+   </properties>
+  </object>
+  <object id="41" name="spike" gid="126" x="1671.66" y="1477.65" width="64" height="64">
+   <properties>
+    <property name="end_angle" type="int" value="270"/>
+    <property name="platform" type="bool" value="false"/>
+    <property name="radius" type="int" value="100"/>
+    <property name="speed" type="int" value="50"/>
+    <property name="start_angle" type="int" value="90"/>
+   </properties>
+  </object>
+  <object id="42" name="spike" gid="126" x="1673.66" y="1794.65" width="64" height="64">
+   <properties>
+    <property name="end_angle" type="int" value="270"/>
+    <property name="platform" type="bool" value="false"/>
+    <property name="radius" type="int" value="100"/>
+    <property name="speed" type="int" value="50"/>
+    <property name="start_angle" type="int" value="90"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="12" name="Objects">
+  <object id="12" name="player" gid="145" x="203.879" y="78.303" width="96" height="96">
+   <properties>
+    <property name="spawn" value="top"/>
+   </properties>
+  </object>
+  <object id="18" name="player" gid="145" x="-18" y="2386" width="96" height="96">
+   <properties>
+    <property name="spawn" value="left"/>
+   </properties>
+  </object>
+  <object id="19" name="player" gid="145" x="1841" y="2386" width="96" height="96">
+   <properties>
+    <property name="spawn" value="right"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="13" name="Data">
+  <object id="14" name="Data" x="14" y="16" width="64" height="64">
+   <properties>
+    <property name="bg" value=""/>
+    <property name="bottom_limit" type="int" value="0"/>
+    <property name="death_border_bottom" type="int" value="0"/>
+    <property name="horizon_line" type="int" value="0"/>
+    <property name="level_unlock" type="int" value="1"/>
+    <property name="next_room_down" value="3"/>
+    <property name="next_room_left" value="4"/>
+    <property name="next_room_right" value="5"/>
+    <property name="next_room_up" value="1"/>
+    <property name="top_limit" type="int" value="0"/>
+   </properties>
+  </object>
+ </objectgroup>
+ <objectgroup id="16" name="Water">
+  <object id="17" name="water" x="-169.697" y="2396.97" width="2263.64" height="297.939"/>
  </objectgroup>
 </map>

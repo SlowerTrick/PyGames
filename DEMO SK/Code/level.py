@@ -1,9 +1,10 @@
 from settings import *
 from sprites import Sprite, AnimatedSprite, MovingSprite, Spike, Item, ParticleEffectSprite
+from timecount import Timer
 from player import Player
 from groups import AllSprites
 from debug import debug
-from enemies import Tooth, Shell, Pearl, Slime, Fly
+from enemies import Tooth, Shell, Breakable_wall, Pearl, Slime, Fly
 from attack import Neutral_Attack, Throw_Attack
 
 from random import uniform
@@ -34,7 +35,7 @@ class Level:
         self.current_stage = current_stage
         self.player_spawn = player_spawn
         self.adjacent_stage = {
-            'up': tmx_level_properties['next_room_up'], 
+            'top': tmx_level_properties['next_room_up'], 
             'left': tmx_level_properties['next_room_left'], 
             'right': tmx_level_properties['next_room_right'], 
             'down': tmx_level_properties['next_room_down']
@@ -60,10 +61,10 @@ class Level:
         self.pearl_sprites = pygame.sprite.Group()
         self.slime_sprites = pygame.sprite.Group()
         self.fly_sprites = pygame.sprite.Group()
+        self.thorn_sprites = pygame.sprite.Group()
 
         # Inicialização do grupo de sprites dos itens
         self.item_sprites = pygame.sprite.Group()
-        self.setup(tmx_map, level_frames, audio_files)
 
         # Superficie separadas para facilitar o acesso
         self.pearl_surface = level_frames['pearl']
@@ -74,6 +75,9 @@ class Level:
         # Sons
         self.audio_files = audio_files
         self.audio_files['geo'].set_volume(3)
+
+        self.setup(tmx_map, level_frames, audio_files)
+        self.timers = {'loading_time': Timer(100)}
 
     def setup(self, tmx_map, level_frames, audio_files):
         def get_layer(tmx_map, layer_name):
@@ -107,7 +111,7 @@ class Level:
                     if obj.name == 'candle':
                         AnimatedSprite((int(obj.x), int(obj.y)) + vector(-20, -20), level_frames['candle_light'], self.all_sprites, Z_LAYERS['bg tiles'])
 
-        # Player
+        # Player e objetos normais
         objects_layer = get_layer(tmx_map, 'Objects')
         if objects_layer:
             for obj in objects_layer:
@@ -126,12 +130,15 @@ class Level:
                     else:
                         if obj.name in level_frames and obj.name != 'player':
                             frames = level_frames[obj.name] if not 'palm' in obj.name else level_frames['palms'][obj.name]
-                            if obj.name == 'floor_spike' and obj.properties['inverted']:
-                                frames = [pygame.transform.flip(frame, False, True) for frame in frames]
+                            if obj.name == 'floor_spike':
+                                frames = level_frames['floor_spike'][obj.properties['direction']]
 
                             groups = [self.all_sprites]
                             if obj.name in ('palm_small', 'palm_large'): groups.append(self.semi_collision_sprites)
-                            if obj.name in ('saw', 'floor_spike'): groups.append(self.damage_sprites)
+                            if obj.name in ('saw'): groups.append(self.damage_sprites)
+                            if obj.name in ('floor_spike'): 
+                                groups.append(self.damage_sprites)
+                                groups.append(self.thorn_sprites)
 
                             z = Z_LAYERS['main'] if not 'bg' in obj.name else Z_LAYERS['bg details']
 
@@ -142,7 +149,7 @@ class Level:
                 if obj.name == 'flag':
                     self.level_finish_rect = pygame.FRect((int(obj.x), int(obj.y)), (int(obj.width), int(obj.height)))
 
-        # Objetos moveisc / Objetos com dano
+        # Objetos moveis / Objetos com dano
         moving_objects_layer = get_layer(tmx_map, 'Moving Objects')
         if moving_objects_layer:
             for obj in moving_objects_layer:
@@ -212,7 +219,14 @@ class Level:
                         reverse = obj.properties['reverse'],
                         player = self.player,
                         create_pearl = self.create_pearl)
-                    
+            
+                if obj.name == 'breakable_wall':
+                    Breakable_wall(
+                        pos = (int(obj.x), int(obj.y)),
+                        surf = level_frames['breakable_wall'],
+                        groups = (self.all_sprites, self.collision_sprites, self.tooth_sprites),
+                    )
+    
                 if obj.name == 'slime':
                     Slime(
                         pos = (int(obj.x), int(obj.y)),
@@ -228,6 +242,24 @@ class Level:
                         groups = (self.all_sprites, self.damage_sprites, self.fly_sprites),
                         player = self.player,
                         collision_sprites = self.collision_sprites)
+
+        # Espinhos Normais
+        thorns_layer = get_layer(tmx_map, 'Thorns')
+        if thorns_layer:
+            for x, y, surf in thorns_layer.tiles():
+                frames = level_frames['floor_spike']['up']
+                groups = [self.all_sprites, self.damage_sprites, self.thorn_sprites]
+                z = Z_LAYERS['main']
+                AnimatedSprite((x * TILE_SIZE, (y+0.8) * TILE_SIZE), frames, groups, z, ANIMATION_SPEED)
+        
+        # Espinhos Reversos
+        reverse_thorns_layer = get_layer(tmx_map, 'Reverse Thorns')
+        if reverse_thorns_layer:
+            for x, y, surf in reverse_thorns_layer.tiles():
+                frames = level_frames['floor_spike']['down']
+                groups = [self.all_sprites, self.damage_sprites, self.thorn_sprites]
+                z = Z_LAYERS['main']
+                AnimatedSprite((x * TILE_SIZE, (y) * TILE_SIZE), frames, groups, z, ANIMATION_SPEED)
 
         # Itens
         items_layer = get_layer(tmx_map, 'Items')
@@ -251,8 +283,13 @@ class Level:
                         else:
                             Sprite((x, y), level_frames['water_body'], self.all_sprites, Z_LAYERS['water'])
     
+    def update_timers(self):
+        # Atualiza todos os temporizadores estabelicidos
+        for timer in self.timers.values():
+            timer.update()
+
     def create_pearl(self, pos, direction):
-        Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), self.pearl_surface, direction, 150)
+        Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), self.pearl_surface, direction, 350)
         self.audio_files['pearl'].play()
 
     def pearl_collision(self):
@@ -325,9 +362,9 @@ class Level:
                         if not target.hit_timer.active:
                             self.data.string_bar += 1
                         target.is_alive()
-                        handle_knockback = not self.player.timers['during_knockback'].active and not target.hit_timer.active
+                        handle_knockback = not self.player.timers['hit_knockback'].active and not target.hit_timer.active
                     else:
-                        handle_knockback = not self.player.timers['during_knockback'].active
+                        handle_knockback = not self.player.timers['hit_knockback'].active
 
                     if handle_knockback:
                         if self.player_neutral_attack_sprite.facing_side in ['right', 'left']:
@@ -337,7 +374,12 @@ class Level:
                                 target.during_knockback.activate()
                         else:
                             self.player.knockback_direction = 'up' if self.player_neutral_attack_sprite.facing_side == 'down' else 'down'
-                        self.player.timers['during_knockback'].activate()
+                            if hasattr(target, 'knockback_direction'):
+                                target.knockback_direction = 'up' if self.player.knockback_direction == 'down' else 'down'
+                                target.during_knockback.activate()
+
+                        if target not in self.thorn_sprites:
+                            self.player.timers['hit_knockback'].activate()
                         
                         if not is_enemy:
                             self.player.dash_is_available = True
@@ -350,8 +392,6 @@ class Level:
                     if hasattr(target, 'is_enemy'):
                         target.get_damage()
                         if not hasattr(target, 'pearl'):
-                            if not target.hit_timer.active:
-                                self.data.string_bar += 1
                             target.is_alive()
                     else:
                         self.player_throw_attack_sprite.on_wall = True
@@ -361,6 +401,11 @@ class Level:
         if (self.during_neutral_attack and self.player_neutral_attack_sprite) or (self.during_throw_attack and self.player_throw_attack_sprite):
             if self.during_neutral_attack and self.player_neutral_attack_sprite:
                 self.player_neutral_attack_sprite.update_position((self.player.hitbox_rect.x, self.player.hitbox_rect.y))
+                if self.player_neutral_attack_sprite.facing_side in {'right', 'left'} and not self.player_neutral_attack_sprite.knockback_applied:
+                    self.player_neutral_attack_sprite.knockback_applied = True
+                    self.player.knockback_direction = 'right' if self.player_neutral_attack_sprite.facing_side == 'right' else 'left'
+                    self.player.timers['attack_knockback'].activate()
+
             elif self.player_throw_attack_sprite.on_wall:
                 self.throw_attack_movement(delta_time)
             self.attack_collision()
@@ -381,33 +426,34 @@ class Level:
         right_limit = self.level_width
         left_limit = 0
         # Logica para mudar a fase e posicionar o jogador na posição correta
-        if self.player.hitbox_rect.bottom >= bottom_limit:
+        if self.player.hitbox_rect.top >= bottom_limit:
             self.switch_screen(int(self.adjacent_stage['down']), 'top')
         if self.player.hitbox_rect.bottom <= top_limit:
-            self.switch_screen(int(self.adjacent_stage['top']), 'bottom')
-        elif self.player.hitbox_rect.right >= right_limit:
+            self.switch_screen(int(self.adjacent_stage['top']), 'down')
+        elif self.player.hitbox_rect.left >= right_limit:
             self.switch_screen(int(self.adjacent_stage['right']), 'left')
-        elif self.player.hitbox_rect.left <= left_limit:
+        elif self.player.hitbox_rect.right <= left_limit:
             self.switch_screen(int(self.adjacent_stage['left']), 'right')
 
     def run(self, delta_time):
-        self.display_surface.fill('black')  # Preenche a tela com a cor preta
+        self.update_timers()
+        if not self.timers['loading_time'].active:
+            self.display_surface.fill('black')  # Preenche a tela com a cor preta
+            self.all_sprites.update(delta_time)  # Atualiza os sprites da tela
+            self.pearl_collision()
+            self.hit_collision()
+            self.item_collision()
 
-        self.all_sprites.update(delta_time)  # Atualiza os sprites da tela
-        self.pearl_collision()
-        self.hit_collision()
-        self.item_collision()
+            # Ataque do player
+            self.player_attack()
+            self.attack_logic(delta_time)
 
-        # Ataque do player
-        self.player_attack()
-        self.attack_logic(delta_time)
+            # Limitação do mapa e desenho dos sprites
+            self.check_constraint()
+            self.all_sprites.draw(self.player.hitbox_rect.center, delta_time)
 
-        # Limitação do mapa e desenho dos sprites
-        self.check_constraint()
-        self.all_sprites.draw(self.player.hitbox_rect.center, delta_time)
-
-        # Desenhar a linha caso exista
-        if self.during_throw_attack:
-            attack_pos = ((self.player_throw_attack_sprite.rect.centerx + self.all_sprites.offset.x, self.player_throw_attack_sprite.rect.centery + self.all_sprites.offset.y))
-            player_pos =((self.player.rect.centerx + self.all_sprites.offset.x, self.player.rect.centery + 10 + self.all_sprites.offset.y))
-            self.player_throw_attack_sprite.draw_rope(self.display_surface, player_pos, attack_pos)
+            # Desenhar a linha caso exista
+            if self.during_throw_attack:
+                attack_pos = ((self.player_throw_attack_sprite.rect.centerx + self.all_sprites.offset.x, self.player_throw_attack_sprite.rect.centery + self.all_sprites.offset.y))
+                player_pos =((self.player.rect.centerx + self.all_sprites.offset.x, self.player.rect.centery + 10 + self.all_sprites.offset.y))
+                self.player_throw_attack_sprite.draw_rope(self.display_surface, player_pos, attack_pos)

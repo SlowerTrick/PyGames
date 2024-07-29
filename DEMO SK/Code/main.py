@@ -5,6 +5,7 @@ from os.path import join
 from support import *
 from data import Data
 from ui import UI
+from menu import Menu
 
 class Game:
     def __init__(self):
@@ -22,6 +23,8 @@ class Game:
         # Carregamento das informações do jogo
         self.ui = UI(self.font, self.ui_frames)
         self.data = Data(self.ui)
+        self.menu = Menu(self.display_surface, self.font)
+        self.state = "menu"
 
         # Carregamento dos mapas do jogo
         self.tmx_maps = {
@@ -39,6 +42,7 @@ class Game:
         self.start_stage = 0
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
+        self.current_stage.timers['loading_time'].activate()
         self.bg_music.play(-1)
 
     def switch_screen(self, target, player_spawn):
@@ -51,7 +55,7 @@ class Game:
             # Adição dos sprites animados
             'flag': import_folder('..', 'graphics', 'level', 'flag'),
             'saw': import_folder('..', 'graphics', 'enemies', 'saw', 'animation'),
-            'floor_spike': import_folder('..', 'graphics','enemies', 'floor_spikes'),
+            'floor_spike': import_sub_folders('..', 'graphics','enemies', 'floor_spikes'),
             'palms': import_sub_folders('..', 'graphics', 'level', 'palms'),
             'candle': import_folder('..', 'graphics','level', 'candle'),
             'window': import_folder('..', 'graphics','level', 'window'),
@@ -66,6 +70,7 @@ class Game:
             'spike_chain': import_image('..',  'graphics', 'enemies', 'spike_ball', 'spiked_chain'),
             'tooth': import_folder('..', 'graphics','enemies', 'tooth', 'run'),
             'shell': import_sub_folders('..', 'graphics', 'enemies', 'shell'),
+            'breakable_wall': import_image('..',  'graphics', 'enemies', 'breakable_wall', 'wall'),
             'slime': import_sub_folders('..', 'graphics', 'enemies', 'slime'),
             'fly': import_sub_folders('..', 'graphics', 'enemies', 'fly'),
             'pearl': import_image('..',  'graphics', 'enemies', 'bullets', 'pearl'),
@@ -79,7 +84,7 @@ class Game:
             'player_neutral_attack': import_sub_folders('..', 'graphics', 'player', 'attack_animation'),
             'player_throw_attack': import_image('..', 'graphics', 'player', 'throw_attack', '0'),
         }
-        self.font = pygame.font.Font(join('..', 'graphics', 'ui', 'runescape_uf.ttf'), 40)
+        self.font = pygame.font.Font(join('..', 'graphics', 'ui', 'SuperPixel.ttf'), 40)
 
         self.ui_frames = {
             'heart': import_folder('..', 'graphics', 'ui', 'heart'), 
@@ -105,11 +110,6 @@ class Game:
         self.bg_music = pygame.mixer.Sound(join('..', 'audio', 'noragami.mp3'))
         self.bg_music.set_volume(0.5)
 
-    def check_game_over(self):
-        if self.data.player_health <= 0:
-            pygame.quit()
-            sys.exit()
-
     def show_fps(self):
         fps = self.clock.get_fps()
         font = pygame.font.SysFont(None, 24)
@@ -125,12 +125,23 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        self.state = "menu"
 
-            self.check_game_over()
-            self.current_stage.run(delta_time) # Atualização dos sprites do jogo a partir do arquivo "Level"
-            self.ui.update(delta_time) # HUD do jogo
-            #self.show_fps()
-            pygame.display.update() # Atualização da tela
+            # Menu
+            if self.state == "menu":
+                next_state = self.menu.display_menu()
+                if next_state == "play":
+                    self.state = "game"
+                    self.current_stage.timers['loading_time'].activate()
+            # Jogo
+            elif self.state == "game":
+                self.current_stage.run(delta_time) # Atualização dos sprites do jogo a partir do arquivo "Level"
+                if not self.current_stage.timers['loading_time'].active:
+                    self.ui.update(delta_time) # HUD do jogo
+                # self.show_fps()
+                pygame.display.update() # Atualização da tela
 
 if __name__ == '__main__': # Verifica se o script está sendo executado diretamente (exemplo: python main.py)
     # Inicialização do jogo

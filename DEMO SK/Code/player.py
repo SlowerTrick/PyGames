@@ -12,6 +12,7 @@ class Player(pygame.sprite.Sprite):
         self.state, self.facing_side = 'idle', 'right'
         self.vertical_sight = 'none'
         self.image = self.frames[self.state][self.frame_index]
+        self.neutral_attack_direction = 'none'
 
         # Retângulos
         self.rect = self.image.get_frect(topleft = pos)
@@ -22,8 +23,8 @@ class Player(pygame.sprite.Sprite):
         self.direction = vector()
         self.speed = 200
         self.gravity = 1300
-        self.jump_height = 700
-        self.keys_pressed = {'jump': False, 'neutral_attack': False, 'throw_attack': False, 'dash': False}
+        self.jump_height = 720
+        self.keys_pressed = {'jump': True, 'neutral_attack': True, 'throw_attack': True, 'dash': True}
 
         # Dash
         self.dash_speed = 700
@@ -41,9 +42,10 @@ class Player(pygame.sprite.Sprite):
         self.neutral_attacking = False
         self.throw_attacking = False
         self.throw_attack_is_available = True
-        self.knockback_value = 250
+        self.knockback_value = 350
         self.knockback_direction = 'none'
         self.healing = True
+        self.neutral_attack_direction = 'none'
 
         # Colisão
         self.collision_sprites = collision_sprites
@@ -55,13 +57,14 @@ class Player(pygame.sprite.Sprite):
         self.timers = {
             'wall_jump': Timer(200),
             'wall_slide_block': Timer(250),
-            'jump_buffer': Timer(150),
+            'jump_buffer': Timer(100),
             'platform_skip': Timer(100),
             'neutral_attack_block': Timer(400),
             'dash_block': Timer(500),
             'invincibility_frames': Timer(500),
             'jump_sound': Timer(100),
-            'during_knockback': Timer(200),
+            'hit_knockback': Timer(150),
+            'attack_knockback': Timer(150),
             'healing_timer': Timer (1500),
         }
         # Áudio, data e etc
@@ -98,7 +101,7 @@ class Player(pygame.sprite.Sprite):
             
             if keys[pygame.K_w]:
                 self.vertical_sight = 'up'
-            if keys[pygame.K_s]:
+            elif keys[pygame.K_s]:
                 self.timers['platform_skip'].activate()
                 self.vertical_sight = 'down'
 
@@ -110,7 +113,7 @@ class Player(pygame.sprite.Sprite):
             else:
                 self.keys_pressed['neutral_attack'] = False
 
-            if keys[pygame.K_o] and not self.neutral_attacking:
+            if keys[pygame.K_o] and not self.neutral_attacking and self.data.unlocked_throw_attack:
                 if not self.keys_pressed['throw_attack']:
                     if self.throw_attack_is_available and self.data.string_bar > 0:
                         self.data.string_bar -= 1
@@ -121,7 +124,7 @@ class Player(pygame.sprite.Sprite):
 
             if keys[pygame.K_i]:
                 if not self.keys_pressed['dash']:
-                    if self.dash_is_available:
+                    if self.dash_is_available and self.data.unlocked_dash:
                         self.dash()
                         self.keys_pressed['dash'] = True
             else:
@@ -171,7 +174,8 @@ class Player(pygame.sprite.Sprite):
             self.audio_files['throw'].play()
     
     def knockback(self, delta_time):
-        if self.timers['during_knockback'].active:
+        keys = pygame.key.get_pressed()
+        if self.timers['hit_knockback'].active:
             # Horizontal
             if self.knockback_direction == 'left':
                 self.hitbox_rect.x += -1 * self.knockback_value * delta_time
@@ -183,11 +187,20 @@ class Player(pygame.sprite.Sprite):
             # Vertical
             elif self.knockback_direction == 'up':
                 self.direction.y = 0
-                self.hitbox_rect.y += -1 * self.knockback_value * delta_time * 1.5
+                self.hitbox_rect.y += -1 * self.knockback_value * delta_time * 2
                 self.collision('vertical')
             elif self.knockback_direction == 'down':
                 self.hitbox_rect.y += 1 * self.knockback_value * delta_time
                 self.collision('vertical')
+            self.timers['attack_knockback'].deactivate()
+
+        if self.timers['attack_knockback'].active:
+            if self.knockback_direction == 'left' and keys[pygame.K_a]:
+                self.hitbox_rect.x += -1 * self.knockback_value * delta_time
+                self.collision('horizontal')
+            elif self.knockback_direction == 'right' and keys[pygame.K_d]:
+                self.hitbox_rect.x += 1 * self.knockback_value * delta_time
+                self.collision('horizontal')
 
     def dash(self):
         if not self.timers['dash_block'].active:
@@ -231,7 +244,7 @@ class Player(pygame.sprite.Sprite):
         # Vertical 
 
         # Gravidade Paredes
-        if not self.on_surface['floor'] and any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active:
+        if not self.on_surface['floor'] and any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active and self.data.unlocked_wall_jump:
             self.dash_is_available = True
             self.direction.y = 0
             self.hitbox_rect.y += self.gravity / 10 * delta_time
@@ -260,7 +273,7 @@ class Player(pygame.sprite.Sprite):
                     self.timers['jump_sound'].activate()
 
             # Pulo na parede
-            elif any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active:
+            elif any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active and self.data.unlocked_wall_jump:
                 self.timers['wall_jump'].activate()
                 self.direction.y = -self.jump_height
                 if self.on_surface['left_wall']:
@@ -281,7 +294,7 @@ class Player(pygame.sprite.Sprite):
                 self.jumping = False
 
         # Verificação para posicionar no lado correto em relação a parede
-        if any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.on_surface['floor']:
+        if any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.on_surface['floor'] and self.data.unlocked_wall_jump:
             self.facing_side = 'right' if self.on_surface['left_wall'] else 'left'
 
         self.collision('vertical')
@@ -362,6 +375,7 @@ class Player(pygame.sprite.Sprite):
 
         if self.neutral_attacking and not self.timers['neutral_attack_block'].active:
             self.neutral_attacking = False
+            self.neutral_attack_direction = 'none'
 
     def get_state(self):
         if self.on_surface['floor']:
@@ -371,9 +385,9 @@ class Player(pygame.sprite.Sprite):
                 self.state = 'idle' if self.direction.x == 0 else 'run'
         else:
             if self.neutral_attacking:
-                self.state = 'air_attack'
+                self.state = 'down_attack' if self.vertical_sight == 'down' else 'up_attack'
             else:
-                if any((self.on_surface['left_wall'], self.on_surface['right_wall'])):
+                if any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and self.data.unlocked_wall_jump:
                     self.state = 'wall'
                 else:
                     self.state = 'jump' if self.direction.y < 0 else 'fall'
@@ -381,6 +395,8 @@ class Player(pygame.sprite.Sprite):
             self.state = 'healing'
         if self.timers['invincibility_frames'].active:
             self.state = 'hit'
+        if self.throw_attacking:
+            self.state = 'throw_attack_animation'
 
     def get_damage(self):
         self.data.player_health -= 1

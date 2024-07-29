@@ -61,14 +61,14 @@ class AllSprites(pygame.sprite.Group):
         self.offset.y = self.offset.y if self.offset.y < self.borders['top'] else self.borders['top']
     
     def draw_sky(self):
-        self.display_surface.fill('#ddc6a1')
+        self.display_surface.fill('#181818')
         horizon_pos = self.horizon_line + self.offset.y
 
         sea_rect = pygame.FRect(0,horizon_pos, WINDOW_WIDTH, WINDOW_HEIGHT - horizon_pos)
-        pygame.draw.rect(self.display_surface, '#92a9ce', sea_rect)
+        pygame.draw.rect(self.display_surface, '#181818', sea_rect)
 
         # Linha do horizonte
-        pygame.draw.line(self.display_surface, '#f5f1de', (0, horizon_pos), (WINDOW_WIDTH, horizon_pos), 4)
+        pygame.draw.line(self.display_surface, '#181818', (0, horizon_pos), (WINDOW_WIDTH, horizon_pos), 4)
 
     def create_cloud(self):
         pos = (randint(self.width + 500, self.width + 600), randint(self.borders['top'], self.horizon_line))
