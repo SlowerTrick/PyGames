@@ -15,8 +15,6 @@ class Game:
         icon = pygame.image.load('../graphics/icon/chibi.jpg') # Icone do jogo
         pygame.display.set_icon(icon)
 
-        self.pause = True
-
         self.clock = pygame.time.Clock() # FPS
         self.import_assets()
 
@@ -24,7 +22,7 @@ class Game:
         self.ui = UI(self.font, self.ui_frames)
         self.data = Data(self.ui)
         self.menu = Menu(self.display_surface, self.font)
-        self.state = "menu"
+        self.state = "game"
 
         # Carregamento dos mapas do jogo
         self.tmx_maps = {
@@ -39,7 +37,7 @@ class Game:
             7: load_pygame(join('..', 'data', 'levels', '7.tmx')),
             8: load_pygame(join('..', 'data', 'levels', '8.tmx')),
         }
-        self.start_stage = 0
+        self.start_stage = 6
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
         self.current_stage.timers['loading_time'].activate()
@@ -127,16 +125,16 @@ class Game:
                     sys.exit()
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
-                        self.state = "menu"
+                        self.state = 'menu'
 
             # Menu
-            if self.state == "menu":
+            if self.state == 'menu':
                 next_state = self.menu.display_menu()
-                if next_state == "play":
-                    self.state = "game"
+                if next_state == 'play':
+                    self.state = 'game'
                     self.current_stage.timers['loading_time'].activate()
             # Jogo
-            elif self.state == "game":
+            elif self.state == 'game':
                 self.current_stage.run(delta_time) # Atualização dos sprites do jogo a partir do arquivo "Level"
                 if not self.current_stage.timers['loading_time'].active:
                     self.ui.update(delta_time) # HUD do jogo

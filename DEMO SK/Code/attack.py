@@ -6,7 +6,20 @@ class Neutral_Attack(pygame.sprite.Sprite):
         super().__init__(groups)
 
         self.frames = frames
-        self.frame_index = 0
+        self.frame_index = 0  # Iniciando o índice de frames em 0
+        self.animation_direction = 'none'
+
+        # Definindo direção e inicialização do frame_index e animation_direction
+        if vertical_sight == 'down':
+            self.animation_direction = 'right' if facing_side == 'right' else 'left'
+            self.frame_index = 0 if self.animation_direction == 'right' else len(self.frames[vertical_sight])
+        elif vertical_sight == 'up':
+            self.animation_direction = 'left' if facing_side == 'left' else 'right'
+            self.frame_index = 0 if self.animation_direction == 'right' else len(self.frames[vertical_sight])
+        elif facing_side == 'right':
+            self.animation_direction = 'right'
+        elif facing_side == 'left':
+            self.animation_direction = 'left'
 
         # Armazenar a direção inicial
         self.facing_side = facing_side
@@ -15,7 +28,7 @@ class Neutral_Attack(pygame.sprite.Sprite):
         self.knockback_applied = False
 
         self.z = Z_LAYERS['main']
-        self.timers = {'lifetime': Timer(150)}
+        self.timers = {'lifetime': Timer(200)}
         self.timers['lifetime'].activate()
 
         self.image = self.frames[self.facing_side][self.frame_index]
@@ -41,8 +54,15 @@ class Neutral_Attack(pygame.sprite.Sprite):
             self.kill()
 
         # Atualizar a animação
-        self.frame_index += ANIMATION_SPEED * dt * 3
-        self.frame_index = self.frame_index if self.frame_index < len(self.frames[self.facing_side]) else 0
+        if self.animation_direction == 'right':
+            self.frame_index += ANIMATION_SPEED * dt * 3
+            if self.frame_index >= 1:
+                self.frame_index = 1
+        elif self.animation_direction == 'left':
+            self.frame_index -= ANIMATION_SPEED * dt * 3
+            if self.frame_index <= 1:
+                self.frame_index = 1
+
         self.image = self.frames[self.facing_side][int(self.frame_index)]
 
 class Throw_Attack(pygame.sprite.Sprite):

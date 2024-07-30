@@ -35,8 +35,8 @@ class Menu:
     def __init__(self, screen, font):
         self.screen = screen
         self.font = font
-        self.play_button = Button(None, (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2), "PLAY", self.get_font(45), "White", "Red")
-        self.quit_button = Button(None, (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 1.5), "QUIT", self.get_font(45), "White", "Red")
+        self.play_button = Button(None, (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2), "PLAY", self.get_font(45), "White", "Gray")
+        self.quit_button = Button(None, (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 1.5), "QUIT", self.get_font(45), "White", "Gray")
         self.background_image = pygame.image.load(join('..', 'graphics', 'ui', 'Background.png'))
         self.background_image = pygame.transform.scale(self.background_image, (WINDOW_WIDTH, WINDOW_HEIGHT))
         
@@ -64,6 +64,8 @@ class Menu:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+                if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                    return "play"
                 if event.type == pygame.MOUSEBUTTONDOWN:
                     if self.play_button.checkForInput(mouse_pos):
                         return "play"

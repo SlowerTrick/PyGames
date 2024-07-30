@@ -99,8 +99,8 @@
  </tileset>
  <tileset firstgid="98" source="../tilesets/tileset2.tsx"/>
  <tileset firstgid="158" source="../tilesets/tileset3.tsx"/>
- <tileset firstgid="160" source="../tilesets/platforms.tsx"/>
- <tileset firstgid="168" source="../tilesets/objects.tsx"/>
+ <tileset firstgid="173" source="../tilesets/platforms.tsx"/>
+ <tileset firstgid="181" source="../tilesets/objects.tsx"/>
  <layer id="1" name="BG" width="30" height="18">
   <data encoding="csv">
 13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,13,
@@ -159,7 +159,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,160,161,161,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,173,174,174,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -168,7 +168,7 @@
 </data>
  </layer>
  <objectgroup id="12" name="Objects">
-  <object id="16" name="player" gid="97" x="218.334" y="912.333" width="96" height="96">
+  <object id="16" name="player" gid="97" x="216.334" y="975.833" width="96" height="96">
    <properties>
     <property name="spawn" value="left"/>
    </properties>
@@ -180,9 +180,9 @@
   </object>
  </objectgroup>
  <objectgroup id="18" name="Items">
-  <object id="25" name="dash" gid="201" x="864.238" y="667.285" width="34.3063" height="34.3063"/>
-  <object id="26" name="throw_attack" gid="202" x="996.456" y="663.351" width="73.973" height="27.8739"/>
-  <object id="27" name="wall_jump" gid="203" x="934.637" y="670.502" width="27.8739" height="39.6667"/>
+  <object id="25" name="dash" gid="214" x="864.238" y="667.285" width="34.3063" height="34.3063"/>
+  <object id="26" name="throw_attack" gid="215" x="996.456" y="663.351" width="73.973" height="27.8739"/>
+  <object id="27" name="wall_jump" gid="216" x="934.637" y="670.502" width="27.8739" height="39.6667"/>
  </objectgroup>
  <objectgroup id="15" name="Enemies"/>
  <objectgroup id="13" name="Data">

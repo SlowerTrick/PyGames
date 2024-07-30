@@ -1,6 +1,8 @@
 from settings import *
 from timecount import Timer
 from math import sin
+from json import load
+from os.path import join
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos, groups, collision_sprites, semi_collision_sprites, frames, data, audio_files):
@@ -18,6 +20,13 @@ class Player(pygame.sprite.Sprite):
         self.rect = self.image.get_frect(topleft = pos)
         self.hitbox_rect = self.rect.inflate(-76, -36) # Acrescenta um offset no retangulo (numeros negativos)
         self.old_rect = self.hitbox_rect.copy()
+
+        # Inicialização do controle
+        self.joysticks = []
+        for joystick in range(pygame.joystick.get_count()):
+            self.joysticks.append(pygame.joystick.Joystick(joystick))
+        for joystick in self.joysticks:
+            joystick.init()
 
         # Movimento
         self.direction = vector()
@@ -89,31 +98,31 @@ class Player(pygame.sprite.Sprite):
         if not self.throw_attacking and not self.healing:
             if not self.timers['wall_jump'].active and not self.dashing:
                 # Movimentação Horizontal
-                if keys[pygame.K_d]:
+                if (keys[pygame.K_d] or any(joystick.get_axis(0) > 0.5 for joystick in self.joysticks)):
                     input_vector.x += 1
                     self.facing_side = 'right'
-                if keys[pygame.K_a]:
+                if (keys[pygame.K_a] or any(joystick.get_axis(0) < -0.5 for joystick in self.joysticks)):
                     input_vector.x -= 1
                     self.facing_side = 'left'
 
-                # Mantém a distancia do vetor e mantém o seu tamanho uniforme
+                # Mantém a distância do vetor e mantém o seu tamanho uniforme
                 self.direction.x = input_vector.normalize().x if input_vector else 0
-            
-            if keys[pygame.K_w]:
+
+            if (keys[pygame.K_w] or any(joystick.get_axis(1) < -0.5 for joystick in self.joysticks)):
                 self.vertical_sight = 'up'
-            elif keys[pygame.K_s]:
+            elif (keys[pygame.K_s] or any(joystick.get_axis(1) > 0.5 for joystick in self.joysticks)):
                 self.timers['platform_skip'].activate()
                 self.vertical_sight = 'down'
 
             # Ataque e Dash
-            if keys[pygame.K_p] and not self.throw_attacking:
+            if (keys[pygame.K_p] or any(joystick.get_button(2) for joystick in self.joysticks)) and not self.throw_attacking:
                 if not self.keys_pressed['neutral_attack']:
                     self.neutral_attack()
                     self.keys_pressed['neutral_attack'] = True
             else:
                 self.keys_pressed['neutral_attack'] = False
 
-            if keys[pygame.K_o] and not self.neutral_attacking and self.data.unlocked_throw_attack:
+            if (keys[pygame.K_o] or any(joystick.get_button(5) for joystick in self.joysticks)) and self.data.unlocked_throw_attack:
                 if not self.keys_pressed['throw_attack']:
                     if self.throw_attack_is_available and self.data.string_bar > 0:
                         self.data.string_bar -= 1
@@ -122,7 +131,7 @@ class Player(pygame.sprite.Sprite):
             else:
                 self.keys_pressed['throw_attack'] = False
 
-            if keys[pygame.K_i]:
+            if (keys[pygame.K_i] or any(joystick.get_button(3) for joystick in self.joysticks)):
                 if not self.keys_pressed['dash']:
                     if self.dash_is_available and self.data.unlocked_dash:
                         self.dash()
@@ -131,7 +140,7 @@ class Player(pygame.sprite.Sprite):
                 self.keys_pressed['dash'] = False
 
             # Movimentação vertical
-            if keys[pygame.K_SPACE] and not self.dashing:
+            if (keys[pygame.K_SPACE] or any(joystick.get_button(0) for joystick in self.joysticks)) and not self.dashing:
                 self.jump_key_held = True
                 if not self.keys_pressed['jump']:
                     self.jump = True
@@ -143,7 +152,7 @@ class Player(pygame.sprite.Sprite):
                 self.jump_key_held = False
 
         if not self.throw_attacking:
-            if keys[pygame.K_u] and self.data.health_regen == True and self.on_surface['floor']:
+            if (keys[pygame.K_u] or any(joystick.get_button(1) for joystick in self.joysticks)) and self.data.health_regen == True and self.on_surface['floor']:
                 if not self.timers['healing_timer'].active:
                     self.timers['healing_timer'].activate()
                     self.audio_files['focus_charge'].play()
@@ -158,7 +167,7 @@ class Player(pygame.sprite.Sprite):
                 self.healing = False
                 self.audio_files['focus_charge'].stop()
                 self.timers['healing_timer'].deactivate()
-    
+
     def neutral_attack(self):
         if not self.timers['neutral_attack_block'].active:
             self.neutral_attacking = True
@@ -189,7 +198,7 @@ class Player(pygame.sprite.Sprite):
                 self.direction.y = 0
                 self.hitbox_rect.y += -1 * self.knockback_value * delta_time * 2
                 self.collision('vertical')
-            elif self.knockback_direction == 'down':
+            elif self.knockback_direction == 'down' and not self.on_surface['floor']:
                 self.hitbox_rect.y += 1 * self.knockback_value * delta_time
                 self.collision('vertical')
             self.timers['attack_knockback'].deactivate()
@@ -380,7 +389,7 @@ class Player(pygame.sprite.Sprite):
     def get_state(self):
         if self.on_surface['floor']:
             if self.neutral_attacking:
-                self.state = 'attack'
+                self.state = 'attack' if not self.vertical_sight == 'up' else 'up_attack'
             else:
                 self.state = 'idle' if self.direction.x == 0 else 'run'
         else:
