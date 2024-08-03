@@ -12,14 +12,13 @@ class Neutral_Attack(pygame.sprite.Sprite):
         # Definindo direção e inicialização do frame_index e animation_direction
         if vertical_sight == 'down':
             self.animation_direction = 'right' if facing_side == 'right' else 'left'
-            self.frame_index = 0 if self.animation_direction == 'right' else len(self.frames[vertical_sight])
+            self.frame_index = 0 if self.animation_direction == 'right' else len(self.frames[vertical_sight]) - 0.01
         elif vertical_sight == 'up':
             self.animation_direction = 'left' if facing_side == 'left' else 'right'
-            self.frame_index = 0 if self.animation_direction == 'right' else len(self.frames[vertical_sight])
-        elif facing_side == 'right':
+            self.frame_index = 0 if self.animation_direction == 'right' else len(self.frames[vertical_sight]) - 0.01
+        elif facing_side in {'left', 'right'}:
             self.animation_direction = 'right'
-        elif facing_side == 'left':
-            self.animation_direction = 'left'
+            self.frame_index = 0
 
         # Armazenar a direção inicial
         self.facing_side = facing_side
@@ -31,7 +30,7 @@ class Neutral_Attack(pygame.sprite.Sprite):
         self.timers = {'lifetime': Timer(200)}
         self.timers['lifetime'].activate()
 
-        self.image = self.frames[self.facing_side][self.frame_index]
+        self.image = self.frames[self.facing_side][int(self.frame_index)]
         self.update_position(pos)
 
     def update_position(self, pos):
@@ -42,7 +41,7 @@ class Neutral_Attack(pygame.sprite.Sprite):
             attack_pos = (pos[0] - 30, pos[1] - 45)
             self.facing_side = 'up'
         else:
-            attack_pos = (pos[0] + 40, pos[1] - 10) if self.facing_side == 'right' else (pos[0] - 40, pos[1] - 10)
+            attack_pos = (pos[0] + 30, pos[1] - 10) if self.facing_side == 'right' else (pos[0] - 80, pos[1] - 10)
         
         self.rect = self.image.get_rect()
         self.rect.topleft = attack_pos
@@ -62,7 +61,6 @@ class Neutral_Attack(pygame.sprite.Sprite):
             self.frame_index -= ANIMATION_SPEED * dt * 3
             if self.frame_index <= 1:
                 self.frame_index = 1
-
         self.image = self.frames[self.facing_side][int(self.frame_index)]
 
 class Throw_Attack(pygame.sprite.Sprite):

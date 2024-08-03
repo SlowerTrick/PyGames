@@ -401,10 +401,10 @@ class Level:
         if (self.during_neutral_attack and self.player_neutral_attack_sprite) or (self.during_throw_attack and self.player_throw_attack_sprite):
             if self.during_neutral_attack and self.player_neutral_attack_sprite:
                 self.player_neutral_attack_sprite.update_position((self.player.hitbox_rect.x, self.player.hitbox_rect.y))
-                if self.player_neutral_attack_sprite.facing_side in {'right', 'left'} and not self.player_neutral_attack_sprite.knockback_applied:
+                """ if self.player_neutral_attack_sprite.facing_side in {'right', 'left'} and not self.player_neutral_attack_sprite.knockback_applied:
                     self.player_neutral_attack_sprite.knockback_applied = True
                     self.player.knockback_direction = 'right' if self.player_neutral_attack_sprite.facing_side == 'right' else 'left'
-                    self.player.timers['attack_knockback'].activate()
+                    self.player.timers['attack_knockback'].activate() """
 
             elif self.player_throw_attack_sprite.on_wall:
                 self.throw_attack_movement(delta_time)

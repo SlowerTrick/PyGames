@@ -74,7 +74,8 @@ class Player(pygame.sprite.Sprite):
             'jump_sound': Timer(100),
             'hit_knockback': Timer(150),
             'attack_knockback': Timer(150),
-            'healing_timer': Timer (1500),
+            'heal_init': Timer(200),
+            'healing': Timer(1500),
         }
         # Áudio, data e etc
         self.data = data
@@ -153,20 +154,20 @@ class Player(pygame.sprite.Sprite):
 
         if not self.throw_attacking:
             if (keys[pygame.K_u] or any(joystick.get_button(1) for joystick in self.joysticks)) and self.data.health_regen == True and self.on_surface['floor']:
-                if not self.timers['healing_timer'].active:
-                    self.timers['healing_timer'].activate()
+                if not self.timers['healing'].active:
+                    self.timers['healing'].activate()
                     self.audio_files['focus_charge'].play()
                     self.frame_index = 0
                     self.state = 'healing'
                     self.healing = True
                     self.dash_progress = self.dash_distance
-                if self.timers['healing_timer'].time_passed() >= 1400:
+                if self.timers['healing'].time_passed() >= 1400:
                     self.heal()
-                    self.timers['healing_timer'].deactivate()
+                    self.timers['healing'].deactivate()
             else:
                 self.healing = False
                 self.audio_files['focus_charge'].stop()
-                self.timers['healing_timer'].deactivate()
+                self.timers['healing'].deactivate()
 
     def neutral_attack(self):
         if not self.timers['neutral_attack_block'].active:
@@ -376,7 +377,10 @@ class Player(pygame.sprite.Sprite):
             timer.update()
 
     def animate(self, dt):
-        self.frame_index += ANIMATION_SPEED * dt
+        if not self.state == 'attack':
+            self.frame_index += ANIMATION_SPEED * dt
+        else:
+            self.frame_index += ANIMATION_SPEED * dt * 3
         if self.state == 'attack' and self.frame_index >= len(self.frames[self.state]):
             self.state = 'idle'
         self.image = self.frames[self.state][int(self.frame_index % len(self.frames[self.state]))]
