@@ -33,7 +33,7 @@ class Player(pygame.sprite.Sprite):
         self.speed = 200
         self.gravity = 1300
         self.jump_height = 720
-        self.keys_pressed = {'jump': True, 'neutral_attack': True, 'throw_attack': True, 'dash': True}
+        self.keys_pressed = {'jump': True, 'neutral_attack': True, 'special_attack': True, 'dash': True}
 
         # Dash
         self.dash_speed = 700
@@ -53,7 +53,7 @@ class Player(pygame.sprite.Sprite):
         self.throw_attack_is_available = True
         self.knockback_value = 350
         self.knockback_direction = 'none'
-        self.healing = True
+        self.healing = False
         self.neutral_attack_direction = 'none'
 
         # Colisão
@@ -74,8 +74,8 @@ class Player(pygame.sprite.Sprite):
             'jump_sound': Timer(100),
             'hit_knockback': Timer(150),
             'attack_knockback': Timer(150),
-            'heal_init': Timer(200),
-            'healing': Timer(1500),
+            'heal_init': Timer(100),
+            'healing': Timer(1400),
         }
         # Áudio, data e etc
         self.data = data
@@ -96,7 +96,7 @@ class Player(pygame.sprite.Sprite):
         input_vector = vector(0, 0)
         self.vertical_sight = 'none'
 
-        if not self.throw_attacking and not self.healing:
+        if not self.throw_attacking:
             if not self.timers['wall_jump'].active and not self.dashing:
                 # Movimentação Horizontal
                 if (keys[pygame.K_d] or any(joystick.get_axis(0) > 0.5 for joystick in self.joysticks)):
@@ -115,7 +115,7 @@ class Player(pygame.sprite.Sprite):
                 self.timers['platform_skip'].activate()
                 self.vertical_sight = 'down'
 
-            # Ataque e Dash
+            # Ataque Neutro
             if (keys[pygame.K_p] or any(joystick.get_button(2) for joystick in self.joysticks)) and not self.throw_attacking:
                 if not self.keys_pressed['neutral_attack']:
                     self.neutral_attack()
@@ -123,15 +123,39 @@ class Player(pygame.sprite.Sprite):
             else:
                 self.keys_pressed['neutral_attack'] = False
 
-            if (keys[pygame.K_o] or any(joystick.get_button(5) for joystick in self.joysticks)) and self.data.unlocked_throw_attack:
-                if not self.keys_pressed['throw_attack']:
-                    if self.throw_attack_is_available and self.data.string_bar > 0:
-                        self.data.string_bar -= 1
-                        self.throw_attack()
-                        self.keys_pressed['throw_attack'] = True
+            # Botão Especial
+            if (keys[pygame.K_o] or any(joystick.get_button(1) for joystick in self.joysticks)):
+                if not self.keys_pressed['special_attack']:
+                    self.timers['heal_init'].activate()
+                    self.keys_pressed['special_attack'] = True
+                if not self.timers['heal_init'].active and self.data.health_regen and self.on_surface['floor']:
+                    if not self.timers['healing'].active:
+                        self.timers['healing'].activate()
+                        self.audio_files['focus_charge'].play()
+                        self.frame_index = 0
+                        self.state = 'healing'
+                        self.healing = True
+                        self.dash_progress = self.dash_distance
+                    if self.timers['healing'].time_passed() >= 1300:
+                        self.heal()
+                        self.timers['healing'].deactivate()
+                        self.healing = False
+                        self.audio_files['focus_charge'].stop()
+                        self.timers['healing'].deactivate()
             else:
-                self.keys_pressed['throw_attack'] = False
+                if self.healing:
+                    self.healing = False
+                    self.audio_files['focus_charge'].stop()
+                    self.timers['healing'].deactivate()
+                    
+                self.keys_pressed['special_attack'] = False
 
+                if self.timers['heal_init'].active and self.throw_attack_is_available and self.data.string_bar > 0 and self.data.unlocked_throw_attack:
+                    self.timers['heal_init'].deactivate()
+                    self.data.string_bar -= 1
+                    self.throw_attack()
+
+            # Dash
             if (keys[pygame.K_i] or any(joystick.get_button(3) for joystick in self.joysticks)):
                 if not self.keys_pressed['dash']:
                     if self.dash_is_available and self.data.unlocked_dash:
@@ -151,23 +175,6 @@ class Player(pygame.sprite.Sprite):
             else:
                 self.keys_pressed['jump'] = False
                 self.jump_key_held = False
-
-        if not self.throw_attacking:
-            if (keys[pygame.K_u] or any(joystick.get_button(1) for joystick in self.joysticks)) and self.data.health_regen == True and self.on_surface['floor']:
-                if not self.timers['healing'].active:
-                    self.timers['healing'].activate()
-                    self.audio_files['focus_charge'].play()
-                    self.frame_index = 0
-                    self.state = 'healing'
-                    self.healing = True
-                    self.dash_progress = self.dash_distance
-                if self.timers['healing'].time_passed() >= 1400:
-                    self.heal()
-                    self.timers['healing'].deactivate()
-            else:
-                self.healing = False
-                self.audio_files['focus_charge'].stop()
-                self.timers['healing'].deactivate()
 
     def neutral_attack(self):
         if not self.timers['neutral_attack_block'].active:

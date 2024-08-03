@@ -457,3 +457,7 @@ class Level:
                 attack_pos = ((self.player_throw_attack_sprite.rect.centerx + self.all_sprites.offset.x, self.player_throw_attack_sprite.rect.centery + self.all_sprites.offset.y))
                 player_pos =((self.player.rect.centerx + self.all_sprites.offset.x, self.player.rect.centery + 10 + self.all_sprites.offset.y))
                 self.player_throw_attack_sprite.draw_rope(self.display_surface, player_pos, attack_pos)
+
+            debug (f"Heal init: {self.player.timers['heal_init'].time_passed()}", 300)
+            debug (f"Healing: {self.player.timers['healing'].time_passed()}", 350)
+            debug (f"Healing state: {self.player.healing}", 400)
