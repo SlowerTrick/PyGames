@@ -51,6 +51,7 @@ class Player(pygame.sprite.Sprite):
         self.neutral_attacking = False
         self.throw_attacking = False
         self.throw_attack_is_available = True
+        self.spin_attacking = False
         self.knockback_value = 350
         self.knockback_direction = 'none'
         self.healing = False
@@ -59,7 +60,7 @@ class Player(pygame.sprite.Sprite):
         # Colisão
         self.collision_sprites = collision_sprites
         self.semi_collision_sprites = semi_collision_sprites
-        self.on_surface = {'floor': False, 'left_wall': False, 'right_wall': False}
+        self.on_surface = {'floor': False, 'left_wall': False, 'right_wall': False, 'bench': False}
         self.platform = None
 
         # Temporizadores
@@ -69,13 +70,16 @@ class Player(pygame.sprite.Sprite):
             'jump_buffer': Timer(100),
             'platform_skip': Timer(100),
             'neutral_attack_block': Timer(400),
+            'parry': Timer(400),
+            'spin_attack_block': Timer(3000),
             'dash_block': Timer(500),
             'invincibility_frames': Timer(500),
             'jump_sound': Timer(100),
             'hit_knockback': Timer(150),
             'attack_knockback': Timer(150),
-            'heal_init': Timer(100),
+            'heal_init': Timer(150),
             'healing': Timer(1400),
+            'sitting_down': Timer(300),
         }
         # Áudio, data e etc
         self.data = data
@@ -96,30 +100,36 @@ class Player(pygame.sprite.Sprite):
         input_vector = vector(0, 0)
         self.vertical_sight = 'none'
 
-        if not self.throw_attacking:
+        if not self.throw_attacking and not self.spin_attacking and not self.timers['sitting_down'].active and not self.timers['parry'].active:
+            # Movimento Horizontal
             if not self.timers['wall_jump'].active and not self.dashing:
                 # Movimentação Horizontal
                 if (keys[pygame.K_d] or any(joystick.get_axis(0) > 0.5 for joystick in self.joysticks)):
                     input_vector.x += 1
                     self.facing_side = 'right'
+                    self.on_surface['bench'] = False
                 if (keys[pygame.K_a] or any(joystick.get_axis(0) < -0.5 for joystick in self.joysticks)):
                     input_vector.x -= 1
                     self.facing_side = 'left'
+                    self.on_surface['bench'] = False
 
                 # Mantém a distância do vetor e mantém o seu tamanho uniforme
                 self.direction.x = input_vector.normalize().x if input_vector else 0
-
+            
+            # Visão vertical
             if (keys[pygame.K_w] or any(joystick.get_axis(1) < -0.5 for joystick in self.joysticks)):
-                self.vertical_sight = 'up'
+                self.vertical_sight = 'up' 
             elif (keys[pygame.K_s] or any(joystick.get_axis(1) > 0.5 for joystick in self.joysticks)):
                 self.timers['platform_skip'].activate()
                 self.vertical_sight = 'down'
+                self.on_surface['bench'] = False
 
             # Ataque Neutro
             if (keys[pygame.K_p] or any(joystick.get_button(2) for joystick in self.joysticks)) and not self.throw_attacking:
                 if not self.keys_pressed['neutral_attack']:
                     self.neutral_attack()
                     self.keys_pressed['neutral_attack'] = True
+                    self.on_surface['bench'] = False
             else:
                 self.keys_pressed['neutral_attack'] = False
 
@@ -150,10 +160,20 @@ class Player(pygame.sprite.Sprite):
                     
                 self.keys_pressed['special_attack'] = False
 
-                if self.timers['heal_init'].active and self.throw_attack_is_available and self.data.string_bar > 0 and self.data.unlocked_throw_attack:
-                    self.timers['heal_init'].deactivate()
-                    self.data.string_bar -= 1
-                    self.throw_attack()
+                if self.timers['heal_init'].active:
+                    if self.throw_attack_is_available and self.data.string_bar >= 1 and self.data.unlocked_throw_attack and self.vertical_sight == 'none':
+                        self.timers['heal_init'].deactivate()
+                        self.data.string_bar -= 1
+                        self.throw_attack()
+                    elif self.data.string_bar >= 3 and self.vertical_sight == 'up':
+                        self.timers['heal_init'].deactivate()
+                        self.data.string_bar -= 3
+                        self.spin_attack()
+                    elif self.data.string_bar >= 2 and self.vertical_sight == 'down' and not self.timers['parry'].active:
+                        self.timers['parry'].activate()
+                        self.timers['heal_init'].deactivate()
+                        self.data.string_bar -= 2
+                        self.dashing = False
 
             # Dash
             if (keys[pygame.K_i] or any(joystick.get_button(3) for joystick in self.joysticks)):
@@ -167,6 +187,7 @@ class Player(pygame.sprite.Sprite):
             # Movimentação vertical
             if (keys[pygame.K_SPACE] or any(joystick.get_button(0) for joystick in self.joysticks)) and not self.dashing:
                 self.jump_key_held = True
+                self.on_surface['bench'] = False
                 if not self.keys_pressed['jump']:
                     self.jump = True
                     if not self.timers['jump_buffer'].active:
@@ -189,7 +210,15 @@ class Player(pygame.sprite.Sprite):
             self.throw_attack_is_available = False
             self.frame_index = 0
             self.audio_files['throw'].play()
+            self.dashing = False
     
+    def spin_attack(self):
+        if not self.spin_attacking:
+            self.spin_attacking = True
+            self.frame_index = 0
+            self.audio_files['throw'].play()
+            self.dashing = False
+
     def knockback(self, delta_time):
         keys = pygame.key.get_pressed()
         if self.timers['hit_knockback'].active:
@@ -253,6 +282,7 @@ class Player(pygame.sprite.Sprite):
                 self.dash_progress += dash_increment
             else:
                 self.dashing = False
+                self.dash_progress = self.dash_distance
         
         # Horizontal 
         self.hitbox_rect.x += self.direction.x * self.speed * delta_time
@@ -415,7 +445,7 @@ class Player(pygame.sprite.Sprite):
             self.state = 'healing'
         if self.timers['invincibility_frames'].active:
             self.state = 'hit'
-        if self.throw_attacking:
+        if self.throw_attacking or self.spin_attacking:
             self.state = 'throw_attack_animation'
 
     def get_damage(self):
@@ -437,7 +467,7 @@ class Player(pygame.sprite.Sprite):
 
         # Movimento do jogo e colisão
         self.input()
-        if not self.throw_attacking and not self.healing:
+        if not self.throw_attacking and not self.healing and not self.spin_attacking and not self.timers['parry'].active and not self.on_surface['bench']:
             self.move(delta_time)
         self.platform_move(delta_time)
         if self.throw_attacking and not self.on_surface['floor']:

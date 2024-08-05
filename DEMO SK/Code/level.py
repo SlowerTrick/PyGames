@@ -5,7 +5,7 @@ from player import Player
 from groups import AllSprites
 from debug import debug
 from enemies import Tooth, Shell, Breakable_wall, Pearl, Slime, Fly
-from attack import Neutral_Attack, Throw_Attack
+from attack import Neutral_Attack, Throw_Attack, Spin_Attack
 
 from random import uniform
 
@@ -19,8 +19,10 @@ class Level:
         # Ataques
         self.during_neutral_attack = False
         self.during_throw_attack = False
+        self.during_spin_attack = False
         self.player_neutral_attack_sprite = None
         self.player_throw_attack_sprite = None
+        self.player_spin_attack_sprite = None
 
         # Informações da fase
         self.level_width = tmx_map.width * TILE_SIZE
@@ -54,6 +56,7 @@ class Level:
         self.semi_collision_sprites = pygame.sprite.Group()
         self.damage_sprites = pygame.sprite.Group()
         self.attack_sprites = pygame.sprite.Group()
+        self.bench_sprites = pygame.sprite.Group()
 
         # Inicialização do grupo de sprites dos inimigos que causam dano
         self.tooth_sprites = pygame.sprite.Group()
@@ -71,6 +74,7 @@ class Level:
         self.particle_frames = level_frames['particle']
         self.neutral_attack_frames = level_frames['player_neutral_attack']
         self.throw_attack_frames = level_frames['player_throw_attack']
+        self.spin_attack_frames = level_frames['player_spin_attack']
 
         # Sons
         self.audio_files = audio_files
@@ -127,6 +131,8 @@ class Level:
                 else:
                     if obj.name in ('barrel', 'crate'):
                         Sprite((int(obj.x), int(obj.y)), obj.image, (self.all_sprites, self.collision_sprites))
+                    elif obj.name == 'bench':
+                        Sprite((int(obj.x), int(obj.y)), obj.image, (self.all_sprites, self.bench_sprites), z = Z_LAYERS['bg details'])
                     else:
                         if obj.name in level_frames and obj.name != 'player':
                             frames = level_frames[obj.name] if not 'palm' in obj.name else level_frames['palms'][obj.name]
@@ -298,18 +304,54 @@ class Level:
             if sprite:
                 ParticleEffectSprite((sprite[0].rect.center), self.particle_frames, self.all_sprites)
 
-    def hit_collision(self):
+    def player_collisions(self, dt):
+        # Hit no jogador
         for sprite in self.damage_sprites:
             if sprite.rect.colliderect(self.player.hitbox_rect):
-                if not self.player.timers['invincibility_frames'].active:
+                if not self.player.timers['invincibility_frames'].active and not self.player.timers['parry'].active:
                     self.player.get_damage()
                     self.audio_files['damage'].play()
+                if self.player.timers['parry'].active:
+                    # Implementação do parry
+                    pass
                 if hasattr(sprite, 'pearl'):
                     sprite.kill()
                     ParticleEffectSprite((sprite.rect.center), self.particle_frames, self.all_sprites)
                 if self.data.player_health <= 0:
                     self.data.player_health = BASE_HEALTH
                     self.switch_screen(int(self.current_stage), self.player_spawn)
+        
+        # Banco
+        for sprite in self.bench_sprites:
+            if sprite.rect.colliderect(self.player.hitbox_rect) and self.player.vertical_sight == 'up':
+                self.player.on_surface['bench'] = True
+                self.player.timers['sitting_down'].activate()
+            
+            if self.player.on_surface['bench']:
+                target_center = (sprite.rect.centerx, sprite.rect.centery - 15)
+                
+                if self.player.hitbox_rect.center != target_center:
+                    distance_x = target_center[0] - self.player.hitbox_rect.centerx
+                    distance_y = target_center[1] - self.player.hitbox_rect.centery
+
+                    speed_x = max(1, min(300 * dt, abs(distance_x)))
+                    speed_y = max(1, min(300 * dt, abs(distance_y)))
+
+                    # Movimenta o jogador no eixo X e Y
+                    self.player.hitbox_rect.centerx += speed_x if distance_x > 0 else -speed_x
+                    self.player.hitbox_rect.centery += speed_y if distance_y > 0 else -speed_y
+
+                    # Mantém o rect do jogador alinhado com a hitbox
+                    self.player.rect.center = self.player.hitbox_rect.center
+
+                    # Verifica se o jogador está próximo o suficiente do centro ajustado
+                    if abs(distance_x) < speed_x and abs(distance_y) < speed_y:
+                        self.data.player_health = BASE_HEALTH
+                        self.player.hitbox_rect.center = target_center
+                        self.player.rect.center = target_center
+                        self.audio_files['bench_rest'].play()
+                        self.player.timers['sitting_down'].activate()
+                        self.player.dashing = False
     
     def item_collision(self):
         if self.item_sprites:
@@ -345,10 +387,23 @@ class Level:
                 vertical_sight = self.player.vertical_sight,
                 audio_files = self.audio_files
             )
-        # Caso o sprite exista e ele deve sumir da tela
         if self.player_throw_attack_sprite and not self.player_throw_attack_sprite.alive():
             self.during_throw_attack = False
             self.player.throw_attacking = False
+
+        # Ataque giratório
+        if self.player.spin_attacking and not self.during_spin_attack:
+            self.during_spin_attack = True
+            self.player_spin_attack_sprite = Spin_Attack(
+                pos = (self.player.hitbox_rect.x, self.player.hitbox_rect.y),
+                groups = (self.all_sprites, self.attack_sprites),
+                frames = self.spin_attack_frames,
+                audio_files = self.audio_files
+            )
+        if self.player_spin_attack_sprite and not self.player_spin_attack_sprite.alive():
+            self.during_spin_attack = False
+            self.player.spin_attacking = False
+            self.player.spin_attacking = False
 
     def attack_collision(self):
         if self.player.neutral_attacking:
@@ -361,7 +416,6 @@ class Level:
                     if is_enemy and not is_pearl:
                         if not target.hit_timer.active:
                             self.data.string_bar += 1
-                        target.is_alive()
                         handle_knockback = not self.player.timers['hit_knockback'].active and not target.hit_timer.active
                     else:
                         handle_knockback = not self.player.timers['hit_knockback'].active
@@ -385,6 +439,8 @@ class Level:
                             self.player.dash_is_available = True
                         else:
                             target.get_damage()
+                            if not is_pearl:
+                                target.is_alive()
 
         if self.player.throw_attacking:
             for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.collision_sprites.sprites():
@@ -397,16 +453,27 @@ class Level:
                         self.player_throw_attack_sprite.on_wall = True
                         self.player_throw_attack_sprite.speed = 0
 
+        if self.player.spin_attacking:
+            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.damage_sprites.sprites():
+                if target.rect.colliderect(self.player_spin_attack_sprite.rect):
+                    self.player.dash_is_available = True
+                    is_enemy = hasattr(target, 'is_enemy')
+                    is_pearl = hasattr(target, 'pearl')
+                    
+                    if is_enemy and not is_pearl:
+                        target.get_damage()
+                        target.is_alive()
+
     def attack_logic(self, delta_time):
-        if (self.during_neutral_attack and self.player_neutral_attack_sprite) or (self.during_throw_attack and self.player_throw_attack_sprite):
+        if (self.during_neutral_attack and self.player_neutral_attack_sprite) or (self.during_throw_attack and self.player_throw_attack_sprite) or (self.during_spin_attack and self.player_spin_attack_sprite):
             if self.during_neutral_attack and self.player_neutral_attack_sprite:
                 self.player_neutral_attack_sprite.update_position((self.player.hitbox_rect.x, self.player.hitbox_rect.y))
                 """ if self.player_neutral_attack_sprite.facing_side in {'right', 'left'} and not self.player_neutral_attack_sprite.knockback_applied:
                     self.player_neutral_attack_sprite.knockback_applied = True
                     self.player.knockback_direction = 'right' if self.player_neutral_attack_sprite.facing_side == 'right' else 'left'
                     self.player.timers['attack_knockback'].activate() """
-
-            elif self.player_throw_attack_sprite.on_wall:
+                
+            elif self.during_throw_attack and self.player_throw_attack_sprite.on_wall:
                 self.throw_attack_movement(delta_time)
             self.attack_collision()
 
@@ -441,11 +508,11 @@ class Level:
             self.display_surface.fill('black')  # Preenche a tela com a cor preta
             self.all_sprites.update(delta_time)  # Atualiza os sprites da tela
             self.pearl_collision()
-            self.hit_collision()
+            self.player_collisions(delta_time)
             self.item_collision()
 
             # Ataque do player
-            self.player_attack()
+            self.player_attack()                  
             self.attack_logic(delta_time)
 
             # Limitação do mapa e desenho dos sprites
@@ -457,7 +524,5 @@ class Level:
                 attack_pos = ((self.player_throw_attack_sprite.rect.centerx + self.all_sprites.offset.x, self.player_throw_attack_sprite.rect.centery + self.all_sprites.offset.y))
                 player_pos =((self.player.rect.centerx + self.all_sprites.offset.x, self.player.rect.centery + 10 + self.all_sprites.offset.y))
                 self.player_throw_attack_sprite.draw_rope(self.display_surface, player_pos, attack_pos)
-
-            debug (f"Heal init: {self.player.timers['heal_init'].time_passed()}", 300)
-            debug (f"Healing: {self.player.timers['healing'].time_passed()}", 350)
-            debug (f"Healing state: {self.player.healing}", 400)
+            
+            debug (self.player.timers['parry'].time_passed(), 300)

@@ -134,3 +134,32 @@ class Throw_Attack(pygame.sprite.Sprite):
         if not self.timers['max_time']:
             self.kill()
             self.audio_files['catch'].play()
+
+class Spin_Attack(pygame.sprite.Sprite):
+    def __init__(self, pos, groups, frames, audio_files):
+        super().__init__(groups)
+
+        # Setup do objeto
+        self.frame_index = 0
+        self.frames = frames
+        self.image = self.frames[int(self.frame_index)]
+        self.rect = self.image.get_rect()
+        self.rect.center = (pos[0] + 10, pos[1] + 30)
+
+        # Posição na tela e temporizadores
+        self.z = Z_LAYERS['main']
+        self.timers = {'life_time': Timer(800)}
+        self.timers['life_time'].activate()
+        self.audio_files = audio_files
+
+    def update(self, dt):
+        for timer in self.timers.values():
+            timer.update()
+
+        self.frame_index += ANIMATION_SPEED * dt * 3
+        if self.frame_index >= len(self.frames):
+            self.frame_index = 0
+        self.image = self.frames[int(self.frame_index)]
+
+        if not self.timers['life_time'].active:
+            self.kill()

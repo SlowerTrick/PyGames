@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.0" name="objects" tilewidth="156" tileheight="186" tilecount="35" columns="0">
+<tileset version="1.10" tiledversion="1.11.0" name="objects" tilewidth="156" tileheight="186" tilecount="36" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="0">
   <image source="../../graphics/objects/barrel.png" width="46" height="50"/>
@@ -98,12 +98,15 @@
   <image source="../../graphics/enemies/floor_spikes/left/0.png" width="26" height="64"/>
  </tile>
  <tile id="33">
-  <image source="../../graphics/items/dash/0.png" width="32" height="32"/>
+  <image source="../../graphics/items/dash/0.png" width="30" height="28"/>
  </tile>
  <tile id="34">
   <image source="../../graphics/items/throw_attack/0.png" width="69" height="26"/>
  </tile>
  <tile id="35">
   <image source="../../graphics/items/wall_jump/0.png" width="26" height="37"/>
+ </tile>
+ <tile id="36">
+  <image source="../../graphics/level/bench/bench.png" width="34" height="21"/>
  </tile>
 </tileset>

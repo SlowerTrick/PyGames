@@ -37,7 +37,7 @@ class Game:
             7: load_pygame(join('..', 'data', 'levels', '7.tmx')),
             8: load_pygame(join('..', 'data', 'levels', '8.tmx')),
         }
-        self.start_stage = 6
+        self.start_stage = 1
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
         self.current_stage.timers['loading_time'].activate()
@@ -81,6 +81,8 @@ class Game:
             'cloud_large': import_image('..', 'graphics','level', 'clouds', 'large_cloud'),
             'player_neutral_attack': import_sub_folders('..', 'graphics', 'player', 'attack_animation'),
             'player_throw_attack': import_image('..', 'graphics', 'player', 'throw_attack', '0'),
+            'player_spin_attack': import_folder('..', 'graphics', 'player', 'spin_attack'),
+            'bench': import_image('..',  'graphics', 'level', 'bench', 'bench'),
         }
         self.font = pygame.font.Font(join('..', 'graphics', 'ui', 'SuperPixel.ttf'), 40)
 
@@ -104,6 +106,7 @@ class Game:
             'catch': pygame.mixer.Sound(join('..', 'audio', 'hornet_needle_catch.wav')),
             'focus_heal': pygame.mixer.Sound(join('..', 'audio', 'focus_health_heal.wav')),
             'focus_charge': pygame.mixer.Sound(join('..', 'audio', 'focus_health_charging.wav')),
+            'bench_rest': pygame.mixer.Sound(join('..', 'audio', 'bench_rest.wav')),
         }
         self.bg_music = pygame.mixer.Sound(join('..', 'audio', 'noragami.mp3'))
         self.bg_music.set_volume(0.5)
