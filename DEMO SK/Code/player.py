@@ -52,6 +52,7 @@ class Player(pygame.sprite.Sprite):
         self.throw_attacking = False
         self.throw_attack_is_available = True
         self.spin_attacking = False
+        self.parrying = False
         self.knockback_value = 350
         self.knockback_direction = 'none'
         self.healing = False
@@ -71,7 +72,8 @@ class Player(pygame.sprite.Sprite):
             'platform_skip': Timer(100),
             'neutral_attack_block': Timer(400),
             'parry': Timer(400),
-            'spin_attack_block': Timer(3000),
+            'parry_attack': Timer(250),
+            'spin_attack_block': Timer(3000), 
             'dash_block': Timer(500),
             'invincibility_frames': Timer(500),
             'jump_sound': Timer(100),
@@ -100,7 +102,7 @@ class Player(pygame.sprite.Sprite):
         input_vector = vector(0, 0)
         self.vertical_sight = 'none'
 
-        if not self.throw_attacking and not self.spin_attacking and not self.timers['sitting_down'].active and not self.timers['parry'].active:
+        if not self.throw_attacking and not self.spin_attacking and not self.timers['sitting_down'].active and not self.timers['parry'].active and not self.timers['parry_attack'].active:
             # Movimento Horizontal
             if not self.timers['wall_jump'].active and not self.dashing:
                 # Movimentação Horizontal
@@ -162,18 +164,11 @@ class Player(pygame.sprite.Sprite):
 
                 if self.timers['heal_init'].active:
                     if self.throw_attack_is_available and self.data.string_bar >= 1 and self.data.unlocked_throw_attack and self.vertical_sight == 'none':
-                        self.timers['heal_init'].deactivate()
-                        self.data.string_bar -= 1
                         self.throw_attack()
                     elif self.data.string_bar >= 3 and self.vertical_sight == 'up':
-                        self.timers['heal_init'].deactivate()
-                        self.data.string_bar -= 3
                         self.spin_attack()
                     elif self.data.string_bar >= 2 and self.vertical_sight == 'down' and not self.timers['parry'].active:
-                        self.timers['parry'].activate()
-                        self.timers['heal_init'].deactivate()
-                        self.data.string_bar -= 2
-                        self.dashing = False
+                        self.parry()
 
             # Dash
             if (keys[pygame.K_i] or any(joystick.get_button(3) for joystick in self.joysticks)):
@@ -206,6 +201,8 @@ class Player(pygame.sprite.Sprite):
     
     def throw_attack(self):
         if not self.throw_attacking:
+            self.timers['heal_init'].deactivate()
+            self.data.string_bar -= 1
             self.throw_attacking = True
             self.throw_attack_is_available = False
             self.frame_index = 0
@@ -214,10 +211,19 @@ class Player(pygame.sprite.Sprite):
     
     def spin_attack(self):
         if not self.spin_attacking:
+            self.timers['heal_init'].deactivate()
+            self.data.string_bar -= 3
             self.spin_attacking = True
             self.frame_index = 0
             self.audio_files['throw'].play()
             self.dashing = False
+
+    def parry(self):
+        self.timers['parry'].activate()
+        self.timers['heal_init'].deactivate()
+        self.data.string_bar -= 2
+        self.dashing = False
+        self.audio_files['parry_prepare'].play()
 
     def knockback(self, delta_time):
         keys = pygame.key.get_pressed()
@@ -443,8 +449,13 @@ class Player(pygame.sprite.Sprite):
                     self.state = 'jump' if self.direction.y < 0 else 'fall'
         if self.healing:
             self.state = 'healing'
-        if self.timers['invincibility_frames'].active:
+        if self.timers['invincibility_frames'].active and not self.timers['parry'].active and not self.timers['parry_attack'].active:
             self.state = 'hit'
+        if self.timers['parry'].active or self.timers['parry_attack'].active:
+            self.state = 'parry' if self.timers['parry'].active else self.state
+            self.state = 'parry_attack' if self.timers['parry_attack'].active else self.state
+        else:
+            self.parrying = False
         if self.throw_attacking or self.spin_attacking:
             self.state = 'throw_attack_animation'
 
@@ -467,7 +478,7 @@ class Player(pygame.sprite.Sprite):
 
         # Movimento do jogo e colisão
         self.input()
-        if not self.throw_attacking and not self.healing and not self.spin_attacking and not self.timers['parry'].active and not self.on_surface['bench']:
+        if not self.throw_attacking and not self.healing and not self.spin_attacking and not self.timers['parry'].active and not self.timers['parry_attack'].active and not self.on_surface['bench']:
             self.move(delta_time)
         self.platform_move(delta_time)
         if self.throw_attacking and not self.on_surface['floor']:

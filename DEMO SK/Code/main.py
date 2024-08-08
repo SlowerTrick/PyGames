@@ -37,7 +37,7 @@ class Game:
             7: load_pygame(join('..', 'data', 'levels', '7.tmx')),
             8: load_pygame(join('..', 'data', 'levels', '8.tmx')),
         }
-        self.start_stage = 1
+        self.start_stage = 6
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
         self.current_stage.timers['loading_time'].activate()
@@ -82,6 +82,7 @@ class Game:
             'player_neutral_attack': import_sub_folders('..', 'graphics', 'player', 'attack_animation'),
             'player_throw_attack': import_image('..', 'graphics', 'player', 'throw_attack', '0'),
             'player_spin_attack': import_folder('..', 'graphics', 'player', 'spin_attack'),
+            'player_parry_attack': import_folder('..', 'graphics', 'player', 'parry_attack_animation'),
             'bench': import_image('..',  'graphics', 'level', 'bench', 'bench'),
         }
         self.font = pygame.font.Font(join('..', 'graphics', 'ui', 'SuperPixel.ttf'), 40)
@@ -107,6 +108,8 @@ class Game:
             'focus_heal': pygame.mixer.Sound(join('..', 'audio', 'focus_health_heal.wav')),
             'focus_charge': pygame.mixer.Sound(join('..', 'audio', 'focus_health_charging.wav')),
             'bench_rest': pygame.mixer.Sound(join('..', 'audio', 'bench_rest.wav')),
+            'parry_prepare': pygame.mixer.Sound(join('..', 'audio', 'hornet_parry_prepare.wav')),
+            'parry': pygame.mixer.Sound(join('..', 'audio', 'hornet_parry.wav')),
         }
         self.bg_music = pygame.mixer.Sound(join('..', 'audio', 'noragami.mp3'))
         self.bg_music.set_volume(0.5)

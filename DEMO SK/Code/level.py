@@ -5,7 +5,7 @@ from player import Player
 from groups import AllSprites
 from debug import debug
 from enemies import Tooth, Shell, Breakable_wall, Pearl, Slime, Fly
-from attack import Neutral_Attack, Throw_Attack, Spin_Attack
+from attack import Neutral_Attack, Throw_Attack, Spin_Attack, Parry_Attack
 
 from random import uniform
 
@@ -23,6 +23,7 @@ class Level:
         self.player_neutral_attack_sprite = None
         self.player_throw_attack_sprite = None
         self.player_spin_attack_sprite = None
+        self.player_parry_attack_sprite = None
 
         # Informações da fase
         self.level_width = tmx_map.width * TILE_SIZE
@@ -75,6 +76,7 @@ class Level:
         self.neutral_attack_frames = level_frames['player_neutral_attack']
         self.throw_attack_frames = level_frames['player_throw_attack']
         self.spin_attack_frames = level_frames['player_spin_attack']
+        self.parry_attack_frames = level_frames['player_parry_attack']
 
         # Sons
         self.audio_files = audio_files
@@ -308,12 +310,24 @@ class Level:
         # Hit no jogador
         for sprite in self.damage_sprites:
             if sprite.rect.colliderect(self.player.hitbox_rect):
-                if not self.player.timers['invincibility_frames'].active and not self.player.timers['parry'].active:
-                    self.player.get_damage()
-                    self.audio_files['damage'].play()
-                if self.player.timers['parry'].active:
-                    # Implementação do parry
-                    pass
+                if not self.player.timers['invincibility_frames'].active:
+                    if (not self.player.timers['parry'].active and not self.player.timers['parry_attack'].active) or sprite in self.thorn_sprites:
+                        self.player.get_damage()
+                        self.audio_files['damage'].play()
+
+                # Cria o ataque parry  
+                if self.player.state == 'parry' and hasattr(sprite, 'is_enemy'):
+                    self.player.timers['parry'].deactivate()
+                    self.player.timers['parry_attack'].activate()
+                    self.player.parrying = True
+                    self.player_parry_attack_sprite = Parry_Attack(
+                    pos = (self.player.hitbox_rect.centerx, self.player.hitbox_rect.centery),
+                    groups = (self.all_sprites, self.attack_sprites),
+                    frames = self.parry_attack_frames,
+                    facing_side = self.player.facing_side,
+                    audio_files = self.audio_files
+                )
+                    
                 if hasattr(sprite, 'pearl'):
                     sprite.kill()
                     ParticleEffectSprite((sprite.rect.center), self.particle_frames, self.all_sprites)
@@ -464,8 +478,31 @@ class Level:
                         target.get_damage()
                         target.is_alive()
 
+        if self.player.parrying:
+            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.damage_sprites.sprites():
+                if target.rect.colliderect(self.player_parry_attack_sprite.rect):
+                    is_enemy = hasattr(target, 'is_enemy')
+                    is_pearl = hasattr(target, 'pearl')
+
+                    if hasattr(target, 'knockback_direction'):
+                        # Calcula o centro do player e do inimigo
+                        player_center = self.player_parry_attack_sprite.rect.centerx
+                        target_center = target.rect.centerx
+
+                        # Define a direção do knockback com base na posição relativa
+                        if target_center <= player_center:
+                            target.knockback_direction = 'left'
+                        else:
+                            target.knockback_direction = 'right'
+
+                        target.during_knockback.activate()
+                    if is_enemy:
+                        target.get_damage()
+                        if not is_pearl:
+                            target.is_alive()
+
     def attack_logic(self, delta_time):
-        if (self.during_neutral_attack and self.player_neutral_attack_sprite) or (self.during_throw_attack and self.player_throw_attack_sprite) or (self.during_spin_attack and self.player_spin_attack_sprite):
+        if (self.during_neutral_attack and self.player_neutral_attack_sprite) or (self.during_throw_attack and self.player_throw_attack_sprite) or (self.during_spin_attack and self.player_spin_attack_sprite) or self.player.parrying:
             if self.during_neutral_attack and self.player_neutral_attack_sprite:
                 self.player_neutral_attack_sprite.update_position((self.player.hitbox_rect.x, self.player.hitbox_rect.y))
                 """ if self.player_neutral_attack_sprite.facing_side in {'right', 'left'} and not self.player_neutral_attack_sprite.knockback_applied:
@@ -525,4 +562,7 @@ class Level:
                 player_pos =((self.player.rect.centerx + self.all_sprites.offset.x, self.player.rect.centery + 10 + self.all_sprites.offset.y))
                 self.player_throw_attack_sprite.draw_rope(self.display_surface, player_pos, attack_pos)
             
-            debug (self.player.timers['parry'].time_passed(), 300)
+            debug (self.player.state, 300)
+            debug (self.player.timers['parry'].time_passed(), 350)
+            debug (self.player.timers['parry_attack'].time_passed(), 400)
+            debug (self.player.parrying, 450)
