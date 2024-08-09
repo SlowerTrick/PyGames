@@ -1,6 +1,6 @@
 from settings import *
 from timecount import Timer
-from random import choice
+from random import choice, randint
 from math import sin
 
 class Tooth(pygame.sprite.Sprite):
@@ -467,3 +467,168 @@ class Fly(pygame.sprite.Sprite):
 
         self.move(dt)
         self.knockback(dt)
+
+class Lace(pygame.sprite.Sprite):
+    def __init__(self, pos, frames, groups, player, collision_sprites):
+        # Setup geral
+        super().__init__(groups)
+        self.is_enemy = True
+        self.frame_index = 0
+        self.frames = frames 
+        self.state = 'idle'
+
+        # Frames 
+        self.image = self.frames[self.state][self.frame_index]
+        self.image = pygame.Surface ((48, 56)) # temporario
+        self.image.fill('blue') # temporario
+        self.rect = self.image.get_frect(topleft = pos)
+        self.hitbox_rect = self.rect
+        self.old_rect = self.rect.copy()
+        self.z = Z_LAYERS['main']
+        self.player = player
+
+        # Status
+        self.direction = vector()
+        self.direction.x = 1
+        self.lace_heath = 3
+        self.speed = 150
+        self.jump_height = 820
+        self.gravity = 1300
+        self.on_ground = True
+        self.player_near = False
+        self.using_attack = 'none'
+
+        # Colisões e timers
+        self.collision_rects = [sprite.rect for sprite in collision_sprites]
+        self.hit_timer = Timer(500)
+        self.timers = {
+            'cycle_attacks': Timer(3000)
+        }
+
+    def collisions(self, axis):
+        top_rect = pygame.FRect(self.rect.midtop, (1, 1))
+        floor_rect = pygame.FRect(self.rect.midbottom, (1, 1))
+        right_rect = pygame.FRect(self.rect.midleft, (1, 1))
+        left_rect = pygame.FRect(self.rect.midright, (1, 1))
+
+        if axis == 'horizontal':
+            for sprite in self.collision_rects:
+                if right_rect.colliderect(sprite) or left_rect.colliderect(sprite):
+                    if right_rect.x < sprite.x:
+                        self.hitbox_rect.right = sprite.left
+                        self.direction.x = -1
+                    else:
+                        self.hitbox_rect.left = sprite.right
+                        self.direction.x = 1
+
+        if axis == 'vertical':
+            for sprite in self.collision_rects:
+                if floor_rect.colliderect(sprite):
+                    self.hitbox_rect.bottom = sprite.top
+                    self.direction.y = 0
+                    self.on_ground = True
+                    break
+                else:
+                    self.on_ground = False
+
+                if top_rect.colliderect(sprite):
+                    self.hitbox_rect.top = sprite.bottom
+                    self.direction.y = 0
+                    self.on_ground = False
+                    break
+
+    def move(self, dt):
+        # Movimentação Horizontal
+        self.hitbox_rect.x += self.direction.x * self.speed * dt
+        self.collisions('horizontal')
+
+        # Movimentação Vertical
+        self.direction.y += self.gravity / 2 * dt
+        self.hitbox_rect.y += self.direction.y* dt
+        self.direction.y += self.gravity / 2 * dt
+        self.collisions('vertical')
+
+        # Finalização do movimento
+        self.rect.center = self.hitbox_rect.center
+
+    def attack(self, dt):
+        self.speed = 150
+        self.gravity = 1300
+        if self.using_attack == 'air_attack':
+            if self.on_ground:
+                self.direction.y = -self.jump_height
+                self.hitbox_rect.y += self.direction.y * dt
+                self.collisions('vertical')
+            else:
+                if self.direction.y <= 0:
+                    self.direction.y += self.gravity / 2 * dt
+                    self.hitbox_rect.y += self.direction.y * dt
+                    self.direction.y += self.gravity / 2 * dt
+                    self.collisions('vertical')
+
+                if self.direction.y >= 0:
+                    self.hitbox_rect.x += self.direction.x * self.speed * dt * 4
+                    self.hitbox_rect.y += self.speed * dt * 4
+                    self.collisions('horizontal')
+                    self.collisions('vertical')
+
+            self.rect.center = self.hitbox_rect.center
+
+    def state_management(self):
+        player_pos, lace_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
+        self.player_near = lace_pos.distance_to(player_pos) < 1000
+        player_level = abs(lace_pos.y - player_pos.y) < 500
+
+        """ if self.player_near and player_level:
+            if player_pos.x <= lace_pos.x:
+                self.direction.x = -1
+                self.speed = 150
+            else:
+                self.direction.x = 1
+                self.speed = 150
+        else:
+            self.speed = 0 """
+        
+        if not self.timers['cycle_attacks'].active:
+            self.timers['cycle_attacks'].activate()
+            new_attack = randint(0, 0)
+            self.using_attack = 'air_attack' if new_attack == 0 else 'none'
+
+    def get_damage(self):
+        if not self.hit_timer.active:
+            self.hit_timer.activate()
+            self.lace_heath -= 1
+
+    def is_alive(self):
+        if self.lace_heath <= 0:
+            self.kill()
+
+    def flicker(self):
+        if self.hit_timer.active and sin(pygame.time.get_ticks() * 100) >= 0:
+            white_mask = pygame.mask.from_surface(self.image)
+            white_surf = white_mask.to_surface()
+            white_surf.set_colorkey('black')
+            self.image = white_surf
+
+    def update_timers(self):
+        # Atualiza todos os temporizadores estabelicidos
+        for timer in self.timers.values():
+            timer.update()
+        self.hit_timer.update()
+
+    def update(self, dt):
+        self.update_timers()
+        self.state_management()
+        self.attack(dt)
+
+        """ # Animação
+        self.frame_index += ANIMATION_SPEED * dt
+        if self.frame_index < len(self.frames[self.state]):
+            self.image = self.frames[self.state][int(self.frame_index)]
+        else:
+            self.frame_index = 0
+        self.image = pygame.transform.flip(self.image, True, False) if self.direction.x < 0 else self.image """
+        self.image.fill('blue') # temporario
+        self.flicker()
+        if not self.using_attack == 'air_attack':
+            self.move(dt)

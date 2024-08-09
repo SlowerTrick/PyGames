@@ -4,7 +4,7 @@ from timecount import Timer
 from player import Player
 from groups import AllSprites
 from debug import debug
-from enemies import Tooth, Shell, Breakable_wall, Pearl, Slime, Fly
+from enemies import Tooth, Shell, Breakable_wall, Pearl, Slime, Fly, Lace
 from attack import Neutral_Attack, Throw_Attack, Spin_Attack, Parry_Attack
 
 from random import uniform
@@ -251,6 +251,14 @@ class Level:
                         player = self.player,
                         collision_sprites = self.collision_sprites)
 
+                if obj.name == 'lace':
+                    Lace(
+                        pos = (int(obj.x), int(obj.y)),
+                        frames = level_frames['slime'],
+                        groups = (self.all_sprites, self.damage_sprites, self.slime_sprites),
+                        player = self.player,
+                        collision_sprites = self.collision_sprites)
+                    
         # Espinhos Normais
         thorns_layer = get_layer(tmx_map, 'Thorns')
         if thorns_layer:
@@ -312,6 +320,7 @@ class Level:
             if sprite.rect.colliderect(self.player.hitbox_rect):
                 if not self.player.timers['invincibility_frames'].active:
                     if (not self.player.timers['parry'].active and not self.player.timers['parry_attack'].active) or sprite in self.thorn_sprites:
+                        self.all_sprites.start_shaking(500, 2)
                         self.player.get_damage()
                         self.audio_files['damage'].play()
 
@@ -340,6 +349,7 @@ class Level:
             if sprite.rect.colliderect(self.player.hitbox_rect) and self.player.vertical_sight == 'up':
                 self.player.on_surface['bench'] = True
                 self.player.timers['sitting_down'].activate()
+                self.all_sprites.start_shaking(500, 1)
             
             if self.player.on_surface['bench']:
                 target_center = (sprite.rect.centerx, sprite.rect.centery - 15)

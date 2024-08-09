@@ -1,6 +1,6 @@
 from settings import *
 from sprites import Sprite, Cloud
-from random import choice, randint
+from random import choice, randint, uniform
 from timecount import Timer
 
 class AllSprites(pygame.sprite.Group):
@@ -17,42 +17,11 @@ class AllSprites(pygame.sprite.Group):
         }
         self.sky = not bg_tile # Bool para verificar a necessidade do céu, a partir da não existencia de um tile
         self.horizon_line = horizon_line
-
-        if bg_tile:
-            for col in range(width):
-                for row in range(-int(top_limit / TILE_SIZE) - 1, height):
-                    x, y = col * TILE_SIZE, row * TILE_SIZE
-                    Sprite((x, y), bg_tile, self, -1)
-        else:
-            # Céu
-            self.large_cloud = clouds['large']
-            self.small_clouds = clouds['small']
-            self.cloud_direction = -1
-
-            # Nuvem grande
-            self.large_cloud_speed = 50
-            self.large_cloud_x = 0
-            self.large_cloud_tiles = int(self.width / self.large_cloud.get_width()) + 2
-            self.large_cloud_width, self.large_cloud_height = self.large_cloud.get_size()
-
-            # Nuvem pequena
-            self.cloud_timer = Timer(2500, self.create_cloud, True) # Cria a nuvem repete a cada 2.5 segundos
-            self.cloud_timer.activate()
-            for cloud in range(5):
-                pos = (randint(0, self.width), randint(self.borders['top'], self.horizon_line))
-                surface = choice(self.small_clouds)
-                Cloud(pos, surface, self)
         
-    def draw_large_cloud(self, delta_time):
-        self.large_cloud_x += self.cloud_direction * self.large_cloud_speed * delta_time 
-        if self.large_cloud_x <= -self.large_cloud_width:
-            self.large_cloud_x = 0
+        # Controle do tremor da câmera
+        self.shake_magnitude = 5  # Intensidade do tremor
+        self.shake_timer = Timer(0)   # Duração do tremor
 
-        for cloud in range(self.large_cloud_tiles):
-            left = self.large_cloud_x + self.large_cloud_width * cloud + self.offset.x
-            top = self.horizon_line - self.large_cloud_height + self.offset.y
-            self.display_surface.blit(self.large_cloud, (left, top))
-    
     def camera_constraint(self):
         # Limitação da camera do jogador
         self.offset.x = self.offset.x if self.offset.x < self.borders['left'] else self.borders['left']
@@ -60,32 +29,37 @@ class AllSprites(pygame.sprite.Group):
         self.offset.y = self.offset.y if self.offset.y > self.borders['bottom'] else self.borders['bottom']
         self.offset.y = self.offset.y if self.offset.y < self.borders['top'] else self.borders['top']
     
+    def start_shaking(self, duration, intensity=5):
+        # Inicia o tremor da câmera por uma certa duração e intensidade.
+        self.shake_magnitude = intensity
+        self.shake_timer = Timer(duration, self.stop_shaking, repeat=False)
+        self.shake_timer.activate()
+
+    def stop_shaking(self):
+        self.shake_timer.deactivate()
+        
+    def apply_shake(self):
+        # Aplica o tremor da câmera se o temporizador estiver ativo.
+        self.shake_timer.update()
+        if self.shake_timer.active:
+            self.offset.x += uniform(-self.shake_magnitude, self.shake_magnitude)
+            self.offset.y += uniform(-self.shake_magnitude, self.shake_magnitude)
+
     def draw_sky(self):
         self.display_surface.fill('#181818')
-        horizon_pos = self.horizon_line + self.offset.y
-
-        sea_rect = pygame.FRect(0,horizon_pos, WINDOW_WIDTH, WINDOW_HEIGHT - horizon_pos)
-        pygame.draw.rect(self.display_surface, '#181818', sea_rect)
-
-        # Linha do horizonte
-        pygame.draw.line(self.display_surface, '#181818', (0, horizon_pos), (WINDOW_WIDTH, horizon_pos), 4)
-
-    def create_cloud(self):
-        pos = (randint(self.width + 500, self.width + 600), randint(self.borders['top'], self.horizon_line))
-        surface = choice(self.small_clouds)
-        Cloud(pos, surface, self)
 
     def draw(self, target_pos, delta_time):
         # Movimentação da camera do jogador
         self.offset.x = -(target_pos[0] - WINDOW_WIDTH / 2) # "-" pois o movimento é oposto ao crescimento da tela
         self.offset.y = -(target_pos[1] - WINDOW_HEIGHT / 2) # "-" pois o movimento é oposto ao crescimento da tela
+        
+        # Aplica o tremor da câmera e limita a tela de acordo com o jogador
         self.camera_constraint()
+        self.apply_shake()
 
         # Desenho do céu
         if self.sky:
-            self.cloud_timer.update()
             self.draw_sky()
-            self.draw_large_cloud(delta_time)
 
         for sprite in sorted(self, key = lambda sprite: sprite.z):
             # Desenha os elementos com base na ordem em Z_LAYER
