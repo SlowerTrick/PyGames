@@ -379,7 +379,7 @@ class Fly(pygame.sprite.Sprite):
         if axis == 'vertical':
             for sprite in self.collision_rects:
                 if floor_rect.colliderect(sprite):
-                    self.hitbox_rect.bottom = sprite.top
+                    self.hitbox_rect.bottom = sprite.top - 1
                     break
                 if top_rect.colliderect(sprite):
                     self.hitbox_rect.top = sprite.bottom
@@ -389,11 +389,9 @@ class Fly(pygame.sprite.Sprite):
         # Movimentação Horizontal
         self.hitbox_rect.x += self.direction.x * self.speed * dt
         self.collisions('horizontal')
-        self.collisions('vertical')
 
         # Movimentação Vertical
         self.hitbox_rect.y += self.direction.y * self.speed * dt
-        self.collisions('horizontal')
         self.collisions('vertical')
         self.knockback(dt)
 

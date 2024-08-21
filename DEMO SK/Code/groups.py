@@ -2,6 +2,8 @@ from settings import *
 from sprites import Sprite, Cloud
 from random import choice, randint, uniform
 from timecount import Timer
+from pygame import gfxdraw, BLEND_RGB_ADD
+from math import sqrt
 
 class AllSprites(pygame.sprite.Group):
     def __init__(self, width, height, clouds, horizon_line, bg_tile = None, top_limit = 0):
@@ -44,7 +46,7 @@ class AllSprites(pygame.sprite.Group):
         if self.shake_timer.active:
             self.offset.x += uniform(-self.shake_magnitude, self.shake_magnitude)
             self.offset.y += uniform(-self.shake_magnitude, self.shake_magnitude)
-
+            
     def draw_sky(self):
         self.display_surface.fill('#181818')
 

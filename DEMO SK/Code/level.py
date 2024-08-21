@@ -129,7 +129,8 @@ class Level:
                         semi_collision_sprites = self.semi_collision_sprites,
                         frames = level_frames['player'],
                         data = self.data,
-                        audio_files = audio_files)
+                        audio_files = audio_files,
+                        screen_shake = self.all_sprites.start_shaking)
                 else:
                     if obj.name in ('barrel', 'crate'):
                         Sprite((int(obj.x), int(obj.y)), obj.image, (self.all_sprites, self.collision_sprites))
@@ -349,7 +350,6 @@ class Level:
             if sprite.rect.colliderect(self.player.hitbox_rect) and self.player.vertical_sight == 'up':
                 self.player.on_surface['bench'] = True
                 self.player.timers['sitting_down'].activate()
-                self.all_sprites.start_shaking(500, 1)
             
             if self.player.on_surface['bench']:
                 target_center = (sprite.rect.centerx, sprite.rect.centery - 15)
@@ -533,6 +533,12 @@ class Level:
             self.player_throw_attack_sprite.kill()
             self.player.throw_attacking = False
     
+    def throw_attack_rope(self):
+        if self.during_throw_attack:
+            attack_pos = ((self.player_throw_attack_sprite.rect.centerx + self.all_sprites.offset.x, self.player_throw_attack_sprite.rect.centery + self.all_sprites.offset.y))
+            player_pos =((self.player.rect.centerx + self.all_sprites.offset.x, self.player.rect.centery + 10 + self.all_sprites.offset.y))
+            self.player_throw_attack_sprite.draw_rope(self.display_surface, player_pos, attack_pos)
+        
     def check_constraint(self):
         # Metodo para limitar o jogador na tela e mudar a tela
         bottom_limit = self.level_bottom + 200
@@ -567,12 +573,4 @@ class Level:
             self.all_sprites.draw(self.player.hitbox_rect.center, delta_time)
 
             # Desenhar a linha caso exista
-            if self.during_throw_attack:
-                attack_pos = ((self.player_throw_attack_sprite.rect.centerx + self.all_sprites.offset.x, self.player_throw_attack_sprite.rect.centery + self.all_sprites.offset.y))
-                player_pos =((self.player.rect.centerx + self.all_sprites.offset.x, self.player.rect.centery + 10 + self.all_sprites.offset.y))
-                self.player_throw_attack_sprite.draw_rope(self.display_surface, player_pos, attack_pos)
-            
-            debug (self.player.state, 300)
-            debug (self.player.timers['parry'].time_passed(), 350)
-            debug (self.player.timers['parry_attack'].time_passed(), 400)
-            debug (self.player.parrying, 450)
+            self.throw_attack_rope()

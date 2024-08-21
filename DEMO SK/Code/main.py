@@ -37,7 +37,7 @@ class Game:
             7: load_pygame(join('..', 'data', 'levels', '7.tmx')),
             8: load_pygame(join('..', 'data', 'levels', '8.tmx')),
         }
-        self.start_stage = 1
+        self.start_stage = 8
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
         self.current_stage.timers['loading_time'].activate()
@@ -144,7 +144,7 @@ class Game:
                 self.current_stage.run(delta_time) # Atualização dos sprites do jogo a partir do arquivo "Level"
                 if not self.current_stage.timers['loading_time'].active:
                     self.ui.update(delta_time) # HUD do jogo
-                # self.show_fps()
+                self.show_fps()
                 pygame.display.update() # Atualização da tela
 
 if __name__ == '__main__': # Verifica se o script está sendo executado diretamente (exemplo: python main.py)

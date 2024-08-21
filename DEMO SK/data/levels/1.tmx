@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="35" height="26" tilewidth="64" tileheight="64" infinite="0" nextlayerid="18" nextobjectid="55">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="35" height="26" tilewidth="64" tileheight="64" infinite="0" nextlayerid="18" nextobjectid="56">
  <tileset firstgid="1" source="../tilesets/outside.tsx"/>
  <tileset firstgid="49" source="../tilesets/extra.tsx"/>
  <tileset firstgid="115" name="objects" tilewidth="156" tileheight="186" tilecount="33" columns="0">
@@ -101,7 +101,7 @@
    <image source="../../graphics/enemies/floor_spikes/left/0.png" width="26" height="64"/>
   </tile>
   <tile id="32">
-   <image source="../../graphics/level/bench/bench.png" width="102" height="57"/>
+   <image source="../../graphics/level/bench/bench.png" width="70" height="38"/>
   </tile>
  </tileset>
  <tileset firstgid="148" name="tileset2" tilewidth="64" tileheight="64" tilecount="60" columns="15">
@@ -246,7 +246,7 @@
     <property name="spawn" value="top"/>
    </properties>
   </object>
-  <object id="53" name="bench" gid="327" x="639.667" y="539.583" width="34" height="21"/>
+  <object id="53" name="bench" gid="327" x="671.5" y="558.583" width="34" height="21"/>
  </objectgroup>
  <objectgroup id="15" name="Enemies">
   <object id="35" name="fly" gid="144" x="772" y="873" width="48" height="42"/>

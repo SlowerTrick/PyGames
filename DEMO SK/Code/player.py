@@ -5,7 +5,7 @@ from json import load
 from os.path import join
 
 class Player(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, collision_sprites, semi_collision_sprites, frames, data, audio_files):
+    def __init__(self, pos, groups, collision_sprites, semi_collision_sprites, frames, data, audio_files, screen_shake):
         # Setup Geral
         super().__init__(groups)
 
@@ -88,6 +88,7 @@ class Player(pygame.sprite.Sprite):
         self.audio_files = audio_files
         self.audio_files['neutral_attack'].set_volume(0.5)
         self.z = Z_LAYERS['main']
+        self.screen_shake = screen_shake
         
         self.display_surface = pygame.display.get_surface()
 
@@ -148,6 +149,8 @@ class Player(pygame.sprite.Sprite):
                         self.state = 'healing'
                         self.healing = True
                         self.dash_progress = self.dash_distance
+                    if self.timers['healing'].active:
+                            self.screen_shake(100, 1)
                     if self.timers['healing'].time_passed() >= 1300:
                         self.heal()
                         self.timers['healing'].deactivate()
@@ -268,6 +271,7 @@ class Player(pygame.sprite.Sprite):
 
     def heal(self):
         self.audio_files['focus_heal'].play()
+        self.screen_shake(100, 1)
         self.data.health_regen = False
         self.data.player_health += 3
         self.data.string_bar -= 3
@@ -447,6 +451,8 @@ class Player(pygame.sprite.Sprite):
                     self.state = 'wall'
                 else:
                     self.state = 'jump' if self.direction.y < 0 else 'fall'
+        if self.dashing:
+            self.state = 'dashing'
         if self.healing:
             self.state = 'healing'
         if self.timers['invincibility_frames'].active and not self.timers['parry'].active and not self.timers['parry_attack'].active:
@@ -458,6 +464,8 @@ class Player(pygame.sprite.Sprite):
             self.parrying = False
         if self.throw_attacking or self.spin_attacking:
             self.state = 'throw_attack_animation'
+        if self.on_surface['bench']:
+            self.state = 'on_bench'
 
     def get_damage(self):
         self.data.player_health -= 1
