@@ -6,7 +6,6 @@ from groups import AllSprites
 from debug import debug
 from enemies import Tooth, Shell, Breakable_wall, Pearl, Slime, Fly, Lace
 from attack import Neutral_Attack, Throw_Attack, Spin_Attack, Parry_Attack
-
 from random import uniform
 
 class Level:
@@ -83,7 +82,10 @@ class Level:
         self.audio_files['geo'].set_volume(3)
 
         self.setup(tmx_map, level_frames, audio_files)
-        self.timers = {'loading_time': Timer(100)}
+        self.timers = {
+            'loading_time': Timer(50),
+            'hit_stop': Timer(100),
+        }
 
     def setup(self, tmx_map, level_frames, audio_files):
         def get_layer(tmx_map, layer_name):
@@ -322,6 +324,7 @@ class Level:
                 if not self.player.timers['invincibility_frames'].active:
                     if (not self.player.timers['parry'].active and not self.player.timers['parry_attack'].active) or sprite in self.thorn_sprites:
                         self.all_sprites.start_shaking(500, 2)
+                        self.timers['hit_stop'].activate()
                         self.player.get_damage()
                         self.audio_files['damage'].play()
 
@@ -557,7 +560,7 @@ class Level:
 
     def run(self, delta_time):
         self.update_timers()
-        if not self.timers['loading_time'].active:
+        if all(not timer.active for timer in self.timers.values()):
             self.display_surface.fill('black')  # Preenche a tela com a cor preta
             self.all_sprites.update(delta_time)  # Atualiza os sprites da tela
             self.pearl_collision()

@@ -38,7 +38,7 @@ class Neutral_Attack(pygame.sprite.Sprite):
             attack_pos = (pos[0] - 30, pos[1] + 45)
             self.facing_side = 'down'
         elif self.vertical_sight == 'up':
-            attack_pos = (pos[0] - 30, pos[1] - 45)
+            attack_pos = (pos[0] - 30, pos[1] - 50)
             self.facing_side = 'up'
         else:
             attack_pos = (pos[0] + 30, pos[1] - 10) if self.facing_side == 'right' else (pos[0] - 80, pos[1] - 10)

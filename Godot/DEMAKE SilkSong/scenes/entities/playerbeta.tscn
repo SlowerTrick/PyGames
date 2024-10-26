@@ -1,0 +1,78 @@
+[gd_scene load_steps=11 format=3 uid="uid://cl1mncqdukpju"]
+
+[ext_resource type="PackedScene" uid="uid://da37ukgk5vuwc" path="res://scenes/entities/entity.tscn" id="1_tr708"]
+[ext_resource type="Script" path="res://scenes/entities/player.gd" id="2_w27ce"]
+[ext_resource type="Texture2D" uid="uid://3ul012qd3j8f" path="res://assets/graphics/player/Hornet Sprite Sheet.png" id="3_6ehom"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_qv38q"]
+size = Vector2(14, 29)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mrdep"]
+atlas = ExtResource("3_6ehom")
+region = Rect2(0, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_db1u3"]
+atlas = ExtResource("3_6ehom")
+region = Rect2(48, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ndpan"]
+atlas = ExtResource("3_6ehom")
+region = Rect2(96, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uwj2k"]
+atlas = ExtResource("3_6ehom")
+region = Rect2(144, 0, 48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wfa7t"]
+atlas = ExtResource("3_6ehom")
+region = Rect2(192, 0, 48, 48)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_fyf7m"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mrdep")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_db1u3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ndpan")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uwj2k")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wfa7t")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="Player" instance=ExtResource("1_tr708")]
+script = ExtResource("2_w27ce")
+
+[node name="CollisionShape2D" parent="." index="0"]
+position = Vector2(-1, 0.5)
+shape = SubResource("RectangleShape2D_qv38q")
+
+[node name="Camera2D" type="Camera2D" parent="." index="1"]
+zoom = Vector2(2, 2)
+
+[node name="Coyote" type="Timer" parent="Timers" index="0"]
+wait_time = 0.15
+one_shot = true
+
+[node name="JumpBuffer" type="Timer" parent="Timers" index="1"]
+wait_time = 0.15
+one_shot = true
+
+[node name="DashCooldown" type="Timer" parent="Timers" index="2"]
+one_shot = true
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="." index="3"]
+sprite_frames = SubResource("SpriteFrames_fyf7m")
+autoplay = "default"
+frame = 1
+frame_progress = 0.0633487

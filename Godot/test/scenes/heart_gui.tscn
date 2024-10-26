@@ -1,0 +1,68 @@
+[gd_scene load_steps=8 format=3 uid="uid://cml5bwbd7526v"]
+
+[ext_resource type="Texture2D" uid="uid://gsl7wc0x6jhk" path="res://assets/graphics/ui/heart/health-Sheet.png" id="1_7fnc8"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wu26j"]
+atlas = ExtResource("1_7fnc8")
+region = Rect2(0, 0, 13, 17)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_heoac"]
+atlas = ExtResource("1_7fnc8")
+region = Rect2(13, 0, 13, 17)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_btosr"]
+atlas = ExtResource("1_7fnc8")
+region = Rect2(26, 0, 13, 17)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_er4y6"]
+atlas = ExtResource("1_7fnc8")
+region = Rect2(39, 0, 13, 17)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_2sixw"]
+atlas = ExtResource("1_7fnc8")
+region = Rect2(52, 0, 13, 17)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_exq4a"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wu26j")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_heoac")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_btosr")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_er4y6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wu26j")
+}],
+"loop": false,
+"name": &"heart",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_2sixw")
+}],
+"loop": true,
+"name": &"heartless",
+"speed": 5.0
+}]
+
+[node name="HeartGUI" type="Panel"]
+self_modulate = Color(1, 1, 1, 0)
+custom_minimum_size = Vector2(13, 17)
+offset_right = 13.0
+offset_bottom = 17.0
+metadata/_edit_horizontal_guides_ = [-5.0]
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(55, 22)
+scale = Vector2(2, 2)
+sprite_frames = SubResource("SpriteFrames_exq4a")
+animation = &"heart"
+centered = false

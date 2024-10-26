@@ -37,7 +37,7 @@ class Game:
             7: load_pygame(join('..', 'data', 'levels', '7.tmx')),
             8: load_pygame(join('..', 'data', 'levels', '8.tmx')),
         }
-        self.start_stage = 8
+        self.start_stage = 1 # 8 para lace
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
         self.current_stage.timers['loading_time'].activate()
@@ -47,6 +47,7 @@ class Game:
         if target >= len(self.tmx_maps):
             target = 0
         self.current_stage = Level(self.tmx_maps[target], self.level_frames, self.audio_files, self.data, self.switch_screen, target, player_spawn)
+        self.current_stage.timers['loading_time'].activate()
 
     def import_assets(self):
         self.level_frames = {
@@ -119,6 +120,19 @@ class Game:
         font = pygame.font.SysFont(None, 24)
         fps_text = font.render(f"FPS: {int(fps)}", True, pygame.Color('white'))
         self.display_surface.blit(fps_text, (10, 10))
+
+    def fade(width, height): 
+        def redrawWindow():
+            self.display_surface.fill((255,255,255))
+            pygame.draw.rect (win, (255,0,0), (200,300,200,200), 0) pygame.draw.rect (win, (0,255,0), (500,500,100,200), 0)
+        fade = pygame.Surface((width, height))
+        fade.fill((0,0,0))
+        for alpha in range(0, 300):
+            fade.set_alpha(alpha)
+            redrawWindow()
+            win.blit(fade, (0,0))
+            pygame.display.update()
+            pygame.time.delay(5)
 
     def run(self):
         while True:

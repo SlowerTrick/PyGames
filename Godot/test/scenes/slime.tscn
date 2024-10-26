@@ -1,0 +1,74 @@
+[gd_scene load_steps=11 format=3 uid="uid://dvc5c5i164mb5"]
+
+[ext_resource type="Texture2D" uid="uid://dlpjim4w8pmmk" path="res://assets/graphics/enemy/slime.png" id="1_bnhx6"]
+[ext_resource type="Script" path="res://scripts/slime.gd" id="1_wvicb"]
+[ext_resource type="PackedScene" uid="uid://dm6fdg4c8yq3g" path="res://scenes/kill_zone.tscn" id="2_h2qqe"]
+[ext_resource type="Script" path="res://scenes/damageable.gd" id="4_4lust"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7c7bc"]
+atlas = ExtResource("1_bnhx6")
+region = Rect2(0, 0, 18, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lxwqy"]
+atlas = ExtResource("1_bnhx6")
+region = Rect2(18, 0, 18, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_fotbw"]
+atlas = ExtResource("1_bnhx6")
+region = Rect2(36, 0, 18, 16)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_f6b8d"]
+atlas = ExtResource("1_bnhx6")
+region = Rect2(54, 0, 18, 16)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_676xm"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7c7bc")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lxwqy")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_fotbw")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_f6b8d")
+}],
+"loop": true,
+"name": &"default",
+"speed": 7.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_barkx"]
+
+[node name="Slime" type="CharacterBody2D"]
+collision_layer = 4
+script = ExtResource("1_wvicb")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_676xm")
+autoplay = "default"
+frame_progress = 0.588478
+
+[node name="KillZone" parent="." instance=ExtResource("2_h2qqe")]
+visible = false
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="KillZone"]
+shape = SubResource("CircleShape2D_barkx")
+
+[node name="RayCastRight" type="RayCast2D" parent="."]
+target_position = Vector2(11, 0)
+
+[node name="RayCastLeft" type="RayCast2D" parent="."]
+target_position = Vector2(-11, 0)
+
+[node name="Damageable" type="Node" parent="."]
+script = ExtResource("4_4lust")
+health = 99
+knockback_velocity = Vector2(120, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -2)
+shape = SubResource("CircleShape2D_barkx")

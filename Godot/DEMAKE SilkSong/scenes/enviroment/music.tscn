@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://itdsgl70bjhh"]
+
+[ext_resource type="AudioStream" uid="uid://cx8toysfd5omm" path="res://assets/audio/noragami.mp3" id="1_mtvei"]
+
+[node name="Music" type="AudioStreamPlayer"]
+stream = ExtResource("1_mtvei")
+autoplay = true
+bus = &"Music"

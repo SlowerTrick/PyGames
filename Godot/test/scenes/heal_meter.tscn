@@ -1,0 +1,33 @@
+[gd_scene load_steps=4 format=3 uid="uid://dm5ad1y5ud4bg"]
+
+[ext_resource type="Texture2D" uid="uid://btxogqiyel5ti" path="res://assets/graphics/ui/bar/0.png" id="1_n261k"]
+[ext_resource type="Texture2D" uid="uid://x3e1m6rfutww" path="res://assets/graphics/ui/bar/1.png" id="2_vxt8i"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_k7lc5"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("1_n261k")
+}],
+"loop": true,
+"name": &"Empty",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_vxt8i")
+}],
+"loop": false,
+"name": &"Heal",
+"speed": 5.0
+}]
+
+[node name="HealMeter" type="Panel"]
+self_modulate = Color(1, 1, 1, 0)
+offset_right = 40.0
+offset_bottom = 40.0
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_k7lc5")
+animation = &"Empty"
+centered = false
