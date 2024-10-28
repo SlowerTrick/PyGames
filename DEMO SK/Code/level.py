@@ -87,6 +87,10 @@ class Level:
             'hit_stop': Timer(100),
         }
 
+        # Fade
+        self.fade_alpha = 255  # Nível de opacidade inicial (0-255)
+        self.fade_speed = 5    # Velocidade do fade
+
     def setup(self, tmx_map, level_frames, audio_files):
         def get_layer(tmx_map, layer_name):
             try:
@@ -558,6 +562,16 @@ class Level:
         elif self.player.hitbox_rect.right <= left_limit:
             self.switch_screen(int(self.adjacent_stage['left']), 'right')
 
+    def fade_in(self):
+        if self.fade_alpha > 0:
+            fade_surface = pygame.Surface(self.display_surface.get_size())
+            fade_surface.fill((0, 0, 0))  # Preencher com preto
+            fade_surface.set_alpha(self.fade_alpha)  # Definir opacidade
+            self.display_surface.blit(fade_surface, (0, 0))  # Aplicar o fade na tela
+            self.fade_alpha -= self.fade_speed  # Reduzir opacidade gradualmente
+            if self.fade_alpha < 0:
+                self.fade_alpha = 0  # Garantir que a opacidade não fique negativa
+
     def run(self, delta_time):
         self.update_timers()
         if all(not timer.active for timer in self.timers.values()):
@@ -577,3 +591,6 @@ class Level:
 
             # Desenhar a linha caso exista
             self.throw_attack_rope()
+
+            # Aplicar efeito de fade in
+            self.fade_in()

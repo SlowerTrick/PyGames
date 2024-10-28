@@ -30,7 +30,7 @@ class Player(pygame.sprite.Sprite):
 
         # Movimento
         self.direction = vector()
-        self.speed = 200
+        self.speed = 220
         self.gravity = 1300
         self.jump_height = 720
         self.keys_pressed = {'jump': True, 'neutral_attack': True, 'special_attack': True, 'dash': True}
