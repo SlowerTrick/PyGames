@@ -466,6 +466,51 @@ class Fly(pygame.sprite.Sprite):
         self.move(dt)
         self.knockback(dt)
 
+class Butterfly(pygame.sprite.Sprite):
+    def __init__(self, pos, frames, groups, player):
+        # Setup geral
+        super().__init__(groups)
+        self.frames, self.frame_index = frames, 0
+        self.image = self.frames[self.frame_index]
+        self.rect = self.image.get_frect(topleft = pos)
+        self.speed = 300
+        self.z = Z_LAYERS['main']
+        self.player = player
+        self.flee_active = False
+
+        # Timers
+        self.timers = {
+            'flee_timer': Timer(3000)
+        }
+    
+    def update_timers(self):
+        # Atualiza todos os temporizadores estabelicidos
+        for timer in self.timers.values():
+            timer.update()
+    
+    def state_management(self):
+        player_pos, butterfly_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
+        player_near = butterfly_pos.distance_to(player_pos) < 400
+        player_level = abs(butterfly_pos.y - player_pos.y) < 200
+
+        if player_near and player_level:
+            self.flee_active = True
+            self.timers['flee_timer'].activate()
+    
+    def update(self, dt):
+        self.update_timers()
+        self.state_management()
+
+        # Animação
+        self.frame_index += ANIMATION_SPEED * dt
+        self.image = self.frames[int(self.frame_index % len(self.frames))]
+
+        # Movimento
+        if self.flee_active:
+            self.rect.y += -self.speed * dt
+            if not self.timers['flee_timer'].active:
+                self.kill()
+
 class Lace(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, player, collision_sprites):
         # Setup geral
@@ -477,53 +522,58 @@ class Lace(pygame.sprite.Sprite):
 
         # Frames 
         self.image = self.frames[self.state][self.frame_index]
-        self.image = pygame.Surface ((48, 56)) # temporario
-        self.image.fill('blue') # temporario
         self.rect = self.image.get_frect(topleft = pos)
-        self.hitbox_rect = self.rect
-        self.old_rect = self.rect.copy()
+        self.hitbox_rect = self.rect.inflate(-75, 0)
+        self.old_rect = self.hitbox_rect.copy()
         self.z = Z_LAYERS['main']
         self.player = player
 
         # Status
         self.direction = vector()
-        self.direction.x = 1
+        self.direction.x = -1
+        self.facing_side = 'left'
         self.lace_heath = 3
-        self.speed = 150
+        self.speed = 130
         self.jump_height = 820
         self.gravity = 1300
         self.on_ground = True
         self.player_near = False
-        self.using_attack = 'none'
+        self.active_attack = 'none'
+        self.can_move = False
+        self.can_attack = True
+
+        # Dash
+        self.dash_speed = 600
+        self.dash_distance = 400
+        self.dash_progress = self.dash_distance
 
         # Colisões e timers
         self.collision_rects = [sprite.rect for sprite in collision_sprites]
         self.hit_timer = Timer(500)
+        self.cycle = 1500
         self.timers = {
-            'cycle_attacks': Timer(3000)
+            'cycle_attacks': Timer(self.cycle)
         }
 
     def collisions(self, axis):
-        top_rect = pygame.FRect(self.rect.midtop, (1, 1))
-        floor_rect = pygame.FRect(self.rect.midbottom, (1, 1))
-        right_rect = pygame.FRect(self.rect.midleft, (1, 1))
-        left_rect = pygame.FRect(self.rect.midright, (1, 1))
+        top_rect = pygame.FRect(self.hitbox_rect.midtop, (1, 1))
+        floor_rect = pygame.FRect(self.hitbox_rect.midbottom, (1, 1))
+        right_rect = pygame.FRect(self.hitbox_rect.midleft, (1, 1))
+        left_rect = pygame.FRect(self.hitbox_rect.midright, (1, 1))
 
         if axis == 'horizontal':
             for sprite in self.collision_rects:
                 if right_rect.colliderect(sprite) or left_rect.colliderect(sprite):
                     if right_rect.x < sprite.x:
-                        self.hitbox_rect.right = sprite.left
-                        self.direction.x = -1
+                        self.hitbox_rect.right = sprite.left - 1
                     else:
-                        self.hitbox_rect.left = sprite.right
-                        self.direction.x = 1
+                        self.hitbox_rect.left = sprite.right + 1
 
         if axis == 'vertical':
             for sprite in self.collision_rects:
                 if floor_rect.colliderect(sprite):
                     self.hitbox_rect.bottom = sprite.top
-                    self.direction.y = 0
+                    #self.direction.y = -self.jump_height
                     self.on_ground = True
                     break
                 else:
@@ -536,61 +586,58 @@ class Lace(pygame.sprite.Sprite):
                     break
 
     def move(self, dt):
-        # Movimentação Horizontal
-        self.hitbox_rect.x += self.direction.x * self.speed * dt
-        self.collisions('horizontal')
+        if self.can_move:
+            if self.active_attack == 'dash':
+                self.dash(dt)
+                self.collisions('horizontal')
 
-        # Movimentação Vertical
-        self.direction.y += self.gravity / 2 * dt
-        self.hitbox_rect.y += self.direction.y* dt
-        self.direction.y += self.gravity / 2 * dt
-        self.collisions('vertical')
+            # Movimentação Vertical
+            if not self.on_ground and self.active_attack == 'cooldown':
+                self.direction.y += self.gravity / 2 * dt
+                self.hitbox_rect.y += self.direction.y * dt
+                self.direction.y += self.gravity / 2 * dt
+            self.collisions('vertical')
 
         # Finalização do movimento
         self.rect.center = self.hitbox_rect.center
 
     def attack(self, dt):
-        self.speed = 150
-        self.gravity = 1300
-        if self.using_attack == 'air_attack':
-            if self.on_ground:
-                self.direction.y = -self.jump_height
-                self.hitbox_rect.y += self.direction.y * dt
-                self.collisions('vertical')
-            else:
-                if self.direction.y <= 0:
-                    self.direction.y += self.gravity / 2 * dt
-                    self.hitbox_rect.y += self.direction.y * dt
-                    self.direction.y += self.gravity / 2 * dt
-                    self.collisions('vertical')
-
-                if self.direction.y >= 0:
-                    self.hitbox_rect.x += self.direction.x * self.speed * dt * 4
-                    self.hitbox_rect.y += self.speed * dt * 4
-                    self.collisions('horizontal')
-                    self.collisions('vertical')
-
-            self.rect.center = self.hitbox_rect.center
+        if not self.timers['cycle_attacks'].active:
+            self.timers['cycle_attacks'].activate()
+            attack = randint(2, 2)
+            self.active_attack = ['dash', 'multi', 'air'][attack]
+            self.can_attack = True
+        elif self.timers['cycle_attacks'].time_passed() > self.cycle - 200:
+            self.active_attack = 'cooldown'
+        
+        # Atualizar estado baseado no ataque ativo
+        if self.active_attack != 'cooldown' and self.can_attack:
+            self.can_attack = False
+            self.state = self.active_attack
+            self.can_move = self.active_attack == 'dash'
+            if self.active_attack == 'dash':
+                self.dash_progress = 0
 
     def state_management(self):
         player_pos, lace_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
-        self.player_near = lace_pos.distance_to(player_pos) < 1000
+        self.player_near = lace_pos.distance_to(player_pos) < 2000
         player_level = abs(lace_pos.y - player_pos.y) < 500
 
-        """ if self.player_near and player_level:
-            if player_pos.x <= lace_pos.x:
-                self.direction.x = -1
-                self.speed = 150
+        if self.player_near:
+            if self.active_attack == 'cooldown':
+                self.facing_side = 'left' if player_pos.x <= lace_pos.x else 'right'
+
+    def dash(self, dt):
+        if self.dash_progress < self.dash_distance:
+            dash_increment = self.dash_speed * dt
+            if self.dash_progress + dash_increment > self.dash_distance:
+                dash_increment = self.dash_distance - self.dash_progress
             else:
-                self.direction.x = 1
-                self.speed = 150
+                self.hitbox_rect.x += dash_increment if self.facing_side == 'right' else -dash_increment
+            self.dash_progress += dash_increment
         else:
-            self.speed = 0 """
-        
-        if not self.timers['cycle_attacks'].active:
-            self.timers['cycle_attacks'].activate()
-            new_attack = randint(0, 0)
-            self.using_attack = 'air_attack' if new_attack == 0 else 'none'
+            self.dash_progress = self.dash_distance
+            self.active_attack = 'cooldown' 
 
     def get_damage(self):
         if not self.hit_timer.active:
@@ -614,19 +661,17 @@ class Lace(pygame.sprite.Sprite):
             timer.update()
         self.hit_timer.update()
 
+    def animate(self, dt):
+        self.frame_index += ANIMATION_SPEED * dt
+        self.image = self.frames[self.state][int(self.frame_index % len(self.frames[self.state]))]
+        self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
+
     def update(self, dt):
         self.update_timers()
         self.state_management()
         self.attack(dt)
 
-        """ # Animação
-        self.frame_index += ANIMATION_SPEED * dt
-        if self.frame_index < len(self.frames[self.state]):
-            self.image = self.frames[self.state][int(self.frame_index)]
-        else:
-            self.frame_index = 0
-        self.image = pygame.transform.flip(self.image, True, False) if self.direction.x < 0 else self.image """
-        self.image.fill('blue') # temporario
+        self.animate(dt)
         self.flicker()
-        if not self.using_attack == 'air_attack':
-            self.move(dt)
+
+        self.move(dt)

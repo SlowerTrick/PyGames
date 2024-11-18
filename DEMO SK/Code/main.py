@@ -12,9 +12,6 @@ class Game:
         pygame.init() # Inicialização do pygame
         self.display_surface = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT), pygame.FULLSCREEN) # Tela
         pygame.display.set_caption('DEMO SilkSong') # Nome do jogo
-        icon = pygame.image.load('../graphics/icon/chibi.jpg') # Icone do jogo
-        pygame.display.set_icon(icon)
-
         self.clock = pygame.time.Clock() # FPS
         self.import_assets()
 
@@ -24,7 +21,19 @@ class Game:
         self.menu = Menu(self.display_surface, self.font)
         self.state = "game"
 
-        # Carregamento dos mapas do jogo
+        # Level
+        self.start_stage = 8 # 8 para lace
+        self.player_spawn = 'left'
+        self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
+        self.current_stage.timers['loading_time'].activate()
+        self.bg_music.play(-1)
+
+    def import_assets(self):
+        # Icone do jogo
+        icon = pygame.image.load('../graphics/icon/chibi.jpg') # Icone do jogo
+        pygame.display.set_icon(icon)
+
+        # Mapas
         self.tmx_maps = {
             #0: load_pygame(join('..', 'data', 'levels', 'omni.tmx')),
             0: load_pygame(join('..', 'data', 'levels', '0.tmx')),
@@ -37,13 +46,7 @@ class Game:
             7: load_pygame(join('..', 'data', 'levels', '7.tmx')),
             8: load_pygame(join('..', 'data', 'levels', '8.tmx')),
         }
-        self.start_stage = 1 # 8 para lace
-        self.player_spawn = 'left'
-        self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
-        self.current_stage.timers['loading_time'].activate()
-        self.bg_music.play(-1)
 
-    def import_assets(self):
         self.level_frames = {
             # Adição dos sprites animados
             'flag': import_folder('..', 'graphics', 'level', 'flag'),
@@ -61,10 +64,12 @@ class Game:
             'boat': import_folder('..',  'graphics', 'objects', 'boat'),
             'spike': import_image('..',  'graphics', 'enemies', 'spike_ball', 'Spiked Ball'),
             'spike_chain': import_image('..',  'graphics', 'enemies', 'spike_ball', 'spiked_chain'),
-            'tooth': import_folder('..', 'graphics','enemies', 'tooth', 'run'),
+            'tooth': import_folder('..', 'graphics', 'enemies', 'tooth', 'run'),
             'shell': import_sub_folders('..', 'graphics', 'enemies', 'shell'),
             'breakable_wall': import_image('..',  'graphics', 'enemies', 'breakable_wall', 'wall'),
             'slime': import_sub_folders('..', 'graphics', 'enemies', 'slime'),
+            'butterfly': import_folder('..', 'graphics', 'enemies', 'butterfly'),
+            'lace': import_sub_folders('..', 'graphics', 'enemies', 'lace'),
             'fly': import_sub_folders('..', 'graphics', 'enemies', 'fly'),
             'pearl': import_image('..',  'graphics', 'enemies', 'bullets', 'pearl'),
             'items': import_sub_folders('..', 'graphics', 'items'),
@@ -143,6 +148,7 @@ class Game:
             # Jogo
             elif self.state == 'game':
                 self.current_stage.run(delta_time) # Atualização dos sprites do jogo a partir do arquivo "Level"
+    
                 if not self.current_stage.timers['loading_time'].active:
                     self.ui.update(delta_time) # HUD do jogo
                 self.show_fps()

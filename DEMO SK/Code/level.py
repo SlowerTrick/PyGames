@@ -4,7 +4,7 @@ from timecount import Timer
 from player import Player
 from groups import AllSprites
 from debug import debug
-from enemies import Tooth, Shell, Breakable_wall, Pearl, Slime, Fly, Lace
+from enemies import Tooth, Shell, Breakable_wall, Pearl, Slime, Fly, Butterfly, Lace
 from attack import Neutral_Attack, Throw_Attack, Spin_Attack, Parry_Attack
 from random import uniform
 
@@ -64,6 +64,7 @@ class Level:
         self.pearl_sprites = pygame.sprite.Group()
         self.slime_sprites = pygame.sprite.Group()
         self.fly_sprites = pygame.sprite.Group()
+        self.lace_sprites = pygame.sprite.Group()
         self.thorn_sprites = pygame.sprite.Group()
 
         # Inicialização do grupo de sprites dos itens
@@ -258,11 +259,18 @@ class Level:
                         player = self.player,
                         collision_sprites = self.collision_sprites)
 
+                if obj.name == 'butterfly':
+                    Butterfly(
+                        pos = (int(obj.x), int(obj.y)), 
+                        frames = level_frames['butterfly'], 
+                        groups = (self.all_sprites),
+                        player = self.player)
+
                 if obj.name == 'lace':
-                    Lace(
+                    self.lace = Lace(
                         pos = (int(obj.x), int(obj.y)),
-                        frames = level_frames['slime'],
-                        groups = (self.all_sprites, self.damage_sprites, self.slime_sprites),
+                        frames = level_frames['lace'],
+                        groups = (self.all_sprites, self.damage_sprites, self.lace_sprites),
                         player = self.player,
                         collision_sprites = self.collision_sprites)
                     
@@ -438,7 +446,7 @@ class Level:
 
     def attack_collision(self):
         if self.player.neutral_attacking:
-            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.damage_sprites.sprites():
+            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.damage_sprites.sprites() + self.lace_sprites.sprites():
                 if target.rect.colliderect(self.player_neutral_attack_sprite.rect):
                     self.player.dash_is_available = True
                     is_enemy = hasattr(target, 'is_enemy')
@@ -474,7 +482,7 @@ class Level:
                                 target.is_alive()
 
         if self.player.throw_attacking:
-            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.collision_sprites.sprites():
+            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.collision_sprites.sprites() + self.lace_sprites.sprites():
                 if target.rect.colliderect(self.player_throw_attack_sprite.rect):
                     if hasattr(target, 'is_enemy'):
                         target.get_damage()
@@ -485,7 +493,7 @@ class Level:
                         self.player_throw_attack_sprite.speed = 0
 
         if self.player.spin_attacking:
-            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.damage_sprites.sprites():
+            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.damage_sprites.sprites() + self.lace_sprites.sprites():
                 if target.rect.colliderect(self.player_spin_attack_sprite.rect):
                     self.player.dash_is_available = True
                     is_enemy = hasattr(target, 'is_enemy')
@@ -496,7 +504,7 @@ class Level:
                         target.is_alive()
 
         if self.player.parrying:
-            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.damage_sprites.sprites():
+            for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.damage_sprites.sprites() + self.lace_sprites.sprites():
                 if target.rect.colliderect(self.player_parry_attack_sprite.rect):
                     is_enemy = hasattr(target, 'is_enemy')
                     is_pearl = hasattr(target, 'pearl')
@@ -594,3 +602,7 @@ class Level:
 
             # Aplicar efeito de fade in
             self.fade_in()
+
+            debug(self.lace.timers['cycle_attacks'].time_passed(), 150)
+            debug(self.lace.active_attack, 200)
+            debug((self.lace.dash_progress, self.lace.dash_distance), 250)
