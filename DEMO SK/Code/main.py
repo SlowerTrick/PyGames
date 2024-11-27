@@ -22,7 +22,7 @@ class Game:
         self.state = "game"
 
         # Level
-        self.start_stage = 8 # 8 para lace
+        self.start_stage = 0 # 8 para lace
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
         self.current_stage.timers['loading_time'].activate()
@@ -110,6 +110,7 @@ class Game:
             'bench_rest': pygame.mixer.Sound(join('..', 'audio', 'bench_rest.wav')),
             'parry_prepare': pygame.mixer.Sound(join('..', 'audio', 'hornet_parry_prepare.wav')),
             'parry': pygame.mixer.Sound(join('..', 'audio', 'hornet_parry.wav')),
+            'enemy_damage': pygame.mixer.Sound(join('..', 'audio', 'enemy_damage.wav')),
         }
         self.bg_music = pygame.mixer.Sound(join('..', 'audio', 'noragami.mp3'))
         self.bg_music.set_volume(0.5)

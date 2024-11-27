@@ -7,6 +7,8 @@ from debug import debug
 from enemies import Tooth, Shell, Breakable_wall, Pearl, Slime, Fly, Butterfly, Lace
 from attack import Neutral_Attack, Throw_Attack, Spin_Attack, Parry_Attack
 from random import uniform
+from os.path import join
+from audio import AudioManager
 
 class Level:
     def __init__(self, tmx_map, level_frames, audio_files, data, switch_screen, current_stage, player_spawn):
@@ -14,6 +16,7 @@ class Level:
         self.display_surface = pygame.display.get_surface() # Inicializa a partir da tela em main
         self.data = data
         self.switch_screen = switch_screen
+        self.audio_manager = AudioManager()
 
         # Ataques
         self.during_neutral_attack = False
@@ -85,12 +88,16 @@ class Level:
         self.setup(tmx_map, level_frames, audio_files)
         self.timers = {
             'loading_time': Timer(50),
-            'hit_stop': Timer(100),
+            'hit_stop_long': Timer(100),
+            'hit_stop_short': Timer(50),
         }
 
-        # Fade
+        # Screen effects
         self.fade_alpha = 255  # Nível de opacidade inicial (0-255)
-        self.fade_speed = 5    # Velocidade do fade
+        self.damage_alpha = 0 # Nível de opacidade inicial (0-255)
+        # Para tirar, os codigos estão em player_collisions e screen effects
+        self.fade_speed = 5   # Velocidade do fade 
+        self.damage_fade_speed = 3 # Velocidade do fade de dano
 
     def setup(self, tmx_map, level_frames, audio_files):
         def get_layer(tmx_map, layer_name):
@@ -336,7 +343,8 @@ class Level:
                 if not self.player.timers['invincibility_frames'].active:
                     if (not self.player.timers['parry'].active and not self.player.timers['parry_attack'].active) or sprite in self.thorn_sprites:
                         self.all_sprites.start_shaking(500, 2)
-                        self.timers['hit_stop'].activate()
+                        self.timers['hit_stop_long'].activate()
+                        self.damage_alpha = 80
                         self.player.get_damage()
                         self.audio_files['damage'].play()
 
@@ -358,6 +366,7 @@ class Level:
                     ParticleEffectSprite((sprite.rect.center), self.particle_frames, self.all_sprites)
                 if self.data.player_health <= 0:
                     self.data.player_health = BASE_HEALTH
+                    self.data.string_bar = 0
                     self.switch_screen(int(self.current_stage), self.player_spawn)
         
         # Banco
@@ -454,6 +463,9 @@ class Level:
                     
                     if is_enemy and not is_pearl:
                         if not target.hit_timer.active:
+                            self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
+                            self.timers['hit_stop_short'].activate()
+                            self.player_neutral_attack_sprite.frame_index = 1
                             self.data.string_bar += 1
                         handle_knockback = not self.player.timers['hit_knockback'].active and not target.hit_timer.active
                     else:
@@ -484,9 +496,13 @@ class Level:
         if self.player.throw_attacking:
             for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.collision_sprites.sprites() + self.lace_sprites.sprites():
                 if target.rect.colliderect(self.player_throw_attack_sprite.rect):
+                    is_pearl = hasattr(target, 'pearl')
                     if hasattr(target, 'is_enemy'):
+                        if not target.hit_timer.active and not is_pearl:
+                            self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
+                            self.timers['hit_stop_short'].activate()
                         target.get_damage()
-                        if not hasattr(target, 'pearl'):
+                        if not is_pearl:
                             target.is_alive()
                     else:
                         self.player_throw_attack_sprite.on_wall = True
@@ -500,6 +516,9 @@ class Level:
                     is_pearl = hasattr(target, 'pearl')
                     
                     if is_enemy and not is_pearl:
+                        if not target.hit_timer.active:
+                            self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
+                            self.timers['hit_stop_short'].activate()
                         target.get_damage()
                         target.is_alive()
 
@@ -522,6 +541,9 @@ class Level:
 
                         target.during_knockback.activate()
                     if is_enemy:
+                        if not target.hit_timer.active and not is_pearl:
+                                self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
+                                self.timers['hit_stop_short'].activate()
                         target.get_damage()
                         if not is_pearl:
                             target.is_alive()
@@ -570,7 +592,7 @@ class Level:
         elif self.player.hitbox_rect.right <= left_limit:
             self.switch_screen(int(self.adjacent_stage['left']), 'right')
 
-    def fade_in(self):
+    def screen_effects(self):
         if self.fade_alpha > 0:
             fade_surface = pygame.Surface(self.display_surface.get_size())
             fade_surface.fill((0, 0, 0))  # Preencher com preto
@@ -579,6 +601,14 @@ class Level:
             self.fade_alpha -= self.fade_speed  # Reduzir opacidade gradualmente
             if self.fade_alpha < 0:
                 self.fade_alpha = 0  # Garantir que a opacidade não fique negativa
+        if self.damage_alpha > 0:
+            damage_surface = pygame.Surface(self.display_surface.get_size())
+            damage_surface.fill((10, 10, 10))  # Preencher com preto
+            damage_surface.set_alpha(self.damage_alpha)  # Definir opacidade
+            self.display_surface.blit(damage_surface, (0, 0))  # Aplicar o fade na tela
+            self.damage_alpha -= self.damage_fade_speed  # Reduzir opacidade gradualmente
+            if self.damage_alpha < 0:
+                self.damage_alpha = 0  # Garantir que a opacidade não fique negativa
 
     def run(self, delta_time):
         self.update_timers()
@@ -600,9 +630,5 @@ class Level:
             # Desenhar a linha caso exista
             self.throw_attack_rope()
 
-            # Aplicar efeito de fade in
-            self.fade_in()
-
-            debug(self.lace.timers['cycle_attacks'].time_passed(), 150)
-            debug(self.lace.active_attack, 200)
-            debug((self.lace.dash_progress, self.lace.dash_distance), 250)
+            # Aplicar dos efeitos na tela
+            self.screen_effects()

@@ -1,13 +1,14 @@
 from settings import *
 from timecount import Timer
 from math import sin
-from json import load
 from os.path import join
+from audio import AudioManager
 
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos, groups, collision_sprites, semi_collision_sprites, frames, data, audio_files, screen_shake):
         # Setup Geral
         super().__init__(groups)
+        self.audio_manager = AudioManager()
 
         # Imagem
         self.frames, self.frame_index = frames, 0
@@ -200,7 +201,8 @@ class Player(pygame.sprite.Sprite):
             self.neutral_attacking = True
             self.frame_index = 0 # Reseta os frames para dar prioridade ao ataque
             self.timers['neutral_attack_block'].activate()
-            self.audio_files['neutral_attack'].play()
+            #self.audio_files['neutral_attack'].play()
+            self.audio_manager.play_with_pitch(join('..', 'audio', 'hornet_sword.wav'), volume_change=-6.0)
     
     def throw_attack(self):
         if not self.throw_attacking:

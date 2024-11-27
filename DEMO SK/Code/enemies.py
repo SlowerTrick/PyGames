@@ -530,27 +530,30 @@ class Lace(pygame.sprite.Sprite):
 
         # Status
         self.direction = vector()
-        self.direction.x = -1
         self.facing_side = 'left'
-        self.lace_heath = 3
-        self.speed = 130
-        self.jump_height = 820
+        self.lace_heath = 99
         self.gravity = 1300
-        self.on_ground = True
+        self.on_ground = False
         self.player_near = False
         self.active_attack = 'none'
-        self.can_move = False
+        self.can_move = True
         self.can_attack = True
 
-        # Dash
-        self.dash_speed = 600
+        # Dash Vertical
+        self.dash_speed = 650
         self.dash_distance = 400
         self.dash_progress = self.dash_distance
+
+        # Jump
+        self.jump_speed = 700
+        self.jump_distance = 280
+        self.jump_progress = self.jump_distance
+        self.spike_speed = 650
 
         # Colisões e timers
         self.collision_rects = [sprite.rect for sprite in collision_sprites]
         self.hit_timer = Timer(500)
-        self.cycle = 1500
+        self.cycle = 1300
         self.timers = {
             'cycle_attacks': Timer(self.cycle)
         }
@@ -573,7 +576,6 @@ class Lace(pygame.sprite.Sprite):
             for sprite in self.collision_rects:
                 if floor_rect.colliderect(sprite):
                     self.hitbox_rect.bottom = sprite.top
-                    #self.direction.y = -self.jump_height
                     self.on_ground = True
                     break
                 else:
@@ -587,16 +589,18 @@ class Lace(pygame.sprite.Sprite):
 
     def move(self, dt):
         if self.can_move:
-            if self.active_attack == 'dash':
-                self.dash(dt)
-                self.collisions('horizontal')
-
             # Movimentação Vertical
-            if not self.on_ground and self.active_attack == 'cooldown':
-                self.direction.y += self.gravity / 2 * dt
+            if not self.on_ground and not self.active_attack == 'air':
+                self.direction.y += self.gravity / 1.5 * dt
                 self.hitbox_rect.y += self.direction.y * dt
-                self.direction.y += self.gravity / 2 * dt
+                self.direction.y += self.gravity / 1.5 * dt
+                self.direction.x = 1 if self.facing_side == 'right' else -1
+                self.hitbox_rect.x += self.direction.x * self.spike_speed * dt
             self.collisions('vertical')
+
+            # Movimentação Horizontal
+            self.dash(dt)
+            self.collisions('horizontal')
 
         # Finalização do movimento
         self.rect.center = self.hitbox_rect.center
@@ -604,7 +608,7 @@ class Lace(pygame.sprite.Sprite):
     def attack(self, dt):
         if not self.timers['cycle_attacks'].active:
             self.timers['cycle_attacks'].activate()
-            attack = randint(2, 2)
+            attack = randint(0, 2)
             self.active_attack = ['dash', 'multi', 'air'][attack]
             self.can_attack = True
         elif self.timers['cycle_attacks'].time_passed() > self.cycle - 200:
@@ -614,30 +618,44 @@ class Lace(pygame.sprite.Sprite):
         if self.active_attack != 'cooldown' and self.can_attack:
             self.can_attack = False
             self.state = self.active_attack
-            self.can_move = self.active_attack == 'dash'
             if self.active_attack == 'dash':
                 self.dash_progress = 0
+            elif self.active_attack == 'air':
+                self.jump_progress = 0
 
     def state_management(self):
         player_pos, lace_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
         self.player_near = lace_pos.distance_to(player_pos) < 2000
         player_level = abs(lace_pos.y - player_pos.y) < 500
 
-        if self.player_near:
-            if self.active_attack == 'cooldown':
-                self.facing_side = 'left' if player_pos.x <= lace_pos.x else 'right'
+        if self.player_near and self.active_attack == 'cooldown' and self.on_ground:
+            self.facing_side = 'left' if player_pos.x <= lace_pos.x else 'right'
 
     def dash(self, dt):
-        if self.dash_progress < self.dash_distance:
-            dash_increment = self.dash_speed * dt
-            if self.dash_progress + dash_increment > self.dash_distance:
-                dash_increment = self.dash_distance - self.dash_progress
-            else:
+        if self.active_attack == 'dash':
+            # Movimento Horizontal (Dash)
+            if self.dash_progress < self.dash_distance:
+                dash_increment = self.dash_speed * dt
+                if self.dash_progress + dash_increment > self.dash_distance:
+                    dash_increment = self.dash_distance - self.dash_progress
                 self.hitbox_rect.x += dash_increment if self.facing_side == 'right' else -dash_increment
-            self.dash_progress += dash_increment
-        else:
-            self.dash_progress = self.dash_distance
-            self.active_attack = 'cooldown' 
+                self.dash_progress += dash_increment
+            else:
+                self.dash_progress = self.dash_distance
+                self.active_attack = 'cooldown'
+        
+        elif self.active_attack == 'air':
+            # Movimento Vertical (Air Jump)
+            if self.jump_progress < self.jump_distance:
+                jump_increment = self.jump_speed * dt
+                if self.jump_progress + jump_increment > self.jump_distance:
+                    jump_increment = self.jump_distance - self.jump_progress
+                self.hitbox_rect.y -= jump_increment
+                self.jump_progress += jump_increment
+            else:
+                self.active_attack = 'cooldown'
+                self.jump_progress = self.jump_distance
+                self.direction.y = 0
 
     def get_damage(self):
         if not self.hit_timer.active:
