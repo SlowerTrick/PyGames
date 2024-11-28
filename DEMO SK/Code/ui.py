@@ -14,6 +14,7 @@ class UI:
         self.heartless_frames = frames['heartless']
         self.ui_bar_frames = frames['ui_bar']
         self.string_bar_frames = frames['string_bar']
+        self.weapons_frames = frames['weapons']
         self.heart_surface_width = self.heart_frames[0].get_width()
         self.heart_padding = 6
 
@@ -43,6 +44,15 @@ class UI:
             if hasattr(sprite, 'is_StringBar'):
                 sprite.kill()
         StringBar((25, 90), self.string_bar_frames, self.sprites, amount)
+    
+    def create_weapons_frame(self, weapon):
+        for sprite in self.sprites:
+            if hasattr(sprite, 'is_WeaponFrame') or hasattr(sprite, 'is_WeaponFrameChild'):
+                sprite.kill()
+        #self.weapons_frames['frame'][0] = pygame.transform.scale_by(self.weapons_frames['frame'][0], 0.9)
+        #self.weapons_frames['weapons'][weapon] = pygame.transform.scale_by(self.weapons_frames['weapons'][weapon], 0.7)
+        #WeaponFrame((130, 85), self.weapons_frames['frame'][0], self.sprites)
+        WeaponFrame((120, 90), self.weapons_frames['weapons'][weapon], self.sprites)
 
     def display_text(self):
         if self.coin_timer.active:
@@ -105,4 +115,16 @@ class StringBar(Sprite):
         self.is_StringBar = True
         self.image = self.frames = frames[string_count]
         super().__init__(pos, self.image, groups)
+
+class WeaponFrame(Sprite):
+    def __init__(self, pos, frames, groups):
+        self.is_WeaponFrame = True
+        self.image = self.frames = frames
+        super().__init__(pos, frames, groups)
+
+class WeaponFrameChild(Sprite):
+    def __init__(self, pos, frames, groups, weapon):
+        self.is_WeaponFrameChild = True
+        self.image = self.frames = frames
+        super().__init__(pos, frames, groups)
     

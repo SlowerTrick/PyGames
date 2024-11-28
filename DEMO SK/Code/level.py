@@ -149,7 +149,9 @@ class Level:
                     if obj.name in ('barrel', 'crate'):
                         Sprite((int(obj.x), int(obj.y)), obj.image, (self.all_sprites, self.collision_sprites))
                     elif obj.name == 'bench':
-                        Sprite((int(obj.x), int(obj.y)), obj.image, (self.all_sprites, self.bench_sprites), z = Z_LAYERS['bg details'])
+                        bench_image = obj.image
+                        bench_image = pygame.transform.scale_by(bench_image, (1.2, 1.3))
+                        Sprite((int(obj.x), int(obj.y)), bench_image, (self.all_sprites, self.bench_sprites), z = Z_LAYERS['bg details'])
                     else:
                         if obj.name in level_frames and obj.name != 'player':
                             frames = level_frames[obj.name] if not 'palm' in obj.name else level_frames['palms'][obj.name]

@@ -192,3 +192,22 @@ class Parry_Attack(pygame.sprite.Sprite):
         if not self.timers['max_time'].active:
             self.kill()
             self.audio_files['catch'].play()
+
+class Knive(pygame.sprite.Sprite):
+    def __init__(self, pos, groups, surf, direction, speed):
+        super().__init__(groups)
+        self.image = surf
+        self.rect = self.image.get_frect(center = pos + vector(50 * direction,8))
+        self.direction = direction
+        self.speed = speed
+        self.z = Z_LAYERS['main']
+        self.timers = {'lifetime': Timer(5000)}
+        self.timers['lifetime'].activate()
+
+    def update(self, dt):
+        for timer in self.timers.values():
+            timer.update()
+
+        self.rect.x += self.direction * self.speed * dt
+        if not self.timers['lifetime'].active:
+            self.kill()

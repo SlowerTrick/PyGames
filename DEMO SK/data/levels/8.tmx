@@ -42,7 +42,7 @@
   </object>
  </objectgroup>
  <objectgroup id="15" name="Enemies">
-  <object id="14" name="lace" x="966" y="1217" width="58" height="64"/>
+  <object id="14" name="slime" x="966" y="1217" width="58" height="64"/>
   <object id="15" name="butterfly" x="1091" y="1246" width="58" height="64"/>
  </objectgroup>
  <objectgroup id="13" name="Data">

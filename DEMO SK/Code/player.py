@@ -34,7 +34,13 @@ class Player(pygame.sprite.Sprite):
         self.speed = 220
         self.gravity = 1300
         self.jump_height = 720
-        self.keys_pressed = {'jump': True, 'neutral_attack': True, 'special_attack': True, 'dash': True}
+        self.keys_pressed = {
+            'jump': True, 
+            'neutral_attack': True, 
+            'special_attack': True,
+            'switch_weapons': True, 
+            'dash': True
+        }
 
         # Dash
         self.dash_speed = 700
@@ -88,6 +94,7 @@ class Player(pygame.sprite.Sprite):
         self.data = data
         self.audio_files = audio_files
         self.audio_files['neutral_attack'].set_volume(0.5)
+        self.audio_files['switch_weapons'].set_volume(0.5)
         self.z = Z_LAYERS['main']
         self.screen_shake = screen_shake
         
@@ -174,6 +181,14 @@ class Player(pygame.sprite.Sprite):
                     elif self.data.string_bar >= 2 and self.vertical_sight == 'down' and not self.timers['parry'].active:
                         self.parry()
 
+            # Botão Ferramentas
+            if (keys[pygame.K_u] or any(joystick.get_axis(5) > 0.5 for joystick in self.joysticks)):
+                if not self.keys_pressed['switch_weapons']:
+                    self.keys_pressed['switch_weapons'] = True
+                    self.switch_weapon()
+            else:
+                self.keys_pressed['switch_weapons'] = False
+
             # Dash
             if (keys[pygame.K_i] or any(joystick.get_button(3) for joystick in self.joysticks)):
                 if not self.keys_pressed['dash']:
@@ -213,6 +228,7 @@ class Player(pygame.sprite.Sprite):
             self.frame_index = 0
             self.audio_files['throw'].play()
             self.dashing = False
+            self.on_surface['bench'] = False
     
     def spin_attack(self):
         if not self.spin_attacking:
@@ -278,6 +294,10 @@ class Player(pygame.sprite.Sprite):
         self.data.player_health += 3
         self.data.string_bar -= 3
         self.state = 'idle'
+    
+    def switch_weapon(self):
+        self.audio_files['switch_weapons'].play()
+        self.data.actual_weapon += 1
 
     def move(self, delta_time):
         # Dash

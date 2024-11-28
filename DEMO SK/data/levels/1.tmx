@@ -246,7 +246,7 @@
     <property name="spawn" value="top"/>
    </properties>
   </object>
-  <object id="53" name="bench" gid="327" x="671.5" y="558.583" width="34" height="21"/>
+  <object id="53" name="bench" gid="327" x="658.5" y="548.583" width="34" height="21"/>
  </objectgroup>
  <objectgroup id="15" name="Enemies">
   <object id="35" name="fly" gid="144" x="772" y="873" width="48" height="42"/>

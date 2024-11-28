@@ -7,9 +7,15 @@ class Data:
         self._health_regen = True
         self._string_bar = 6
         self._max_string_bar = 6
+        self._actual_weapon = 1 # Voltar para o valor 0 no estado inicial do jogo e liberar outros valores 
+        self._max_actual_weapon = 2 # Valor que diz respeito ao valor máximo desbloqueado (talvez colocar id depois)
+                                    # Ou criar uma loja que libera todos os weapons de uma vez, assim criando uma
+                                    # variavel "available" para weapons 
+        self._max_weapon = 2 # Alterar caso mais sejam adicionados, mas nunca deixar voltar pra 0
         self.ui.create_ui_bar(self._health_regen)
         self.ui.create_hearts(self._player_health, self._max_player_heath)
         self.ui.create_string_bar(self._string_bar)
+        self.ui.create_weapons_frame(0)
 
         # Habilidades desbloqueaveis
         self.unlocked_wall_jump = True
@@ -61,3 +67,14 @@ class Data:
         if self._string_bar < 0:
             self._string_bar = 0
         self.ui.create_string_bar(self._string_bar)
+    
+    @property
+    def actual_weapon(self):
+        return self._actual_weapon
+
+    @actual_weapon.setter
+    def actual_weapon(self, value):
+        self._actual_weapon = value
+        if self._actual_weapon > self._max_weapon:
+            self._actual_weapon = 1
+        self.ui.create_weapons_frame(self._actual_weapon)
