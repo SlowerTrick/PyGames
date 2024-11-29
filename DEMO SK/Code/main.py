@@ -22,11 +22,34 @@ class Game:
         self.state = "game"
 
         # Level
-        self.start_stage = 1 # 8 para lace
+        self.start_stage = 6 # 8 para lace
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
         self.current_stage.timers['loading_time'].activate()
         self.bg_music.play(-1)
+
+        # Inicializando os joysticks
+        self.joysticks = []
+        self.controller_type = None  # Será 'Xbox 360' ou 'PS4' ou 'None'
+
+        # Detectando os joysticks conectados
+        self.init_joysticks()
+
+    def init_joysticks(self):
+        joystick_count = pygame.joystick.get_count()
+
+        if joystick_count > 0:
+            for i in range(joystick_count):
+                joystick = pygame.joystick.Joystick(i)
+                self.joysticks.append(joystick)
+
+            # Identificar tipo de controle
+            if self.joysticks[0].get_name().lower().find("xbox") != -1:
+                self.controller_type = 'Xbox 360'
+            elif self.joysticks[0].get_name().lower().find("ps4") != -1:
+                self.controller_type = 'PS4'
+            else:
+                self.controller_type = 'Unknown'
 
     def import_assets(self):
         # Icone do jogo
@@ -129,17 +152,28 @@ class Game:
         fps_text = font.render(f"FPS: {int(fps)}", True, pygame.Color('white'))
         self.display_surface.blit(fps_text, (10, 10))
 
+    def detect_pause_button(self, event):
+        if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+            return True
+        elif event.type == pygame.JOYBUTTONDOWN: 
+            for joystick in self.joysticks:
+                if self.controller_type == 'Xbox 360':
+                    if joystick.get_button(7):
+                        return True
+                elif self.controller_type == 'PS4':
+                    if joystick.get_button(9):
+                        return True
+        return False
+
     def run(self):
         while True:
             delta_time = self.clock.tick() / 1000 # Delta time para normalizar o fps, o fps não é travado
-            
             # Verificação dos eventos do jogo
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE:
+                if self.detect_pause_button(event):
                         self.state = 'menu'
 
             # Menu

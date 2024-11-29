@@ -466,7 +466,8 @@ class Level:
                     if is_enemy and not is_pearl:
                         if not target.hit_timer.active:
                             self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
-                            self.timers['hit_stop_short'].activate()
+                            if not self.timers['hit_stop_short'].active:
+                                self.timers['hit_stop_short'].activate()
                             self.player_neutral_attack_sprite.frame_index = 1
                             self.data.string_bar += 1
                         handle_knockback = not self.player.timers['hit_knockback'].active and not target.hit_timer.active
@@ -502,7 +503,8 @@ class Level:
                     if hasattr(target, 'is_enemy'):
                         if not target.hit_timer.active and not is_pearl:
                             self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
-                            self.timers['hit_stop_short'].activate()
+                            if not self.timers['hit_stop_short'].active:
+                                self.timers['hit_stop_short'].activate()
                         target.get_damage()
                         if not is_pearl:
                             target.is_alive()
@@ -520,7 +522,8 @@ class Level:
                     if is_enemy and not is_pearl:
                         if not target.hit_timer.active:
                             self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
-                            self.timers['hit_stop_short'].activate()
+                            if not self.timers['hit_stop_short'].active:
+                                self.timers['hit_stop_short'].activate()
                         target.get_damage()
                         target.is_alive()
 
@@ -545,7 +548,8 @@ class Level:
                     if is_enemy:
                         if not target.hit_timer.active and not is_pearl:
                                 self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
-                                self.timers['hit_stop_short'].activate()
+                                if not self.timers['hit_stop_short'].active:
+                                    self.timers['hit_stop_short'].activate()
                         target.get_damage()
                         if not is_pearl:
                             target.is_alive()

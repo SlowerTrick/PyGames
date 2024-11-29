@@ -26,8 +26,12 @@ class Player(pygame.sprite.Sprite):
         self.joysticks = []
         for joystick in range(pygame.joystick.get_count()):
             self.joysticks.append(pygame.joystick.Joystick(joystick))
-        for joystick in self.joysticks:
-            joystick.init()
+
+        # Detecta o tipo de controle
+        self.controller_type = self.detect_controller_type()
+
+        # Mapeamento de controles baseado no tipo de controle
+        self.control_mapping = self.get_control_mapping(self.controller_type)
 
         # Movimento
         self.direction = vector()
@@ -115,11 +119,11 @@ class Player(pygame.sprite.Sprite):
             # Movimento Horizontal
             if not self.timers['wall_jump'].active and not self.dashing:
                 # Movimentação Horizontal
-                if (keys[pygame.K_d] or any(joystick.get_axis(0) > 0.5 for joystick in self.joysticks)):
+                if (keys[pygame.K_d] or self.get_input_action("move_right")):
                     input_vector.x += 1
                     self.facing_side = 'right'
                     self.on_surface['bench'] = False
-                if (keys[pygame.K_a] or any(joystick.get_axis(0) < -0.5 for joystick in self.joysticks)):
+                if (keys[pygame.K_a] or self.get_input_action("move_left")):
                     input_vector.x -= 1
                     self.facing_side = 'left'
                     self.on_surface['bench'] = False
@@ -128,15 +132,15 @@ class Player(pygame.sprite.Sprite):
                 self.direction.x = input_vector.normalize().x if input_vector else 0
             
             # Visão vertical
-            if (keys[pygame.K_w] or any(joystick.get_axis(1) < -0.5 for joystick in self.joysticks)):
+            if (keys[pygame.K_w] or self.get_input_action("move_up")):
                 self.vertical_sight = 'up' 
-            elif (keys[pygame.K_s] or any(joystick.get_axis(1) > 0.5 for joystick in self.joysticks)):
+            elif (keys[pygame.K_s] or self.get_input_action("move_down")):
                 self.timers['platform_skip'].activate()
                 self.vertical_sight = 'down'
                 self.on_surface['bench'] = False
 
             # Ataque Neutro
-            if (keys[pygame.K_p] or any(joystick.get_button(2) for joystick in self.joysticks)) and not self.throw_attacking:
+            if (keys[pygame.K_p] or self.get_input_action("neutral_attack")) and not self.throw_attacking:
                 if not self.keys_pressed['neutral_attack']:
                     self.neutral_attack()
                     self.keys_pressed['neutral_attack'] = True
@@ -145,7 +149,7 @@ class Player(pygame.sprite.Sprite):
                 self.keys_pressed['neutral_attack'] = False
 
             # Botão Especial
-            if (keys[pygame.K_o] or any(joystick.get_button(1) for joystick in self.joysticks)):
+            if (keys[pygame.K_o] or self.get_input_action("special_attack")):
                 if not self.keys_pressed['special_attack']:
                     self.timers['heal_init'].activate()
                     self.keys_pressed['special_attack'] = True
@@ -182,7 +186,7 @@ class Player(pygame.sprite.Sprite):
                         self.parry()
 
             # Botão Ferramentas
-            if (keys[pygame.K_u] or any(joystick.get_axis(5) > 0.5 for joystick in self.joysticks)):
+            if (keys[pygame.K_u] or self.get_input_action("switch_weapons")):
                 if not self.keys_pressed['switch_weapons']:
                     self.keys_pressed['switch_weapons'] = True
                     self.switch_weapon()
@@ -190,7 +194,7 @@ class Player(pygame.sprite.Sprite):
                 self.keys_pressed['switch_weapons'] = False
 
             # Dash
-            if (keys[pygame.K_i] or any(joystick.get_button(3) for joystick in self.joysticks)):
+            if (keys[pygame.K_i] or self.get_input_action("dash")):
                 if not self.keys_pressed['dash']:
                     if self.dash_is_available and self.data.unlocked_dash:
                         self.dash()
@@ -199,7 +203,7 @@ class Player(pygame.sprite.Sprite):
                 self.keys_pressed['dash'] = False
 
             # Movimentação vertical
-            if (keys[pygame.K_SPACE] or any(joystick.get_button(0) for joystick in self.joysticks)) and not self.dashing:
+            if (keys[pygame.K_SPACE] or self.get_input_action("jump")) and not self.dashing:
                 self.jump_key_held = True
                 self.on_surface['bench'] = False
                 if not self.keys_pressed['jump']:
@@ -210,6 +214,57 @@ class Player(pygame.sprite.Sprite):
             else:
                 self.keys_pressed['jump'] = False
                 self.jump_key_held = False
+    
+    def detect_controller_type(self):
+        #Detecta se o controle é um Xbox 360 ou PS4 com base no nome do dispositivo.
+        if pygame.joystick.get_count() > 0:
+            joystick_name = self.joysticks[0].get_name().lower()
+            if 'xbox' in joystick_name:
+                return 'Xbox 360'
+            elif 'play' in joystick_name:
+                return 'PS4'
+        return 'Unknown'
+
+    def get_control_mapping(self, controller_type):
+        # Retorna o mapeamento de controles com base no tipo de controle (Xbox 360 ou PS4).
+        if controller_type == 'Xbox 360':
+            return {
+                # Notação: ("Eixo, Direção, Botão")
+                "move_right": (0, 1),  # Eixo 0 positivo (Movimento para a direita no joystick esquerdo)
+                "move_left": (0, -1),  # Eixo 0 negativo (Movimento para a esquerda no joystick esquerdo)
+                "move_up": (1, -1),    # Eixo 1 negativo (Movimento para cima no joystick esquerdo)
+                "move_down": (1, 1),   # Eixo 1 positivo (Movimento para baixo no joystick esquerdo)
+                "jump": (0, None, 0),  # Botão 0 (Botão A no Xbox, para pulo)
+                "neutral_attack": (0, None, 2),  # Botão 2 (Botão X no Xbox, para ataque neutro)
+                "special_attack": (0, None, 1),  # Botão 1 (Botão B no Xbox, para ataque especial)
+                "switch_weapons": (0, None, 5),  # Botão 5 (Right Bumper - RB, para alternar armas)
+                "dash": (0, None, 3),  # Botão 3 (Botão Y no Xbox, para dash)
+            }
+        if controller_type == 'PS4':
+            return {
+                "move_right": (0, 1),  # Eixo 0 positivo (Movimento para a direita no joystick esquerdo)
+                "move_left": (0, -1),  # Eixo 0 negativo (Movimento para a esquerda no joystick esquerdo)
+                "move_up": (1, -1),    # Eixo 1 negativo (Movimento para cima no joystick esquerdo)
+                "move_down": (1, 1),   # Eixo 1 positivo (Movimento para baixo no joystick esquerdo)
+                "jump": (0, None, 0),  # Botão 0 (Botão X no PS4, para pulo)
+                "neutral_attack": (0, None, 2),  # Botão 2 (Botão Square no PS4, para ataque neutro)
+                "special_attack": (0, None, 1),  # Botão 1 (Botão Circle no PS4, para ataque especial)
+                "switch_weapons": (0, 5),  # Eixo 5 positivo (Right Trigger - R2, para alternar armas)
+                "dash": (0, None, 3),  # Botão 3 (Botão Triangle no PS4, para dash)
+            }    
+        else:
+            return {}
+
+    def get_input_action(self, action):
+        """
+        Verifica se uma ação mapeada está ativa (eixo ou botão).
+        """
+        mapping = self.control_mapping[action]
+        if len(mapping) == 3:  # Botão
+            return any(joystick.get_button(mapping[2]) for joystick in self.joysticks)
+        elif len(mapping) == 2:  # Eixo
+            axis, direction = mapping
+            return any((joystick.get_axis(axis) > 0.5 if direction == 1 else joystick.get_axis(axis) < -0.5) for joystick in self.joysticks)
 
     def neutral_attack(self):
         if not self.timers['neutral_attack_block'].active:
