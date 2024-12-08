@@ -487,7 +487,7 @@ class Level:
 
     def attack_collision(self):
         if self.player.neutral_attacking:
-            for target in self.all_enemies:
+            for target in self.all_enemies.sprites() + self.damage_sprites.sprites():
                 if target.rect.colliderect(self.player_neutral_attack_sprite.rect):
                     self.player.dash_is_available = True
                     is_enemy = hasattr(target, 'is_enemy')
