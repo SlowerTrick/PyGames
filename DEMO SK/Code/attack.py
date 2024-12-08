@@ -1,5 +1,6 @@
 from settings import *
 from timecount import Timer
+from sprites import ParticleEffectSprite
 
 class Neutral_Attack(pygame.sprite.Sprite):
     def __init__(self, pos, groups, frames, facing_side, vertical_sight, jumping):
@@ -195,6 +196,7 @@ class Parry_Attack(pygame.sprite.Sprite):
 
 class Knive(pygame.sprite.Sprite):
     def __init__(self, pos, groups, frames, facing_side, speed):
+        # Setup Geral
         super().__init__(groups)
         self.is_knive = True
         self.image = frames['weapons'][1]
@@ -203,41 +205,61 @@ class Knive(pygame.sprite.Sprite):
         self.direction = 1 if self.facing_side == 'right' else -1
         self.rect = self.image.get_frect(center = pos + vector(50 * self.direction, 8))
         self.rect.y += 25
-        self.speed = speed
         self.z = Z_LAYERS['main']
+
+        # Movimeto
+        self.speed = speed
+
+        # Timers
         self.timers = {'lifetime': Timer(2500)}
         self.timers['lifetime'].activate()
+    
+    def create_particle_effect(self):
+        ParticleEffectSprite(self.rect.center, self.particle_frames, self.all_sprites)
+
+    def move(self, dt):
+        self.rect.x += self.direction * self.speed * dt
+
+    def is_alive(self):
+        if not self.timers['lifetime'].active:
+            self.kill()
 
     def update(self, dt):
         for timer in self.timers.values():
             timer.update()
 
-        self.rect.x += self.direction * self.speed * dt
-        if not self.timers['lifetime'].active:
-            self.kill()
+        self.move(dt)
+        self.is_alive()
 
 class Saw(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, frames, facing_side, speed, collision_sprites):
+    def __init__(self, pos, groups, frames, facing_side, speed, collision_sprites, particle_frames, all_sprites):
+        #Setup geral
         super().__init__(groups)
         self.is_saw = True
         self.frames = pygame.transform.scale_by(frames['weapons'][2], 1.5)
         self.image = frames['weapons'][2]
-        self.angle = 0
         self.facing_side = facing_side
+        self.particle_frames = particle_frames
+        self.all_sprites = all_sprites
         self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
         self.direction = 1 if self.facing_side == 'right' else -1
         self.rect = self.image.get_frect(center = pos + vector(50 * self.direction, 8))
-        self.collision_rects = [sprite.rect for sprite in collision_sprites]
         self.rect.y += 45
-        self.speed = speed
+        self.collision_rects = [sprite.rect for sprite in collision_sprites]
         self.z = Z_LAYERS['main']
+
+        # Rotação e movimento
+        self.angle = 0
+        self.speed = speed
+
+        # Timers
         self.timers = {'lifetime': Timer(2500)}
         self.timers['lifetime'].activate()
-
-    def update(self, dt):
-        for timer in self.timers.values():
-            timer.update()
-
+    
+    def create_particle_effect(self):
+        ParticleEffectSprite(self.rect.center, self.particle_frames, self.all_sprites)
+    
+    def move(self, dt):
         if self.facing_side == 'left':
             self.angle += 6
             self.angle = 0 if self.angle >= 360 else self.angle
@@ -250,10 +272,19 @@ class Saw(pygame.sprite.Sprite):
         # Rotação da imagem
         self.image = pygame.transform.rotate(self.frames, self.angle)
         self.rect = self.image.get_rect(center=self.rect.center)
-        
+
+    def is_alive(self):
         floor_rect = pygame.FRect((self.rect.centerx, self.rect.bottom), (1, 1))
         top_rect = pygame.FRect((self.rect.centerx, self.rect.top), (1, 1))
         if not self.timers['lifetime'].active or\
         floor_rect.collidelist(self.collision_rects) < 0 or\
         top_rect.collidelist(self.collision_rects) > 0:
+            self.create_particle_effect()
             self.kill()
+
+    def update(self, dt):
+        for timer in self.timers.values():
+            timer.update()
+
+        self.move(dt)
+        self.is_alive()
