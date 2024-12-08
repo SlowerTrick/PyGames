@@ -107,6 +107,7 @@ class Game:
             'player_spin_attack': import_folder('..', 'graphics', 'player', 'spin_attack'),
             'player_parry_attack': import_folder('..', 'graphics', 'player', 'parry_attack_animation'),
             'bench': import_image('..',  'graphics', 'level', 'bench', 'bench'),
+            'weapons': import_sub_folders('..', 'graphics', 'ui', 'weapons'), 
         }
         self.font = pygame.font.Font(join('..', 'graphics', 'ui', 'SuperPixel.ttf'), 40)
 

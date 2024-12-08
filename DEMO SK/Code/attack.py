@@ -194,14 +194,18 @@ class Parry_Attack(pygame.sprite.Sprite):
             self.audio_files['catch'].play()
 
 class Knive(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, surf, direction, speed):
+    def __init__(self, pos, groups, frames, facing_side, speed):
         super().__init__(groups)
-        self.image = surf
-        self.rect = self.image.get_frect(center = pos + vector(50 * direction,8))
-        self.direction = direction
+        self.is_knive = True
+        self.image = frames['weapons'][1]
+        self.facing_side = facing_side
+        self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
+        self.direction = 1 if self.facing_side == 'right' else -1
+        self.rect = self.image.get_frect(center = pos + vector(50 * self.direction, 8))
+        self.rect.y += 25
         self.speed = speed
         self.z = Z_LAYERS['main']
-        self.timers = {'lifetime': Timer(5000)}
+        self.timers = {'lifetime': Timer(2500)}
         self.timers['lifetime'].activate()
 
     def update(self, dt):
@@ -210,4 +214,46 @@ class Knive(pygame.sprite.Sprite):
 
         self.rect.x += self.direction * self.speed * dt
         if not self.timers['lifetime'].active:
+            self.kill()
+
+class Saw(pygame.sprite.Sprite):
+    def __init__(self, pos, groups, frames, facing_side, speed, collision_sprites):
+        super().__init__(groups)
+        self.is_saw = True
+        self.frames = pygame.transform.scale_by(frames['weapons'][2], 1.5)
+        self.image = frames['weapons'][2]
+        self.angle = 0
+        self.facing_side = facing_side
+        self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
+        self.direction = 1 if self.facing_side == 'right' else -1
+        self.rect = self.image.get_frect(center = pos + vector(50 * self.direction, 8))
+        self.collision_rects = [sprite.rect for sprite in collision_sprites]
+        self.rect.y += 45
+        self.speed = speed
+        self.z = Z_LAYERS['main']
+        self.timers = {'lifetime': Timer(2500)}
+        self.timers['lifetime'].activate()
+
+    def update(self, dt):
+        for timer in self.timers.values():
+            timer.update()
+
+        if self.facing_side == 'left':
+            self.angle += 6
+            self.angle = 0 if self.angle >= 360 else self.angle
+            self.rect.x += self.direction * self.speed * dt
+        elif self.facing_side == 'right':
+            self.angle -= 6
+            self.angle = 0 if self.angle <= -360 else self.angle
+            self.rect.x += self.direction * self.speed * dt * 1.5
+
+        # Rotação da imagem
+        self.image = pygame.transform.rotate(self.frames, self.angle)
+        self.rect = self.image.get_rect(center=self.rect.center)
+        
+        floor_rect = pygame.FRect((self.rect.centerx, self.rect.bottom), (1, 1))
+        top_rect = pygame.FRect((self.rect.centerx, self.rect.top), (1, 1))
+        if not self.timers['lifetime'].active or\
+        floor_rect.collidelist(self.collision_rects) < 0 or\
+        top_rect.collidelist(self.collision_rects) > 0:
             self.kill()

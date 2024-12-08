@@ -5,7 +5,7 @@ from player import Player
 from groups import AllSprites
 from debug import debug
 from enemies import Tooth, Shell, Breakable_wall, Pearl, Slime, Fly, Butterfly, Lace
-from attack import Neutral_Attack, Throw_Attack, Spin_Attack, Parry_Attack
+from attack import Neutral_Attack, Throw_Attack, Spin_Attack, Parry_Attack, Knive, Saw
 from random import uniform
 from os.path import join
 from audio import AudioManager
@@ -59,6 +59,7 @@ class Level:
         self.semi_collision_sprites = pygame.sprite.Group()
         self.damage_sprites = pygame.sprite.Group()
         self.attack_sprites = pygame.sprite.Group()
+        self.weapon_sprites = pygame.sprite.Group()
         self.bench_sprites = pygame.sprite.Group()
 
         # Inicialização do grupo de sprites dos inimigos que causam dano
@@ -69,6 +70,7 @@ class Level:
         self.fly_sprites = pygame.sprite.Group()
         self.lace_sprites = pygame.sprite.Group()
         self.thorn_sprites = pygame.sprite.Group()
+        self.all_enemies = pygame.sprite.Group()
 
         # Inicialização do grupo de sprites dos itens
         self.item_sprites = pygame.sprite.Group()
@@ -80,6 +82,7 @@ class Level:
         self.throw_attack_frames = level_frames['player_throw_attack']
         self.spin_attack_frames = level_frames['player_spin_attack']
         self.parry_attack_frames = level_frames['player_parry_attack']
+        self.weapon_frames = level_frames['weapons']
 
         # Sons
         self.audio_files = audio_files
@@ -233,14 +236,14 @@ class Level:
                     Tooth(
                         pos = (int(obj.x), int(obj.y)), 
                         frames = level_frames['tooth'], 
-                        groups = (self.all_sprites, self.damage_sprites, self.tooth_sprites), 
+                        groups = (self.all_sprites, self.damage_sprites, self.tooth_sprites, self.all_enemies), 
                         collision_sprites = self.collision_sprites)
                     
                 if obj.name == 'shell':
                     Shell(
                         pos = (int(obj.x), int(obj.y)),
                         frames = level_frames['shell'],
-                        groups = (self.all_sprites, self.collision_sprites, self.shell_sprites),
+                        groups = (self.all_sprites, self.collision_sprites, self.shell_sprites, self.all_enemies),
                         reverse = obj.properties['reverse'],
                         player = self.player,
                         create_pearl = self.create_pearl)
@@ -249,14 +252,14 @@ class Level:
                     Breakable_wall(
                         pos = (int(obj.x), int(obj.y)),
                         surf = level_frames['breakable_wall'],
-                        groups = (self.all_sprites, self.collision_sprites, self.tooth_sprites),
+                        groups = (self.all_sprites, self.collision_sprites, self.tooth_sprites, self.all_enemies),
                     )
     
                 if obj.name == 'slime':
                     Slime(
                         pos = (int(obj.x), int(obj.y)),
                         frames = level_frames['slime'],
-                        groups = (self.all_sprites, self.damage_sprites, self.slime_sprites),
+                        groups = (self.all_sprites, self.damage_sprites, self.slime_sprites, self.all_enemies),
                         player = self.player,
                         collision_sprites = self.collision_sprites)
                 
@@ -264,7 +267,7 @@ class Level:
                     Fly(
                         pos = (int(obj.x), int(obj.y)),
                         frames = level_frames['fly'],
-                        groups = (self.all_sprites, self.damage_sprites, self.fly_sprites),
+                        groups = (self.all_sprites, self.damage_sprites, self.fly_sprites, self.all_enemies),
                         player = self.player,
                         collision_sprites = self.collision_sprites)
 
@@ -279,7 +282,7 @@ class Level:
                     self.lace = Lace(
                         pos = (int(obj.x), int(obj.y)),
                         frames = level_frames['lace'],
-                        groups = (self.all_sprites, self.damage_sprites, self.lace_sprites),
+                        groups = (self.all_sprites, self.damage_sprites, self.lace_sprites, self.all_enemies),
                         player = self.player,
                         collision_sprites = self.collision_sprites)
                     
@@ -333,15 +336,19 @@ class Level:
         self.audio_files['pearl'].play()
 
     def pearl_collision(self):
-        for sprite in self.collision_sprites:
-            sprite = pygame.sprite.spritecollide(sprite, self.pearl_sprites, True)
-            if sprite:
-                ParticleEffectSprite((sprite[0].rect.center), self.particle_frames, self.all_sprites)
+        if self.pearl_sprites:
+            for sprite in self.collision_sprites:
+                sprite = pygame.sprite.spritecollide(sprite, self.pearl_sprites, True)
+                if sprite:
+                    ParticleEffectSprite((sprite[0].rect.center), self.particle_frames, self.all_sprites)
 
     def player_collisions(self, dt):
         # Hit no jogador
         for sprite in self.damage_sprites:
             if sprite.rect.colliderect(self.player.hitbox_rect):
+                if hasattr(sprite, 'is_dead'):
+                    if getattr(sprite, 'is_dead') == True:
+                        continue
                 if not self.player.timers['invincibility_frames'].active:
                     if (not self.player.timers['parry'].active and not self.player.timers['parry_attack'].active) or sprite in self.thorn_sprites:
                         self.all_sprites.start_shaking(500, 2)
@@ -455,6 +462,27 @@ class Level:
             self.player.spin_attacking = False
             self.player.spin_attacking = False
 
+        # Equipamentos
+        if self.player.using_weapon:
+            self.player.using_weapon = False
+            if self.data.actual_weapon == 1:
+                Knive(
+                    pos = (self.player.hitbox_rect.x, self.player.hitbox_rect.y),
+                    groups = (self.all_sprites, self.attack_sprites, self.weapon_sprites),
+                    frames = self.weapon_frames,
+                    facing_side = self.player.facing_side,
+                    speed = 900
+                )
+            elif self.data.actual_weapon == 2: 
+                Saw(
+                    pos = (self.player.hitbox_rect.x, self.player.hitbox_rect.y),
+                    groups = (self.all_sprites, self.attack_sprites, self.weapon_sprites),
+                    frames = self.weapon_frames,
+                    facing_side = self.player.facing_side,
+                    speed = 450,
+                    collision_sprites = self.collision_sprites,
+                )
+
     def attack_collision(self):
         if self.player.neutral_attacking:
             for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.damage_sprites.sprites() + self.lace_sprites.sprites():
@@ -515,7 +543,6 @@ class Level:
         if self.player.spin_attacking:
             for target in self.pearl_sprites.sprites() + self.tooth_sprites.sprites() + self.shell_sprites.sprites() + self.slime_sprites.sprites() + self.fly_sprites.sprites() + self.damage_sprites.sprites() + self.lace_sprites.sprites():
                 if target.rect.colliderect(self.player_spin_attack_sprite.rect):
-                    self.player.dash_is_available = True
                     is_enemy = hasattr(target, 'is_enemy')
                     is_pearl = hasattr(target, 'pearl')
                     
@@ -554,8 +581,37 @@ class Level:
                         if not is_pearl:
                             target.is_alive()
 
+        if self.weapon_sprites:
+            for sprite in self.collision_sprites:
+                collided_sprites = pygame.sprite.spritecollide(sprite, self.weapon_sprites, False)
+                if collided_sprites:
+                    for weapon in collided_sprites:
+                        if hasattr(weapon, 'is_knive'):
+                            ParticleEffectSprite((weapon.rect.center), self.particle_frames, self.all_sprites)
+                            weapon.kill()
+            for target in self.all_enemies:
+                collided_sprites = pygame.sprite.spritecollide(target, self.weapon_sprites, False)
+                if collided_sprites:
+                    for weapon in collided_sprites:
+                        is_enemy = hasattr(target, 'is_enemy')
+                        is_pearl = hasattr(target, 'pearl')
+                        
+                        if is_enemy and not is_pearl:
+                            if not target.hit_timer.active:
+                                self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
+                                if not self.timers['hit_stop_short'].active:
+                                    self.timers['hit_stop_short'].activate()
+                            target.get_damage()
+                            target.is_alive()
+                        
+                        if hasattr(weapon, 'is_saw'):
+                            weapon.speed = 0
+                        elif hasattr(weapon, 'is_knive'):
+                            ParticleEffectSprite((weapon.rect.center), self.particle_frames, self.all_sprites)
+                            weapon.kill()
+
     def attack_logic(self, delta_time):
-        if (self.during_neutral_attack and self.player_neutral_attack_sprite) or (self.during_throw_attack and self.player_throw_attack_sprite) or (self.during_spin_attack and self.player_spin_attack_sprite) or self.player.parrying:
+        if (self.during_neutral_attack and self.player_neutral_attack_sprite) or (self.during_throw_attack and self.player_throw_attack_sprite) or (self.during_spin_attack and self.player_spin_attack_sprite) or self.player.parrying or self.weapon_sprites:
             if self.during_neutral_attack and self.player_neutral_attack_sprite:
                 self.player_neutral_attack_sprite.update_position((self.player.hitbox_rect.x, self.player.hitbox_rect.y))
                 """ if self.player_neutral_attack_sprite.facing_side in {'right', 'left'} and not self.player_neutral_attack_sprite.knockback_applied:

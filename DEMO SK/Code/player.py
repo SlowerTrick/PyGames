@@ -42,7 +42,8 @@ class Player(pygame.sprite.Sprite):
             'jump': True, 
             'neutral_attack': True, 
             'special_attack': True,
-            'switch_weapons': True, 
+            'switch_weapons': True,
+            'use_weapon': True, 
             'dash': True
         }
 
@@ -68,6 +69,7 @@ class Player(pygame.sprite.Sprite):
         self.knockback_direction = 'none'
         self.healing = False
         self.neutral_attack_direction = 'none'
+        self.using_weapon = False
 
         # Colisão
         self.collision_sprites = collision_sprites
@@ -192,6 +194,14 @@ class Player(pygame.sprite.Sprite):
                     self.switch_weapon()
             else:
                 self.keys_pressed['switch_weapons'] = False
+            
+            # Botão usar Ferramentas
+            if (keys[pygame.K_y] or self.get_input_action("use_weapon")):
+                if not self.keys_pressed['use_weapon'] and self.data.string_bar >= 1:
+                    self.keys_pressed['use_weapon'] = True
+                    self.use_weapon()
+            else:
+                self.keys_pressed['use_weapon'] = False
 
             # Dash
             if (keys[pygame.K_i] or self.get_input_action("dash")):
@@ -237,6 +247,7 @@ class Player(pygame.sprite.Sprite):
                 "jump": (0, None, 0),  # Botão 0 (Botão A no Xbox, para pulo)
                 "neutral_attack": (0, None, 2),  # Botão 2 (Botão X no Xbox, para ataque neutro)
                 "special_attack": (0, None, 1),  # Botão 1 (Botão B no Xbox, para ataque especial)
+                "use_weapon": (0, None, 4),  # Eixo 4 positivo (Left Trigger - RA, para usar armas)
                 "switch_weapons": (0, None, 5),  # Botão 5 (Right Bumper - RB, para alternar armas)
                 "dash": (0, None, 3),  # Botão 3 (Botão Y no Xbox, para dash)
             }
@@ -249,22 +260,22 @@ class Player(pygame.sprite.Sprite):
                 "jump": (0, None, 0),  # Botão 0 (Botão X no PS4, para pulo)
                 "neutral_attack": (0, None, 2),  # Botão 2 (Botão Square no PS4, para ataque neutro)
                 "special_attack": (0, None, 1),  # Botão 1 (Botão Circle no PS4, para ataque especial)
-                "switch_weapons": (0, 5),  # Eixo 5 positivo (Right Trigger - R2, para alternar armas)
+                "use_weapon": (0, None, 9),  # Eixo 9 positivo (Left Trigger - R1, para usar armas)
+                "switch_weapons": (0, None, 10),  # Eixo 10 positivo (Right Trigger - R2, para alternar armas)
                 "dash": (0, None, 3),  # Botão 3 (Botão Triangle no PS4, para dash)
             }    
         else:
             return {}
 
     def get_input_action(self, action):
-        """
-        Verifica se uma ação mapeada está ativa (eixo ou botão).
-        """
-        mapping = self.control_mapping[action]
-        if len(mapping) == 3:  # Botão
-            return any(joystick.get_button(mapping[2]) for joystick in self.joysticks)
-        elif len(mapping) == 2:  # Eixo
-            axis, direction = mapping
-            return any((joystick.get_axis(axis) > 0.5 if direction == 1 else joystick.get_axis(axis) < -0.5) for joystick in self.joysticks)
+        if self.control_mapping:
+            #Verifica se uma ação mapeada está ativa (eixo ou botão).
+            mapping = self.control_mapping[action]
+            if len(mapping) == 3:  # Botão
+                return any(joystick.get_button(mapping[2]) for joystick in self.joysticks)
+            elif len(mapping) == 2:  # Eixo
+                axis, direction = mapping
+                return any((joystick.get_axis(axis) > 0.5 if direction == 1 else joystick.get_axis(axis) < -0.5) for joystick in self.joysticks)
 
     def neutral_attack(self):
         if not self.timers['neutral_attack_block'].active:
@@ -347,12 +358,19 @@ class Player(pygame.sprite.Sprite):
         self.screen_shake(100, 1)
         self.data.health_regen = False
         self.data.player_health += 3
-        self.data.string_bar -= 3
         self.state = 'idle'
     
     def switch_weapon(self):
         self.audio_files['switch_weapons'].play()
         self.data.actual_weapon += 1
+
+    def use_weapon(self):
+        if self.data.actual_weapon == 1:
+            self.using_weapon = True
+            self.data.string_bar -= 1
+        elif self.data.actual_weapon == 2 and self.on_surface['floor']:
+            self.using_weapon = True
+            self.data.string_bar -= 2
 
     def move(self, delta_time):
         # Dash

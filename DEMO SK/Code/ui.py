@@ -49,9 +49,6 @@ class UI:
         for sprite in self.sprites:
             if hasattr(sprite, 'is_WeaponFrame') or hasattr(sprite, 'is_WeaponFrameChild'):
                 sprite.kill()
-        #self.weapons_frames['frame'][0] = pygame.transform.scale_by(self.weapons_frames['frame'][0], 0.9)
-        #self.weapons_frames['weapons'][weapon] = pygame.transform.scale_by(self.weapons_frames['weapons'][weapon], 0.7)
-        #WeaponFrame((130, 85), self.weapons_frames['frame'][0], self.sprites)
         WeaponFrame((120, 90), self.weapons_frames['weapons'][weapon], self.sprites)
 
     def display_text(self):

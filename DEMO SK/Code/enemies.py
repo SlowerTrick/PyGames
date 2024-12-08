@@ -186,8 +186,8 @@ class Breakable_wall(pygame.sprite.Sprite):
         self.is_alive()
 
 class Slime(pygame.sprite.Sprite):
-    def __init__(self, pos, frames, groups, player, collision_sprites):
         # Setup geral
+    def __init__(self, pos, frames, groups, player, collision_sprites):
         super().__init__(groups)
         self.is_enemy = True
         self.frame_index = 0
@@ -216,7 +216,12 @@ class Slime(pygame.sprite.Sprite):
         # Colisões e timers
         self.collision_rects = [sprite.rect for sprite in collision_sprites]
         self.hit_timer = Timer(500)
+        self.death_animation_timer = Timer(3000)
         self.during_knockback = Timer(500)
+
+        # Death animation
+        self.angle = 0
+        self.is_dead = False
 
     def collisions(self, axis):
         top_rect = pygame.FRect(self.rect.midtop, (1, 1))
@@ -299,7 +304,10 @@ class Slime(pygame.sprite.Sprite):
 
     def is_alive(self):
         if self.slime_heath <= 0:
-            self.kill()
+            self.is_dead = True
+            self.state = 'idle'
+            self.frame_index = 0
+            self.death_animation_timer.activate()
 
     def flicker(self):
         if self.hit_timer.active and sin(pygame.time.get_ticks() * 100) >= 0:
@@ -308,21 +316,49 @@ class Slime(pygame.sprite.Sprite):
             white_surf.set_colorkey('black')
             self.image = white_surf
 
-    def update(self, dt):
-        self.hit_timer.update()
-        self.during_knockback.update()
-        self.state_management()
+    def death_animation(self, dt):
+        self.death_animation_timer.update()
+        if self.death_animation_timer.active:
+            self.angle += 3
+            if self.angle >= 360:
+                self.angle = 0
 
-        # Animação
-        self.frame_index += ANIMATION_SPEED * dt
-        if self.frame_index < len(self.frames[self.state]):
-            self.image = self.frames[self.state][int(self.frame_index)]
+            # Rotação da imagem
+            self.image = pygame.transform.rotate(self.frames[self.state][self.frame_index], self.angle)
+            self.rect = self.image.get_rect(center=self.hitbox_rect.center)
+
+            # Movimentação do sprite Horizontal
+            if self.knockback_direction == 'left':
+                self.hitbox_rect.x -= self.direction.x * self.speed * dt / 2
+            elif self.knockback_direction == 'right':
+                self.hitbox_rect.x += self.direction.x * self.speed * dt / 2
+
+            # Movimentação do sprite vertical
+            self.direction.y += self.gravity / 2 * dt
+            self.hitbox_rect.y += self.direction.y * dt
+            self.direction.y += self.gravity / 2 * dt
+            self.rect.center = self.hitbox_rect.center
         else:
-            self.frame_index = 0
-        self.image = pygame.transform.flip(self.image, True, False) if self.direction.x < 0 else self.image
-        self.flicker()
+            self.kill()
 
-        self.move(dt)
+    def update(self, dt):
+        if not self.is_dead:
+            self.hit_timer.update()
+            self.during_knockback.update()
+            self.state_management()
+
+            # Animação
+            self.frame_index += ANIMATION_SPEED * dt
+            if self.frame_index < len(self.frames[self.state]):
+                self.image = self.frames[self.state][int(self.frame_index)]
+            else:
+                self.frame_index = 0
+            self.image = pygame.transform.flip(self.image, True, False) if self.direction.x < 0 else self.image
+            self.flicker()
+
+            self.move(dt)
+        else:
+            self.death_animation(dt)
 
 class Fly(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, player, collision_sprites):
@@ -358,6 +394,11 @@ class Fly(pygame.sprite.Sprite):
         self.collision_rects = [sprite.rect for sprite in collision_sprites]
         self.hit_timer = Timer(500)
         self.during_knockback = Timer(300)
+        self.death_animation_timer = Timer(3000)
+
+        # Death animation
+        self.angle = 0
+        self.is_dead = False
 
     def collisions(self, axis):
         top_rect = pygame.FRect(self.rect.midtop, (1, 1))
@@ -440,7 +481,10 @@ class Fly(pygame.sprite.Sprite):
 
     def is_alive(self):
         if self.fly_health <= 0:
-            self.kill()
+            self.is_dead = True
+            self.state = 'idle'
+            self.frame_index = 0
+            self.death_animation_timer.activate()
 
     def flicker(self):
         if self.hit_timer.active and sin(pygame.time.get_ticks() * 100) >= 0:
@@ -448,23 +492,51 @@ class Fly(pygame.sprite.Sprite):
             white_surf = white_mask.to_surface()
             white_surf.set_colorkey('black')
             self.image = white_surf
+    
+    def death_animation(self, dt):
+        self.death_animation_timer.update()
+        if self.death_animation_timer.active:
+            self.angle += 3
+            if self.angle >= 360:
+                self.angle = 0
+
+            # Rotação da imagem
+            self.image = pygame.transform.rotate(self.frames[self.state][self.frame_index], self.angle)
+            self.rect = self.image.get_rect(center=self.hitbox_rect.center)
+
+            # Movimentação do sprite Horizontal
+            if self.knockback_direction == 'left':
+                self.hitbox_rect.x -= self.direction.x * self.speed * dt / 2
+            elif self.knockback_direction == 'right':
+                self.hitbox_rect.x += self.direction.x * self.speed * dt / 2
+
+            # Movimentação do sprite vertical
+            self.direction.y += self.gravity / 2 * dt
+            self.hitbox_rect.y += self.direction.y * dt
+            self.direction.y += self.gravity / 2 * dt
+            self.rect.center = self.hitbox_rect.center
+        else:
+            self.kill()
 
     def update(self, dt):
-        self.hit_timer.update()
-        self.during_knockback.update()
-        self.state_management(dt)
+        if not self.is_dead:
+            self.hit_timer.update()
+            self.during_knockback.update()
+            self.state_management(dt)
 
-        # Animação
-        self.frame_index += ANIMATION_SPEED * dt
-        if self.frame_index < len(self.frames[self.state]):
-            self.image = self.frames[self.state][int(self.frame_index)]
+            # Animação
+            self.frame_index += ANIMATION_SPEED * dt
+            if self.frame_index < len(self.frames[self.state]):
+                self.image = self.frames[self.state][int(self.frame_index)]
+            else:
+                self.frame_index = 0
+            self.image = pygame.transform.flip(self.image, True, False) if self.direction.x < 0 else self.image
+            self.flicker()
+
+            self.move(dt)
+            self.knockback(dt)
         else:
-            self.frame_index = 0
-        self.image = pygame.transform.flip(self.image, True, False) if self.direction.x < 0 else self.image
-        self.flicker()
-
-        self.move(dt)
-        self.knockback(dt)
+            self.death_animation(dt)
 
 class Butterfly(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, player):
