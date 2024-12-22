@@ -22,7 +22,7 @@ class Game:
         self.state = "game"
 
         # Level
-        self.start_stage = 6 # 8 para lace
+        self.start_stage = 7 # 8 para lace
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
         self.current_stage.timers['loading_time'].activate()
@@ -34,22 +34,6 @@ class Game:
 
         # Detectando os joysticks conectados
         self.init_joysticks()
-
-    def init_joysticks(self):
-        joystick_count = pygame.joystick.get_count()
-
-        if joystick_count > 0:
-            for i in range(joystick_count):
-                joystick = pygame.joystick.Joystick(i)
-                self.joysticks.append(joystick)
-
-            # Identificar tipo de controle
-            if self.joysticks[0].get_name().lower().find("xbox") != -1:
-                self.controller_type = 'Xbox 360'
-            elif self.joysticks[0].get_name().lower().find("ps4") != -1:
-                self.controller_type = 'PS4'
-            else:
-                self.controller_type = 'Unknown'
 
     def import_assets(self):
         # Icone do jogo
@@ -76,7 +60,8 @@ class Game:
             'saw': import_folder('..', 'graphics', 'enemies', 'saw', 'animation'),
             'floor_spike': import_sub_folders('..', 'graphics','enemies', 'floor_spikes'),
             'palms': import_sub_folders('..', 'graphics', 'level', 'palms'),
-            'candle': import_folder('..', 'graphics','level', 'candle'),
+            'candle': import_folder('..', 'graphics', 'level', 'candle'),
+            'chest': import_folder('..', 'graphics', 'level', 'chest'),
             'window': import_folder('..', 'graphics','level', 'window'),
             'big_chain': import_folder('..', 'graphics','level', 'big_chains'),
             'small_chain': import_folder('..', 'graphics','level', 'small_chains'),
@@ -87,7 +72,7 @@ class Game:
             'boat': import_folder('..',  'graphics', 'objects', 'boat'),
             'spike': import_image('..',  'graphics', 'enemies', 'spike_ball', 'Spiked Ball'),
             'spike_chain': import_image('..',  'graphics', 'enemies', 'spike_ball', 'spiked_chain'),
-            'tooth': import_folder('..', 'graphics', 'enemies', 'tooth', 'run'),
+            'runner': import_folder('..', 'graphics', 'enemies', 'runner', 'run'),
             'shell': import_sub_folders('..', 'graphics', 'enemies', 'shell'),
             'breakable_wall': import_image('..',  'graphics', 'enemies', 'breakable_wall', 'wall'),
             'slime': import_sub_folders('..', 'graphics', 'enemies', 'slime'),
@@ -107,7 +92,7 @@ class Game:
             'player_spin_attack': import_folder('..', 'graphics', 'player', 'spin_attack'),
             'player_parry_attack': import_folder('..', 'graphics', 'player', 'parry_attack_animation'),
             'bench': import_image('..',  'graphics', 'level', 'bench', 'bench'),
-            'weapons': import_sub_folders('..', 'graphics', 'ui', 'weapons'), 
+            'weapons': import_sub_folders('..', 'graphics', 'ui', 'weapons'),  
         }
         self.font = pygame.font.Font(join('..', 'graphics', 'ui', 'SuperPixel.ttf'), 40)
 
@@ -140,6 +125,22 @@ class Game:
         }
         self.bg_music = pygame.mixer.Sound(join('..', 'audio', 'noragami.mp3'))
         self.bg_music.set_volume(0.5)
+
+    def init_joysticks(self):
+        joystick_count = pygame.joystick.get_count()
+
+        if joystick_count > 0:
+            for i in range(joystick_count):
+                joystick = pygame.joystick.Joystick(i)
+                self.joysticks.append(joystick)
+
+            # Identificar tipo de controle
+            if self.joysticks[0].get_name().lower().find("xbox") != -1:
+                self.controller_type = 'Xbox 360'
+            elif self.joysticks[0].get_name().lower().find("ps4") != -1:
+                self.controller_type = 'PS4'
+            else:
+                self.controller_type = 'Unknown'
 
     def switch_screen(self, target, player_spawn):
         if target >= len(self.tmx_maps):

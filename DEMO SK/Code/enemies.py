@@ -1,32 +1,34 @@
 from settings import *
 from timecount import Timer
-from random import choice, randint
+from random import choice, randint, uniform
+from sprites import Item 
 from math import sin
 
-class Tooth(pygame.sprite.Sprite):
+class Runner(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, collision_sprites):
         super().__init__(groups)
         self.is_enemy = True
         self.frames, self.frame_index = frames, 0
         self.image = self.frames[self.frame_index]
+        self.image = pygame.transform.scale_by(self.image, 1.2)
         self.rect = self.image.get_frect(topleft = pos)
         self.z = Z_LAYERS['main']
-        self.tooth_health = 3
+        self.runner_health = 3
 
         self.direction = choice((-1,1))
         self.collision_rects = [sprite.rect for sprite in collision_sprites]
         self.speed = 200
 
-        self.hit_timer = Timer(300)
+        self.hit_timer = Timer(600)
 
     def get_damage(self):
         if not self.hit_timer.active:
             self.direction *= -1
             self.hit_timer.activate()
-            self.tooth_health -= 1
+            self.runner_health -= 1
 
     def is_alive(self):
-        if self.tooth_health <= 0:
+        if self.runner_health <= 0:
             self.kill()
 
     def flicker(self):
@@ -43,6 +45,7 @@ class Tooth(pygame.sprite.Sprite):
         self.frame_index += ANIMATION_SPEED * dt
         self.image = self.frames[int(self.frame_index % len(self.frames))]
         self.image = pygame.transform.flip(self.image, True, False) if self.direction < 0 else self.image
+        self.image = pygame.transform.scale_by(self.image, 1.2)
         self.flicker()
 
         # movimento
@@ -172,6 +175,28 @@ class Breakable_wall(pygame.sprite.Sprite):
         self.wall_health = 3
         self.hit_timer = Timer(1000)
 
+        # Controle do tremor
+        self.shake_magnitude = 60  # Intensidade do tremor
+        self.shake_timer = Timer(500, self.stop_shaking, repeat=False)   # Duração do tremor
+        self.original_x = self.rect.x
+    
+    def start_shaking(self):
+        self.shake_timer.activate()
+        self.original_x = self.rect.x
+        self.original_y = self.rect.y
+    
+    def stop_shaking(self):
+        self.shake_timer.deactivate()
+
+    def apply_shake(self, dt):
+        if self.shake_timer.active:
+            self.rect.x += uniform(-self.shake_magnitude, self.shake_magnitude) * dt
+        else:
+            if abs(self.rect.x - self.original_x) > self.shake_magnitude:
+                self.rect.x = (self.original_x + (self.rect.x - self.original_x) / abs(self.rect.x - self.original_x) * self.shake_magnitude) * dt
+            else:
+                self.rect.x = self.original_x 
+
     def is_alive(self):
         if self.wall_health <= 0:
             self.kill()
@@ -180,14 +205,106 @@ class Breakable_wall(pygame.sprite.Sprite):
         if not self.hit_timer.active:
             self.hit_timer.activate()
             self.wall_health -= 1
+            self.start_shaking()
+            self.original_x = self.rect.x
 
     def update(self, dt):
         self.hit_timer.update()
+        self.shake_timer.update()
         self.is_alive()
+        self.apply_shake(dt)
+
+class Chest(pygame.sprite.Sprite):
+    def __init__(self, pos, groups, frames, item_name, all_sprites, item_frames, item_sprite_group, data, reverse=False):
+        super().__init__(groups)
+        # Bools
+        self.is_dead = False
+        self.open_chest = True
+        self.is_enemy = True
+
+        # Sprite
+        self.frames, self.frame_index = frames, 0
+        self.image = self.frames[self.frame_index]
+        self.image = pygame.transform.scale_by(self.image, 2.5)
+        self.reverse = reverse
+        self.all_sprites = all_sprites
+        self.image = pygame.transform.flip(self.image, True, False) if self.reverse else self.image
+        self.rect = self.image.get_frect(topleft = pos)
+        self.old_rect = self.rect
+
+        # Item do baú
+        self.item_name = item_name
+        self.item_frames = item_frames
+        self.item_group = item_sprite_group
+
+        # Setup geral
+        self.z = Z_LAYERS['main']
+        self.chest_health = 3
+        self.hit_timer = Timer(600)
+        self.data = data
+
+        # Controle do tremor
+        self.shake_magnitude = 60  # Intensidade do tremor
+        self.shake_timer = Timer(500, self.stop_shaking, repeat=False)   # Duração do tremor
+        self.original_x = self.rect.x
+    
+    def start_shaking(self):
+        self.shake_timer.activate()
+        self.original_x = self.rect.x
+        self.original_y = self.rect.y
+    
+    def stop_shaking(self):
+        self.shake_timer.deactivate()
+
+    def apply_shake(self, dt):
+        if self.shake_timer.active:
+            self.rect.x += uniform(-self.shake_magnitude, self.shake_magnitude) * dt
+        else:
+            if abs(self.rect.x - self.original_x) > self.shake_magnitude:
+                self.rect.x = (self.original_x + (self.rect.x - self.original_x) / abs(self.rect.x - self.original_x) * self.shake_magnitude) * dt
+            else:
+                self.rect.x = self.original_x 
+    
+    def is_alive(self):
+        if self.chest_health <= 0 and not self.is_dead:
+            self.is_dead = True
+            self.create_item()
+    
+    def create_item(self):
+        Item(
+            item_type = self.item_name, 
+            pos = (self.rect.centerx, self.rect.centery), 
+            frames = self.item_frames, 
+            groups = self.item_group, 
+            data = self.data,
+        )
+  
+    def get_damage(self):
+        if not self.hit_timer.active:
+            self.hit_timer.activate()
+            self.chest_health -= 1
+            self.start_shaking()
+            self.original_x = self.rect.x
+
+    def open_chest_animation(self, dt):
+        if self.is_dead and self.open_chest:
+            self.frame_index += ANIMATION_SPEED * dt
+            self.image = self.frames[int(self.frame_index % len(self.frames))]
+            if self.frame_index >= len(self.frames) - 1:
+                self.open_chest = False
+            self.image = pygame.transform.scale_by(self.image, 2.5)
+            self.image = pygame.transform.flip(self.image, True, False) if self.reverse else self.image
+
+    def update(self, dt):
+        self.hit_timer.update()
+        self.shake_timer.update()
+        self.is_alive()
+        self.apply_shake(dt)
+        self.open_chest_animation(dt)
 
 class Slime(pygame.sprite.Sprite):
-        # Setup geral
     def __init__(self, pos, frames, groups, player, collision_sprites):
+        # Setup geral
         super().__init__(groups)
         self.is_enemy = True
         self.frame_index = 0

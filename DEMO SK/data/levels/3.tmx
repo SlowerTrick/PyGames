@@ -95,9 +95,9 @@
 </data>
  </layer>
  <objectgroup id="17" name="Enemies">
-  <object id="20" name="tooth" gid="124" x="857.333" y="2368" width="48" height="46"/>
-  <object id="21" name="tooth" gid="124" x="941" y="2368" width="48" height="46"/>
-  <object id="22" name="tooth" gid="124" x="1021" y="2368" width="48" height="46"/>
+  <object id="20" name="tooth" gid="124" x="857.333" y="2356" width="48" height="46"/>
+  <object id="21" name="tooth" gid="124" x="941" y="2356" width="48" height="46"/>
+  <object id="22" name="tooth" gid="124" x="1021" y="2356" width="48" height="46"/>
   <object id="23" name="shell" gid="123" x="375" y="2369" width="76" height="46">
    <properties>
     <property name="reverse" type="bool" value="false"/>

@@ -4,7 +4,7 @@ from timecount import Timer
 from player import Player
 from groups import AllSprites
 from debug import debug
-from enemies import Tooth, Shell, Breakable_wall, Pearl, Slime, Fly, Butterfly, Lace
+from enemies import Runner, Shell, Breakable_wall, Chest, Pearl, Slime, Fly, Butterfly, Lace
 from attack import Neutral_Attack, Throw_Attack, Spin_Attack, Parry_Attack, Knive, Saw
 from random import uniform
 from os.path import join
@@ -63,7 +63,7 @@ class Level:
         self.bench_sprites = pygame.sprite.Group()
 
         # Inicialização do grupo de sprites dos inimigos que causam dano
-        self.tooth_sprites = pygame.sprite.Group()
+        self.runner_sprites = pygame.sprite.Group()
         self.shell_sprites = pygame.sprite.Group()
         self.pearl_sprites = pygame.sprite.Group()
         self.slime_sprites = pygame.sprite.Group()
@@ -94,6 +94,7 @@ class Level:
             'hit_stop_long': Timer(100),
             'hit_stop_short': Timer(50),
         }
+        self.hit_stop_cooldown = Timer(100)
 
         # Screen effects
         self.fade_alpha = 255  # Nível de opacidade inicial (0-255)
@@ -149,8 +150,18 @@ class Level:
                         audio_files = audio_files,
                         screen_shake = self.all_sprites.start_shaking)
                 else:
-                    if obj.name in ('barrel', 'crate'):
-                        Sprite((int(obj.x), int(obj.y)), obj.image, (self.all_sprites, self.collision_sprites))
+                    if obj.name in ('chest'):
+                        Chest(
+                            pos = (int(obj.x), int(obj.y)), 
+                            groups = (self.all_sprites, self.collision_sprites, self.slime_sprites, self.all_enemies), 
+                            frames = level_frames['chest'], 
+                            item_name = obj.properties['item'], 
+                            all_sprites = self.all_sprites, 
+                            item_frames = level_frames['items'][obj.properties['item']],
+                            item_sprite_group = (self.all_sprites, self.item_sprites),
+                            reverse = obj.properties['reverse'],
+                            data = self.data,
+                        )
                     elif obj.name == 'bench':
                         bench_image = obj.image
                         bench_image = pygame.transform.scale_by(bench_image, (1.2, 1.3))
@@ -233,10 +244,10 @@ class Level:
         if enemies_layer:
             for obj in enemies_layer:
                 if obj.name == 'tooth':
-                    Tooth(
+                    Runner(
                         pos = (int(obj.x), int(obj.y)), 
-                        frames = level_frames['tooth'], 
-                        groups = (self.all_sprites, self.damage_sprites, self.tooth_sprites, self.all_enemies), 
+                        frames = level_frames['runner'], 
+                        groups = (self.all_sprites, self.damage_sprites, self.runner_sprites, self.all_enemies), 
                         collision_sprites = self.collision_sprites)
                     
                 if obj.name == 'shell':
@@ -252,7 +263,7 @@ class Level:
                     Breakable_wall(
                         pos = (int(obj.x), int(obj.y)),
                         surf = level_frames['breakable_wall'],
-                        groups = (self.all_sprites, self.collision_sprites, self.tooth_sprites, self.all_enemies),
+                        groups = (self.all_sprites, self.collision_sprites, self.runner_sprites, self.all_enemies),
                     )
     
                 if obj.name == 'slime':
@@ -496,8 +507,9 @@ class Level:
                     if is_enemy and not is_pearl:
                         if not target.hit_timer.active:
                             self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
-                            if not self.timers['hit_stop_short'].active:
+                            if not self.timers['hit_stop_short'].active and not self.hit_stop_cooldown.active:
                                 self.timers['hit_stop_short'].activate()
+                                self.hit_stop_cooldown.activate()
                             self.player_neutral_attack_sprite.frame_index = 1
                             self.data.string_bar += 1
                         handle_knockback = not self.player.timers['hit_knockback'].active and not target.hit_timer.active
@@ -686,6 +698,7 @@ class Level:
             # Ataque do player
             self.player_attack()                  
             self.attack_logic(delta_time)
+            self.hit_stop_cooldown.update()
 
             # Limitação do mapa e desenho dos sprites
             self.check_constraint()
