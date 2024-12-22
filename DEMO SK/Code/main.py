@@ -59,8 +59,6 @@ class Game:
             'flag': import_folder('..', 'graphics', 'level', 'flag'),
             'saw': import_folder('..', 'graphics', 'enemies', 'saw', 'animation'),
             'floor_spike': import_sub_folders('..', 'graphics','enemies', 'floor_spikes'),
-            'palms': import_sub_folders('..', 'graphics', 'level', 'palms'),
-            'candle': import_folder('..', 'graphics', 'level', 'candle'),
             'chest': import_folder('..', 'graphics', 'level', 'chest'),
             'window': import_folder('..', 'graphics','level', 'window'),
             'big_chain': import_folder('..', 'graphics','level', 'big_chains'),
@@ -69,7 +67,6 @@ class Game:
             'player': import_sub_folders('..', 'graphics', 'player'),
             'saw_chain': import_image('..',  'graphics', 'enemies', 'saw', 'saw_chain'),
             'helicopter': import_folder('..', 'graphics', 'level', 'helicopter'),
-            'boat': import_folder('..',  'graphics', 'objects', 'boat'),
             'spike': import_image('..',  'graphics', 'enemies', 'spike_ball', 'Spiked Ball'),
             'spike_chain': import_image('..',  'graphics', 'enemies', 'spike_ball', 'spiked_chain'),
             'runner': import_folder('..', 'graphics', 'enemies', 'runner', 'run'),
@@ -92,7 +89,8 @@ class Game:
             'player_spin_attack': import_folder('..', 'graphics', 'player', 'spin_attack'),
             'player_parry_attack': import_folder('..', 'graphics', 'player', 'parry_attack_animation'),
             'bench': import_image('..',  'graphics', 'level', 'bench', 'bench'),
-            'weapons': import_sub_folders('..', 'graphics', 'ui', 'weapons'),  
+            'weapons': import_sub_folders('..', 'graphics', 'ui', 'weapons'),
+            'door': import_folder('..', 'graphics', 'objects', 'door'),
         }
         self.font = pygame.font.Font(join('..', 'graphics', 'ui', 'SuperPixel.ttf'), 40)
 
@@ -122,6 +120,11 @@ class Game:
             'parry': pygame.mixer.Sound(join('..', 'audio', 'hornet_parry.wav')),
             'enemy_damage': pygame.mixer.Sound(join('..', 'audio', 'enemy_damage.wav')),
             'switch_weapons': pygame.mixer.Sound(join('..', 'audio', 'switch_weapons.wav')),
+            'door_open': pygame.mixer.Sound(join('..', 'audio', 'door_open.wav')),
+            'door_close': pygame.mixer.Sound(join('..', 'audio', 'door_close.wav')),
+            'special_item_loop': pygame.mixer.Sound(join('..', 'audio', 'special_item_loop.wav')),
+            'special_item_pickup': pygame.mixer.Sound(join('..', 'audio', 'special_item_pickup.wav')),
+            'chest_open': pygame.mixer.Sound(join('..', 'audio', 'chest_open.wav')),
         }
         self.bg_music = pygame.mixer.Sound(join('..', 'audio', 'noragami.mp3'))
         self.bg_music.set_volume(0.5)

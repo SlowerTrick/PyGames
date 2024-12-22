@@ -66,6 +66,94 @@ class Item(AnimatedSprite):
         self.frame_index += self.animation_speed * delta_time
         self.image = self.frames[int(self.frame_index % len(self.frames))]
 
+class Door(pygame.sprite.Sprite):
+    def __init__(self, pos, frames, groups, reverse, mode, player, enemies, door_sounds):
+        super().__init__(groups)
+        # Sprite
+        self.frames = frames
+        self.frame_index = len(self.frames) - 1
+        self.image = self.frames[self.frame_index]
+        self.image = pygame.transform.scale_by(self.image, (3, 4))
+        self.reverse = reverse
+        self.image = pygame.transform.flip(self.image, True, False) if self.reverse else self.image
+        self.rect = self.image.get_frect(topleft = pos)
+        self.old_rect = self.rect
+
+        # Setup geral
+        self.z = Z_LAYERS['main']
+        self.open_door = False
+        self.close_door = False
+        self.open_door_sound = False
+        self.mode = mode
+        self.player = player.hitbox_rect
+        self.enemies = enemies
+        self.sounds = door_sounds
+    
+    def opened_door_logic(self, dt):
+        if self.open_door:
+            self.frame_index -= ANIMATION_SPEED * dt * 5
+            self.image = self.frames[int(self.frame_index % len(self.frames))]
+            if self.frame_index <= 1:
+                self.frame_index = 1
+            self.image = pygame.transform.scale_by(self.image, (3, 4))
+            self.image = pygame.transform.flip(self.image, True, False) if self.reverse else self.image
+
+            # Colisão à esquerda
+            if self.reverse:
+                if self.player.left <= self.rect.right:
+                    self.player.left = self.rect.right
+            
+            # Colisão à direita
+            if not self.reverse:
+                if self.player.right >= self.rect.left:
+                    self.player.right = self.rect.left
+    
+    def closed_door_logic(self, dt):
+        if self.close_door:
+            self.frame_index += ANIMATION_SPEED * dt * 3
+            self.image = self.frames[int(self.frame_index % len(self.frames))]
+            if self.frame_index >= len(self.frames) - 1:
+                self.sounds['close_door'].play()
+                self.kill()
+            self.image = pygame.transform.scale_by(self.image, (3, 4))
+            self.image = pygame.transform.flip(self.image, True, False) if self.reverse else self.image
+    
+    def manage_enemies(self):
+        if not self.enemies:
+            self.close_door = True
+            self.open_door = False
+
+    def manage_state(self):
+        if self.mode == 'cross' and not self.close_door:
+            if self.reverse and self.player.x > self.rect.x + 100:
+                self.open_door = True
+                if not self.open_door_sound:
+                    self.open_door_sound = True
+                    self.sounds['open_door'].play()
+            elif not self.reverse and self.player.x < self.rect.x - 100:
+                self.open_door = True
+                if not self.open_door_sound:
+                    self.open_door_sound = True
+                    self.sounds['open_door'].play()
+
+        if self.mode == 'distance' and not self.close_door:
+            if self.reverse and self.player.x > self.rect.x + 1000:
+                self.open_door = True
+                if self.open_door_sound:
+                    self.open_door_sound = True
+                    self.sounds['open_door'].play()
+            elif not self.reverse and self.player.x > self.rect.x - 1300: 
+                self.open_door = True
+                if self.open_door_sound:
+                    self.open_door_sound = True
+                    self.sounds['open_door'].play()
+    
+    def update(self, dt):
+        self.manage_enemies()
+        self.manage_state()
+        self.opened_door_logic(dt)
+        self.closed_door_logic(dt)
+
 class ParticleEffectSprite(AnimatedSprite):
     def __init__(self, pos, frames, groups):
         super().__init__(pos, frames, groups)

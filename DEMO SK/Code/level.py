@@ -1,5 +1,5 @@
 from settings import *
-from sprites import Sprite, AnimatedSprite, MovingSprite, Spike, Item, ParticleEffectSprite
+from sprites import Sprite, AnimatedSprite, MovingSprite, Spike, Door, Item, ParticleEffectSprite
 from timecount import Timer
 from player import Player
 from groups import AllSprites
@@ -61,6 +61,7 @@ class Level:
         self.attack_sprites = pygame.sprite.Group()
         self.weapon_sprites = pygame.sprite.Group()
         self.bench_sprites = pygame.sprite.Group()
+        self.door_sprites = pygame.sprite.Group()
 
         # Inicialização do grupo de sprites dos inimigos que causam dano
         self.runner_sprites = pygame.sprite.Group()
@@ -70,6 +71,7 @@ class Level:
         self.fly_sprites = pygame.sprite.Group()
         self.lace_sprites = pygame.sprite.Group()
         self.thorn_sprites = pygame.sprite.Group()
+        self.door_enemies = pygame.sprite.Group()
         self.all_enemies = pygame.sprite.Group()
 
         # Inicialização do grupo de sprites dos itens
@@ -151,6 +153,11 @@ class Level:
                         screen_shake = self.all_sprites.start_shaking)
                 else:
                     if obj.name in ('chest'):
+                        chest_sounds = {
+                            'special_item_loop': self.audio_files['special_item_loop'],
+                            'special_item_pickup': self.audio_files['special_item_pickup'],
+                            'chest_open': self.audio_files['chest_open'],
+                        }
                         Chest(
                             pos = (int(obj.x), int(obj.y)), 
                             groups = (self.all_sprites, self.collision_sprites, self.slime_sprites, self.all_enemies), 
@@ -160,12 +167,32 @@ class Level:
                             item_frames = level_frames['items'][obj.properties['item']],
                             item_sprite_group = (self.all_sprites, self.item_sprites),
                             reverse = obj.properties['reverse'],
+                            sounds = chest_sounds,
                             data = self.data,
                         )
                     elif obj.name == 'bench':
                         bench_image = obj.image
                         bench_image = pygame.transform.scale_by(bench_image, (1.2, 1.3))
                         Sprite((int(obj.x), int(obj.y)), bench_image, (self.all_sprites, self.bench_sprites), z = Z_LAYERS['bg details'])
+                    elif obj.name == 'door':
+                        if obj.properties['mode'] == 'cross':
+                            for i in range(3):
+                                Slime(pos = (int(obj.x + 800 + uniform(-200, 200)), int(obj.y)), frames = level_frames['slime'], groups = (self.all_sprites, self.damage_sprites, self.slime_sprites, self.all_enemies, self.door_enemies), player = self.player, collision_sprites = self.collision_sprites)
+                        
+                        door_sounds = {
+                            'open_door': self.audio_files['door_open'],
+                            'close_door': self.audio_files['door_close'],
+                        }
+                        Door(
+                            pos = (int(obj.x), int(obj.y)), 
+                            frames = level_frames['door'], 
+                            groups = (self.all_sprites, self.door_sprites),
+                            reverse = obj.properties['reverse'],
+                            mode = obj.properties['mode'],
+                            player = self.player,
+                            enemies = self.door_enemies,
+                            door_sounds = door_sounds
+                        )
                     else:
                         if obj.name in level_frames and obj.name != 'player':
                             frames = level_frames[obj.name] if not 'palm' in obj.name else level_frames['palms'][obj.name]
@@ -184,9 +211,6 @@ class Level:
                             animation_speed = ANIMATION_SPEED if not 'palm' in obj.name else ANIMATION_SPEED + uniform(-1, 1)
 
                             AnimatedSprite((int(obj.x), int(obj.y)), frames, groups, z, animation_speed)
-
-                if obj.name == 'flag':
-                    self.level_finish_rect = pygame.FRect((int(obj.x), int(obj.y)), (int(obj.width), int(obj.height)))
 
         # Objetos moveis / Objetos com dano
         moving_objects_layer = get_layer(tmx_map, 'Moving Objects')
@@ -427,7 +451,14 @@ class Level:
             if item_sprites:
                 item_sprites[0].activate()
                 ParticleEffectSprite((item_sprites[0].rect.center), self.particle_frames, self.all_sprites)
-                self.audio_files['geo'].play()
+                
+                # Utilizar um canal de som diferente para evitar a não reprodução do som por sobreposição
+                collision_channel = pygame.mixer.Channel(1)
+                
+                if item_sprites[0].item_type in ('throw_attack', 'wall_jump', 'dash'):
+                    collision_channel.play(self.audio_files['special_item_pickup'])
+                else:
+                    collision_channel.play(self.audio_files['geo'])
 
     def player_attack(self):
         # Ataque neutro

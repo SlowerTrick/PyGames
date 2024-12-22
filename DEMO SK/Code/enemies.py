@@ -215,7 +215,7 @@ class Breakable_wall(pygame.sprite.Sprite):
         self.apply_shake(dt)
 
 class Chest(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, frames, item_name, all_sprites, item_frames, item_sprite_group, data, reverse=False):
+    def __init__(self, pos, groups, frames, item_name, all_sprites, item_frames, item_sprite_group, data, sounds, reverse=False):
         super().__init__(groups)
         # Bools
         self.is_dead = False
@@ -236,12 +236,14 @@ class Chest(pygame.sprite.Sprite):
         self.item_name = item_name
         self.item_frames = item_frames
         self.item_group = item_sprite_group
+        self.item_sprite = None
 
         # Setup geral
         self.z = Z_LAYERS['main']
         self.chest_health = 3
         self.hit_timer = Timer(600)
         self.data = data
+        self.sounds = sounds
 
         # Controle do tremor
         self.shake_magnitude = 60  # Intensidade do tremor
@@ -271,14 +273,22 @@ class Chest(pygame.sprite.Sprite):
             self.create_item()
     
     def create_item(self):
-        Item(
+        self.sounds['chest_open'].play()
+        self.item_sprite = Item(
             item_type = self.item_name, 
             pos = (self.rect.centerx, self.rect.centery), 
             frames = self.item_frames, 
             groups = self.item_group, 
             data = self.data,
         )
-  
+    
+    def manage_item(self):
+        # Verifica se o item foi criado e ainda existe
+        if self.item_sprite and self.item_sprite.alive():
+            self.sounds['special_item_loop'].play()
+        else:
+            self.sounds['special_item_loop'].stop()
+
     def get_damage(self):
         if not self.hit_timer.active:
             self.hit_timer.activate()
@@ -301,6 +311,7 @@ class Chest(pygame.sprite.Sprite):
         self.is_alive()
         self.apply_shake(dt)
         self.open_chest_animation(dt)
+        self.manage_item()
 
 class Slime(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, player, collision_sprites):
