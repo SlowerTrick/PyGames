@@ -39,13 +39,17 @@
   <object id="17" name="door" x="1537" y="650.33" width="63.3333" height="63.3333">
    <properties>
     <property name="mode" value="distance"/>
+    <property name="open_distance" type="int" value="1300"/>
     <property name="reverse" type="bool" value="false"/>
+    <property name="should_close" type="bool" value="true"/>
    </properties>
   </object>
   <object id="18" name="door" x="128" y="650.333" width="63.3333" height="63.3333">
    <properties>
     <property name="mode" value="cross"/>
+    <property name="open_distance" type="int" value="0"/>
     <property name="reverse" type="bool" value="true"/>
+    <property name="should_close" type="bool" value="true"/>
    </properties>
   </object>
  </objectgroup>

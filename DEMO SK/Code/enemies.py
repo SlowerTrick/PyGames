@@ -66,6 +66,7 @@ class Shell(pygame.sprite.Sprite):
         # self.pearl = True "Caso algo de errado, vc tirou isso"
         super().__init__(groups)
         self.is_enemy = True
+        self.is_shell = True
 
         if reverse:
             self.frames = {}
@@ -128,7 +129,7 @@ class Shell(pygame.sprite.Sprite):
 
             # Disparo do projetil no frame exato desejado
             if self.state == 'fire' and int(self.frame_index) == 3 and not self.has_fired:
-                self.create_pearl(self.rect.center, self.bullet_direction)
+                self.create_pearl((self.rect.center), (self.player.rect.centerx, self.rect.centery))
                 self.has_fired = True 
 
         else:
@@ -139,34 +140,45 @@ class Shell(pygame.sprite.Sprite):
         self.flicker()
 
 class Pearl(pygame.sprite.Sprite):
-    def __init__(self, pos, groups, surf, direction, speed):
+    def __init__(self, pos, groups, surf, target_pos, speed):
         self.is_enemy = True
         self.pearl = True
         super().__init__(groups)
         self.image = surf
-        self.rect = self.image.get_frect(center = pos + vector(50 * direction,8))
-        self.direction = direction
+        self.rect = self.image.get_rect(center=pos)
         self.speed = speed
         self.z = Z_LAYERS['main']
+        
+        # Vetor direção calculado e normalizado
+        self.position = vector(pos)  # Posição inicial
+        self.target_pos = vector(target_pos)  # Posição do alvo
+        direction_vector = self.target_pos - self.position
+        self.direction = direction_vector.normalize() if direction_vector.length() > 0 else vector(0, 0)
+
         self.timers = {'lifetime': Timer(5000), 'reverse': Timer(500)}
         self.timers['lifetime'].activate()
 
     def get_damage(self):
         if not self.timers['reverse'].active:
-            self.direction *= -1 
+            self.direction *= -1
             self.timers['reverse'].activate()
 
     def update(self, dt):
         for timer in self.timers.values():
             timer.update()
 
-        self.rect.x += self.direction * self.speed * dt
+        # Movimento constante na direção calculada
+        self.position += self.direction * self.speed * dt
+        self.rect.center = self.position
+
+        # Verifica se o tempo de vida expirou
         if not self.timers['lifetime'].active:
             self.kill()
 
 class Breakable_wall(pygame.sprite.Sprite):
     def __init__(self, pos, groups, surf):
         self.is_enemy = True
+        self.is_breakable_wall = True
         super().__init__(groups)
         self.image = surf
         self.rect = self.image.get_frect(topleft = pos)
@@ -666,6 +678,216 @@ class Fly(pygame.sprite.Sprite):
         else:
             self.death_animation(dt)
 
+class Ranged_Fly(pygame.sprite.Sprite):
+    def __init__(self, pos, frames, groups, player, collision_sprites, create_pearl):
+        super().__init__(groups)
+        self.is_enemy = True
+        self.frame_index = 0
+        self.frames = frames 
+        self.state = 'idle'
+        self.create_pearl = create_pearl
+
+        # Frames 
+        self.image = self.frames[self.state][self.frame_index]
+        self.rect = self.image.get_frect(topleft=pos)
+        self.hitbox_rect = self.rect
+        self.old_rect = self.rect.copy()
+        self.z = Z_LAYERS['main']
+        self.player = player
+
+        # Status
+        self.direction = vector()
+        self.speed = 200
+        self.max_speed = 150
+        self.acceleration = 10
+        self.deceleration = 10
+        self.jump_height = 450
+        self.fly_health = 3
+        self.gravity = 1300
+        self.knockback_value = 250
+        self.stop_distance = 300
+        self.knockback_direction = 'none'
+        self.facing_side = 'right'
+        self.on_ground = False
+        self.player_near = False
+
+        # Colisões e timers
+        self.collision_rects = [sprite.rect for sprite in collision_sprites]
+        self.hit_timer = Timer(500)
+        self.during_knockback = Timer(300)
+        self.death_animation_timer = Timer(3000)
+        self.shoot_timer = Timer(2000)
+
+        # Death animation
+        self.angle = 0
+        self.is_dead = False
+
+    def collisions(self, axis):
+        top_rect = pygame.FRect(self.rect.midtop, (1, 1))
+        floor_rect = pygame.FRect(self.rect.midbottom, (1, 1))
+        right_rect = pygame.FRect(self.rect.midleft, (1, 1))
+        left_rect = pygame.FRect(self.rect.midright, (1, 1))
+
+        if axis == 'horizontal':
+            for sprite in self.collision_rects:
+                if right_rect.colliderect(sprite) or left_rect.colliderect(sprite):
+                    if right_rect.x < sprite.x:
+                        self.hitbox_rect.right = sprite.left - 1
+                        self.during_knockback.deactivate()
+                    else:
+                        self.hitbox_rect.left = sprite.right + 1
+                        self.during_knockback.deactivate()
+                    break
+
+        if axis == 'vertical':
+            for sprite in self.collision_rects:
+                if floor_rect.colliderect(sprite):
+                    self.hitbox_rect.bottom = sprite.top - 1
+                    break
+                if top_rect.colliderect(sprite):
+                    self.hitbox_rect.top = sprite.bottom
+                    break                 
+
+    def move(self, dt):
+        # Movimentação Horizontal
+        self.hitbox_rect.x += self.direction.x * self.speed * dt
+        self.collisions('horizontal')
+
+        # Movimentação Vertical
+        self.hitbox_rect.y += self.direction.y * self.speed * dt
+        self.collisions('vertical')
+        self.knockback(dt)
+
+        # Finalização do movimento
+        self.rect.center = self.hitbox_rect.center
+
+    def knockback(self, delta_time):
+        if self.during_knockback.active:
+            if self.knockback_direction == 'left':
+                self.hitbox_rect.x += -1 * self.knockback_value * delta_time
+                self.collisions('horizontal')
+            elif self.knockback_direction == 'right':
+                self.hitbox_rect.x += 1 * self.knockback_value * delta_time
+                self.collisions('horizontal')
+            elif self.knockback_direction == 'up':
+                self.hitbox_rect.y += -1 * self.knockback_value * delta_time
+                self.collisions('vertical')
+            elif self.knockback_direction == 'down':
+                self.hitbox_rect.y += 1 * self.knockback_value * delta_time
+                self.collisions('vertical')
+
+    def state_management(self, dt):
+        player_pos, fly_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
+        player_near = fly_pos.distance_to(player_pos) < 500
+        player_level = abs(fly_pos.y - player_pos.y) < 500
+
+        # Calcula a distância atual até o player.
+        distance_to_player = fly_pos.distance_to(player_pos)
+        tolerance = distance_to_player - self.stop_distance
+
+        if player_near and player_level:
+            target_direction = vector(0, 0)
+            if distance_to_player > self.stop_distance and (tolerance > 1 or tolerance < -1):
+                # Fly se move em direção ao player.
+                target_direction = (player_pos - fly_pos).normalize()
+            elif distance_to_player < self.stop_distance and (tolerance > 1 or tolerance < -1):
+                # Fly foge do player
+                target_direction = (fly_pos - player_pos).normalize()
+                
+                # Atira enquanto corre
+                if not self.shoot_timer.active:
+                    self.shoot_timer.activate()
+                    bullet_directionX = 1 if self.facing_side == 'right' else -1
+                    self.create_pearl(self.rect.center, (self.player.rect.centerx, self.player.rect.centery))
+            else:
+                if not self.shoot_timer.active:
+                    self.shoot_timer.activate()
+                    bullet_direction = 1 if self.facing_side == 'right' else -1
+                    self.create_pearl(self.rect.center, (self.player.rect.centerx, self.player.rect.centery))
+
+            # Atualiza a direção do objeto.
+            self.direction.x = target_direction.x * self.acceleration
+            self.direction.y = target_direction.y * self.acceleration
+
+            if self.direction.length() > 1:
+                self.direction = self.direction.normalize()
+        else:
+            self.direction.x *= (1 - self.deceleration * dt)
+            self.direction.y *= (1 - self.deceleration * dt)
+
+        if self.direction.length() < 0.1:
+            self.direction.x = 0
+            self.direction.y = 0
+
+    def get_damage(self):
+        if not self.hit_timer.active:
+            self.hit_timer.activate()
+            self.fly_health -= 1
+
+    def is_alive(self):
+        if self.fly_health <= 0:
+            self.is_dead = True
+            self.state = 'idle'
+            self.frame_index = 0
+            self.death_animation_timer.activate()
+
+    def flicker(self):
+        if self.hit_timer.active and sin(pygame.time.get_ticks() * 100) >= 0:
+            white_mask = pygame.mask.from_surface(self.image)
+            white_surf = white_mask.to_surface()
+            white_surf.set_colorkey('black')
+            self.image = white_surf
+    
+    def death_animation(self, dt):
+        self.death_animation_timer.update()
+        if self.death_animation_timer.active:
+            self.angle += 3
+            if self.angle >= 360:
+                self.angle = 0
+
+            # Rotação da imagem
+            self.image = pygame.transform.rotate(self.frames[self.state][self.frame_index], self.angle)
+            self.rect = self.image.get_rect(center=self.hitbox_rect.center)
+
+            # Movimentação do sprite Horizontal
+            if self.knockback_direction == 'left':
+                self.hitbox_rect.x -= self.direction.x * self.speed * dt / 2
+            elif self.knockback_direction == 'right':
+                self.hitbox_rect.x += self.direction.x * self.speed * dt / 2
+
+            # Movimentação do sprite vertical
+            self.direction.y += self.gravity / 2 * dt
+            self.hitbox_rect.y += self.direction.y * dt
+            self.direction.y += self.gravity / 2 * dt
+            self.rect.center = self.hitbox_rect.center
+        else:
+            self.kill()
+
+    def update_timers(self):
+        self.shoot_timer.update()
+        self.hit_timer.update()
+        self.during_knockback.update()
+
+    def update(self, dt):
+        if not self.is_dead:
+            self.update_timers()
+            self.state_management(dt)
+
+            # Animação
+            self.facing_side = 'left' if self.rect.x > self.player.rect.x else 'right'
+            self.frame_index += ANIMATION_SPEED * dt
+            if self.frame_index < len(self.frames[self.state]):
+                self.image = self.frames[self.state][int(self.frame_index)]
+            else:
+                self.frame_index = 0
+            self.image = pygame.transform.flip(self.image, True, False) if self.facing_side == 'left' else self.image
+            self.flicker()
+
+            self.move(dt)
+            self.knockback(dt)
+        else:
+            self.death_animation(dt)
+
 class Butterfly(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, player):
         # Setup geral
@@ -690,7 +912,7 @@ class Butterfly(pygame.sprite.Sprite):
     
     def state_management(self):
         player_pos, butterfly_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
-        player_near = butterfly_pos.distance_to(player_pos) < 400
+        player_near = butterfly_pos.distance_to(player_pos) < 500
         player_level = abs(butterfly_pos.y - player_pos.y) < 200
 
         if player_near and player_level:
@@ -730,14 +952,16 @@ class Lace(pygame.sprite.Sprite):
 
         # Status
         self.direction = vector()
-        self.facing_side = 'left'
+        self.facing_side = 'none'
         self.lace_heath = 99
         self.gravity = 1300
         self.on_ground = False
         self.player_near = False
-        self.active_attack = 'none'
+        self.active_attack = 'cooldown'
         self.can_move = True
         self.can_attack = True
+        self.knockback_value = 700
+        self.knockback_direction = 'none'
 
         # Dash Vertical
         self.dash_speed = 650
@@ -753,9 +977,10 @@ class Lace(pygame.sprite.Sprite):
         # Colisões e timers
         self.collision_rects = [sprite.rect for sprite in collision_sprites]
         self.hit_timer = Timer(500)
+        self.during_knockback = Timer(200)
         self.cycle = 1300
         self.timers = {
-            'cycle_attacks': Timer(self.cycle)
+            'cycle_attacks': Timer(self.cycle),
         }
 
     def collisions(self, axis):
@@ -805,31 +1030,46 @@ class Lace(pygame.sprite.Sprite):
         # Finalização do movimento
         self.rect.center = self.hitbox_rect.center
 
+    def knockback(self, delta_time):
+        if self.during_knockback.active:
+            if self.knockback_direction == 'left':
+                self.hitbox_rect.x += -1 * self.knockback_value * delta_time
+                self.collisions('horizontal')
+            elif self.knockback_direction == 'right':
+                self.hitbox_rect.x += 1 * self.knockback_value * delta_time
+                self.collisions('horizontal')
+            elif self.knockback_direction == 'down':
+                self.hitbox_rect.y += 1 * self.knockback_value * delta_time
+                self.collisions('vertical')
+
     def attack(self, dt):
-        if not self.timers['cycle_attacks'].active:
-            self.timers['cycle_attacks'].activate()
-            attack = randint(0, 2)
-            self.active_attack = ['dash', 'multi', 'air'][attack]
-            self.can_attack = True
-        elif self.timers['cycle_attacks'].time_passed() > self.cycle - 200:
-            self.active_attack = 'cooldown'
-        
-        # Atualizar estado baseado no ataque ativo
-        if self.active_attack != 'cooldown' and self.can_attack:
-            self.can_attack = False
-            self.state = self.active_attack
-            if self.active_attack == 'dash':
-                self.dash_progress = 0
-            elif self.active_attack == 'air':
-                self.jump_progress = 0
+        if self.state != 'idle':
+            if not self.timers['cycle_attacks'].active:
+                self.timers['cycle_attacks'].activate()
+                attack = randint(0, 2)
+                self.active_attack = ['dash', 'multi', 'air'][attack]
+                self.can_attack = True
+            elif self.timers['cycle_attacks'].time_passed() > self.cycle - 200:
+                self.active_attack = 'cooldown'
+            
+            # Atualizar estado baseado no ataque ativo
+            if self.active_attack != 'cooldown' and self.can_attack:
+                self.can_attack = False
+                self.state = self.active_attack
+                if self.active_attack == 'dash':
+                    self.dash_progress = 0
+                elif self.active_attack == 'air':
+                    self.jump_progress = 0
 
     def state_management(self):
         player_pos, lace_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
-        self.player_near = lace_pos.distance_to(player_pos) < 2000
-        player_level = abs(lace_pos.y - player_pos.y) < 500
+        player_near = lace_pos.distance_to(player_pos) < 500
+        player_level = abs(lace_pos.y - player_pos.y) < 200
 
-        if self.player_near and self.active_attack == 'cooldown' and self.on_ground:
+        if player_near and player_level and self.active_attack == 'cooldown' and self.on_ground:
             self.facing_side = 'left' if player_pos.x <= lace_pos.x else 'right'
+            if self.state == 'idle':
+                self.state = 'start_attacking'
 
     def dash(self, dt):
         if self.active_attack == 'dash':
@@ -878,6 +1118,7 @@ class Lace(pygame.sprite.Sprite):
         for timer in self.timers.values():
             timer.update()
         self.hit_timer.update()
+        self.during_knockback.update()
 
     def animate(self, dt):
         self.frame_index += ANIMATION_SPEED * dt
@@ -888,6 +1129,7 @@ class Lace(pygame.sprite.Sprite):
         self.update_timers()
         self.state_management()
         self.attack(dt)
+        self.knockback(dt)
 
         self.animate(dt)
         self.flicker()

@@ -113,9 +113,7 @@
 180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180
 </data>
  </layer>
- <objectgroup id="17" name="Items">
-  <object id="20" name="wall_jump" gid="150" x="1471.33" y="2961.17" width="26" height="37"/>
- </objectgroup>
+ <objectgroup id="17" name="Items"/>
  <objectgroup id="16" name="Enemies">
   <object id="16" name="breakable_wall" gid="179" x="2880" y="896" width="64" height="64"/>
   <object id="17" name="breakable_wall" gid="179" x="2880" y="960" width="64" height="64"/>
@@ -126,7 +124,12 @@
     <property name="spawn" value="right"/>
    </properties>
   </object>
-  <object id="18" name="chest" gid="117" x="1477.67" y="3008.67" width="50" height="36"/>
+  <object id="18" name="chest" gid="117" x="1477.67" y="2957.67" width="50" height="36">
+   <properties>
+    <property name="item" value="wall_jump"/>
+    <property name="reverse" type="bool" value="true"/>
+   </properties>
+  </object>
  </objectgroup>
  <objectgroup id="13" name="Data">
   <properties>

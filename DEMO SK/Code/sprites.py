@@ -40,20 +40,22 @@ class Item(AnimatedSprite):
     def activate(self):
         if self.item_type == 'gold':
             self.data.coins += 5
-        if self.item_type == 'silver':
+        elif self.item_type == 'silver':
             self.data.coins += 1
-        if self.item_type == 'diamond':
+        elif self.item_type == 'diamond':
             self.data.coins += 20
-        if self.item_type == 'skull':
+        elif self.item_type == 'skull':
             self.data.coins += 50
-        if self.item_type == 'potion':
+        elif self.item_type == 'potion':
             self.data.player_health += 1
-        if self.item_type == 'wall_jump':
+        elif self.item_type == 'wall_jump':
             self.data.unlocked_wall_jump = True
-        if self.item_type == 'dash':
+        elif self.item_type == 'dash':
             self.data.unlocked_dash = True
-        if self.item_type == 'throw_attack':
+        elif self.item_type == 'throw_attack':
             self.data.unlocked_throw_attack = True
+        elif self.item_type == 'weapons':
+            self.data.unlocked_weapons = True
     
     def update(self, delta_time):
         if self.item_type in ('wall_jump', 'dash', 'throw_attack') :
@@ -67,7 +69,7 @@ class Item(AnimatedSprite):
         self.image = self.frames[int(self.frame_index % len(self.frames))]
 
 class Door(pygame.sprite.Sprite):
-    def __init__(self, pos, frames, groups, reverse, mode, player, enemies, door_sounds):
+    def __init__(self, pos, frames, groups, reverse, mode, player, enemies, properties, door_sounds):
         super().__init__(groups)
         # Sprite
         self.frames = frames
@@ -88,6 +90,8 @@ class Door(pygame.sprite.Sprite):
         self.player = player.hitbox_rect
         self.enemies = enemies
         self.sounds = door_sounds
+        self.should_close = properties['should_close']
+        self.open_distance = properties['open_distance']
     
     def opened_door_logic(self, dt):
         if self.open_door:
@@ -109,7 +113,7 @@ class Door(pygame.sprite.Sprite):
                     self.player.right = self.rect.left
     
     def closed_door_logic(self, dt):
-        if self.close_door:
+        if self.close_door and self.should_close:
             self.frame_index += ANIMATION_SPEED * dt * 3
             self.image = self.frames[int(self.frame_index % len(self.frames))]
             if self.frame_index >= len(self.frames) - 1:
@@ -119,7 +123,7 @@ class Door(pygame.sprite.Sprite):
             self.image = pygame.transform.flip(self.image, True, False) if self.reverse else self.image
     
     def manage_enemies(self):
-        if not self.enemies:
+        if not self.enemies and self.should_close:
             self.close_door = True
             self.open_door = False
 
@@ -137,12 +141,12 @@ class Door(pygame.sprite.Sprite):
                     self.sounds['open_door'].play()
 
         if self.mode == 'distance' and not self.close_door:
-            if self.reverse and self.player.x > self.rect.x + 1000:
+            if self.reverse and self.player.x < self.rect.x + self.open_distance:
                 self.open_door = True
                 if self.open_door_sound:
                     self.open_door_sound = True
                     self.sounds['open_door'].play()
-            elif not self.reverse and self.player.x > self.rect.x - 1300: 
+            elif not self.reverse and self.player.x > self.rect.x - self.open_distance: 
                 self.open_door = True
                 if self.open_door_sound:
                     self.open_door_sound = True
@@ -153,6 +157,52 @@ class Door(pygame.sprite.Sprite):
         self.manage_state()
         self.opened_door_logic(dt)
         self.closed_door_logic(dt)
+
+class Kurisu(pygame.sprite.Sprite):
+    def __init__(self, pos, surf, groups, player, item_name, item_groups, item_frames, data):
+        super().__init__(groups)
+        # Sprite
+        self.image = pygame.transform.scale_by(surf, 0.25)
+        self.rect = self.image.get_frect(topleft = pos)
+
+        # Setup geral
+        self.z = Z_LAYERS['main']
+        self.player = player.hitbox_rect
+        self.item_name = item_name
+        self.item_groups = item_groups
+        self.item_frames = item_frames
+        self.data = data
+        self.should_create_item = True
+        self.should_flee = False
+    
+    def create_item(self):
+        if self.should_flee and self.should_create_item:
+            Item(
+                item_type = self.item_name,
+                pos = self.rect.center,
+                frames = self.item_frames,
+                groups = self.item_groups,
+                data = self.data
+            )
+            self.should_create_item = False
+
+    def manage_state(self):
+        player_pos, kurisu_pos = vector(self.player.center), vector(self.rect.center)
+        self.player_near = kurisu_pos.distance_to(player_pos) < 1000
+        player_level = abs(kurisu_pos.y - player_pos.y) < 100
+
+        if self.player_near and player_level:
+           self.should_flee = True
+    
+    def flee(self, dt):
+        if self.should_flee:
+            self.rect.x -= 2
+
+    
+    def update(self, dt):
+        self.manage_state()
+        self.flee(dt)
+        self.create_item()
 
 class ParticleEffectSprite(AnimatedSprite):
     def __init__(self, pos, frames, groups):

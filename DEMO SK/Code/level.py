@@ -1,10 +1,10 @@
 from settings import *
-from sprites import Sprite, AnimatedSprite, MovingSprite, Spike, Door, Item, ParticleEffectSprite
+from sprites import Sprite, AnimatedSprite, MovingSprite, Kurisu, Spike, Door, Item, ParticleEffectSprite
 from timecount import Timer
 from player import Player
 from groups import AllSprites
 from debug import debug
-from enemies import Runner, Shell, Breakable_wall, Chest, Pearl, Slime, Fly, Butterfly, Lace
+from enemies import Runner, Shell, Breakable_wall, Chest, Pearl, Slime, Fly, Ranged_Fly, Butterfly, Lace
 from attack import Neutral_Attack, Throw_Attack, Spin_Attack, Parry_Attack, Knive, Saw
 from random import uniform
 from os.path import join
@@ -191,7 +191,19 @@ class Level:
                             mode = obj.properties['mode'],
                             player = self.player,
                             enemies = self.door_enemies,
+                            properties = obj.properties,
                             door_sounds = door_sounds
+                        )
+                    elif obj.name == 'kurisu':
+                        Kurisu(
+                            pos = (int(obj.x), int(obj.y)), 
+                            surf = level_frames['kurisu'], 
+                            groups = (self.all_sprites),
+                            player = self.player,
+                            item_name = obj.properties['item'],
+                            item_groups = (self.all_sprites, self.item_sprites),
+                            item_frames = level_frames['items'][obj.properties['item']],
+                            data = self.data
                         )
                     else:
                         if obj.name in level_frames and obj.name != 'player':
@@ -305,6 +317,16 @@ class Level:
                         groups = (self.all_sprites, self.damage_sprites, self.fly_sprites, self.all_enemies),
                         player = self.player,
                         collision_sprites = self.collision_sprites)
+                
+                if obj.name == 'ranged_fly':
+                    Ranged_Fly(
+                        pos = (int(obj.x), int(obj.y)),
+                        frames = level_frames['fly'],
+                        groups = (self.all_sprites, self.damage_sprites, self.fly_sprites, self.all_enemies),
+                        player = self.player,
+                        collision_sprites = self.collision_sprites,
+                        create_pearl = self.create_pearl
+                    )
 
                 if obj.name == 'butterfly':
                     Butterfly(
@@ -319,7 +341,7 @@ class Level:
                         frames = level_frames['lace'],
                         groups = (self.all_sprites, self.damage_sprites, self.lace_sprites, self.all_enemies),
                         player = self.player,
-                        collision_sprites = self.collision_sprites)
+                        collision_sprites = self.collision_sprites.sprites() + self.semi_collision_sprites.sprites())
                     
         # Espinhos Normais
         thorns_layer = get_layer(tmx_map, 'Thorns')
@@ -366,15 +388,16 @@ class Level:
         for timer in self.timers.values():
             timer.update()
 
-    def create_pearl(self, pos, direction):
-        Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), self.pearl_surface, direction, 350)
+    def create_pearl(self, pos, target_pos):
+        Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), self.pearl_surface, target_pos, 500)
         self.audio_files['pearl'].play()
 
     def pearl_collision(self):
         if self.pearl_sprites:
             for sprite in self.collision_sprites:
-                sprite = pygame.sprite.spritecollide(sprite, self.pearl_sprites, True)
-                if sprite:
+                if not hasattr(sprite, 'is_shell'):
+                    sprite = pygame.sprite.spritecollide(sprite, self.pearl_sprites, True)
+                if sprite and not hasattr(sprite, 'is_shell'):
                     ParticleEffectSprite((sprite[0].rect.center), self.particle_frames, self.all_sprites)
 
     def player_collisions(self, dt):

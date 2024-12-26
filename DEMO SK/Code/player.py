@@ -187,17 +187,16 @@ class Player(pygame.sprite.Sprite):
                     elif self.data.string_bar >= 2 and self.vertical_sight == 'down' and not self.timers['parry'].active:
                         self.parry()
 
-            # Botão Ferramentas
+            # Botões das Ferramentas
             if (keys[pygame.K_u] or self.get_input_action("switch_weapons")):
-                if not self.keys_pressed['switch_weapons']:
+                if not self.keys_pressed['switch_weapons'] and self.data.unlocked_weapons:
                     self.keys_pressed['switch_weapons'] = True
                     self.switch_weapon()
             else:
                 self.keys_pressed['switch_weapons'] = False
             
-            # Botão usar Ferramentas
             if (keys[pygame.K_y] or self.get_input_action("use_weapon")):
-                if not self.keys_pressed['use_weapon'] and self.data.string_bar >= 1:
+                if not self.keys_pressed['use_weapon'] and self.data.string_bar >= 1 and self.data.unlocked_weapons:
                     self.keys_pressed['use_weapon'] = True
                     self.use_weapon()
             else:

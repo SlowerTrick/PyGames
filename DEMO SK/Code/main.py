@@ -22,7 +22,7 @@ class Game:
         self.state = "game"
 
         # Level
-        self.start_stage = 7 # 8 para lace
+        self.start_stage = 0 # 8 para lace
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
         self.current_stage.timers['loading_time'].activate()
@@ -42,7 +42,6 @@ class Game:
 
         # Mapas
         self.tmx_maps = {
-            #0: load_pygame(join('..', 'data', 'levels', 'omni.tmx')),
             0: load_pygame(join('..', 'data', 'levels', '0.tmx')),
             1: load_pygame(join('..', 'data', 'levels', '1.tmx')),
             2: load_pygame(join('..', 'data', 'levels', '2.tmx')),
@@ -52,6 +51,8 @@ class Game:
             6: load_pygame(join('..', 'data', 'levels', '6.tmx')),
             7: load_pygame(join('..', 'data', 'levels', '7.tmx')),
             8: load_pygame(join('..', 'data', 'levels', '8.tmx')),
+            9: load_pygame(join('..', 'data', 'levels', '9.tmx')),
+            10: load_pygame(join('..', 'data', 'levels', '10.tmx')),
         }
 
         self.level_frames = {
@@ -78,6 +79,7 @@ class Game:
             'fly': import_sub_folders('..', 'graphics', 'enemies', 'fly'),
             'pearl': import_image('..',  'graphics', 'enemies', 'bullets', 'pearl'),
             'items': import_sub_folders('..', 'graphics', 'items'),
+            'kurisu': import_image('..',  'graphics', 'icon', 'chibi'),
             'particle': import_folder('..', 'graphics', 'effects', 'particle'),
             'water_top': import_folder('..', 'graphics', 'level', 'water', 'top'),
             'water_body': import_image('..', 'graphics', 'level', 'water', 'body'),
@@ -125,6 +127,7 @@ class Game:
             'special_item_loop': pygame.mixer.Sound(join('..', 'audio', 'special_item_loop.wav')),
             'special_item_pickup': pygame.mixer.Sound(join('..', 'audio', 'special_item_pickup.wav')),
             'chest_open': pygame.mixer.Sound(join('..', 'audio', 'chest_open.wav')),
+            'breakable_wall_hit': pygame.mixer.Sound(join('..', 'audio', 'breakable_wall_hit.wav')),
         }
         self.bg_music = pygame.mixer.Sound(join('..', 'audio', 'noragami.mp3'))
         self.bg_music.set_volume(0.5)
@@ -146,6 +149,7 @@ class Game:
                 self.controller_type = 'Unknown'
 
     def switch_screen(self, target, player_spawn):
+        print(len(self.tmx_maps))
         if target >= len(self.tmx_maps):
             target = 0
         self.current_stage = Level(self.tmx_maps[target], self.level_frames, self.audio_files, self.data, self.switch_screen, target, player_spawn)
