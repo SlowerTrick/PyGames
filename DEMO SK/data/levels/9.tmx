@@ -1,103 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="51" height="25" tilewidth="64" tileheight="64" infinite="0" nextlayerid="6" nextobjectid="7">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="51" height="25" tilewidth="64" tileheight="64" infinite="0" nextlayerid="6" nextobjectid="9">
  <tileset firstgid="1" source="../tilesets/lace_tiles.tsx"/>
- <tileset firstgid="19" name="objects" tilewidth="156" tileheight="186" tilecount="31" columns="0">
-  <grid orientation="orthogonal" width="1" height="1"/>
-  <tile id="0">
-   <image source="../../graphics/objects/barrel.png" width="46" height="50"/>
-  </tile>
-  <tile id="1">
-   <image source="../../graphics/objects/bg_palm_1.png" width="128" height="128"/>
-  </tile>
-  <tile id="2">
-   <image source="../../graphics/objects/crate.png" width="50" height="36"/>
-  </tile>
-  <tile id="3">
-   <image source="../../graphics/objects/flag.png" width="68" height="186"/>
-  </tile>
-  <tile id="4">
-   <image source="../../graphics/objects/large_1.png" width="78" height="136"/>
-  </tile>
-  <tile id="5">
-   <image source="../../graphics/objects/ship.png" width="156" height="44"/>
-  </tile>
-  <tile id="6">
-   <image source="../../graphics/objects/small_1.png" width="80" height="103"/>
-  </tile>
-  <tile id="7">
-   <image source="../../graphics/objects/player.png" width="74" height="56"/>
-  </tile>
-  <tile id="8">
-   <image source="../../graphics/objects/shell.png" width="76" height="46"/>
-  </tile>
-  <tile id="9">
-   <image source="../../graphics/objects/tooth.png" width="48" height="46"/>
-  </tile>
-  <tile id="10">
-   <image source="../../graphics/objects/floor_spikes.png" width="64" height="64"/>
-  </tile>
-  <tile id="11">
-   <image source="../../graphics/objects/spike_ball.png" width="64" height="64"/>
-  </tile>
-  <tile id="12">
-   <image source="../../graphics/objects/bg_palm_left.png" width="104" height="106"/>
-  </tile>
-  <tile id="13">
-   <image source="../../graphics/objects/bg_palm_right.png" width="104" height="106"/>
-  </tile>
-  <tile id="14">
-   <image source="../../graphics/objects/bg_crate.png" width="42" height="32"/>
-  </tile>
-  <tile id="15">
-   <image source="../../graphics/objects/candle.png" width="64" height="64"/>
-  </tile>
-  <tile id="16">
-   <image source="../../graphics/objects/window.png" width="64" height="64"/>
-  </tile>
-  <tile id="17">
-   <image source="../../graphics/objects/big_chain.png" width="64" height="116"/>
-  </tile>
-  <tile id="18">
-   <image source="../../graphics/objects/small_chain.png" width="64" height="62"/>
-  </tile>
-  <tile id="19">
-   <image source="../../graphics/objects/green_bottle1.png" width="14" height="34"/>
-  </tile>
-  <tile id="20">
-   <image source="../../graphics/objects/green_bottle2.png" width="30" height="14"/>
-  </tile>
-  <tile id="21">
-   <image source="../../graphics/objects/blue_bottle1.png" width="14" height="28"/>
-  </tile>
-  <tile id="22">
-   <image source="../../graphics/objects/blue_bottle2.png" width="24" height="14"/>
-  </tile>
-  <tile id="23">
-   <image source="../../graphics/objects/bg_barrel.png" width="42" height="44"/>
-  </tile>
-  <tile id="24">
-   <image source="../../graphics/objects/bg_barrel_2.png" width="42" height="44"/>
-  </tile>
-  <tile id="25">
-   <image source="../../graphics/objects/curtain1.png" width="52" height="178"/>
-  </tile>
-  <tile id="26">
-   <image source="../../graphics/objects/curtain2.png" width="52" height="178"/>
-  </tile>
-  <tile id="27">
-   <image source="../../graphics/objects/door.png" width="82" height="98"/>
-  </tile>
-  <tile id="28">
-   <image source="../../graphics/enemies/slime/0.png" width="36" height="32"/>
-  </tile>
-  <tile id="29">
-   <image source="../../graphics/enemies/fly/0.png" width="48" height="42"/>
-  </tile>
-  <tile id="30">
-   <image source="../../graphics/player/idle/0.png" width="96" height="96"/>
-  </tile>
- </tileset>
- <tileset firstgid="50" source="../tilesets/platforms.tsx"/>
+ <tileset firstgid="19" source="../tilesets/platforms.tsx"/>
+ <tileset firstgid="27" source="../tilesets/objects.tsx"/>
  <layer id="1" name="Terrain" width="51" height="25">
   <data encoding="csv">
 7,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,9,
@@ -151,7 +56,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,51,51,51,51,51,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,20,20,20,20,20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -165,11 +70,7 @@
  <objectgroup id="2" name="Data">
   <object id="1" name="Data" x="7.39394" y="4.36364" width="64" height="64">
    <properties>
-    <property name="bg" value=""/>
-    <property name="bottom_limit" type="int" value="200"/>
-    <property name="death_border_bottom" type="int" value="0"/>
-    <property name="horizon_line" type="int" value="100"/>
-    <property name="level_unlock" type="int" value="1"/>
+    <property name="bg_color" value="#181818"/>
     <property name="next_room_down" value="3"/>
     <property name="next_room_left" value="0"/>
     <property name="next_room_right" value="1"/>
@@ -179,7 +80,7 @@
   </object>
  </objectgroup>
  <objectgroup id="3" name="Objects">
-  <object id="2" name="player" gid="49" x="-18.9697" y="529.182" width="96" height="96">
+  <object id="8" name="player" gid="57" x="-18.97" y="529.18" width="96" height="96">
    <properties>
     <property name="spawn" value="left"/>
    </properties>

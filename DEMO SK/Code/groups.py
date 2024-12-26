@@ -1,12 +1,12 @@
 from settings import *
-from sprites import Sprite, Cloud
+from sprites import Sprite
 from random import choice, randint, uniform
 from timecount import Timer
 from pygame import gfxdraw, BLEND_RGB_ADD
 from math import sqrt
 
 class AllSprites(pygame.sprite.Group):
-    def __init__(self, width, height, clouds, horizon_line, bg_tile = None, top_limit = 0):
+    def __init__(self, width, height, bg_color, top_limit = 0):
         super().__init__()
         self.display_surface = pygame.display.get_surface()
         self.offset = vector()
@@ -17,8 +17,7 @@ class AllSprites(pygame.sprite.Group):
             'bottom': -self.height + WINDOW_HEIGHT,
             'top': top_limit,
         }
-        self.sky = not bg_tile # Bool para verificar a necessidade do céu, a partir da não existencia de um tile
-        self.horizon_line = horizon_line
+        self.bg_color = bg_color
         
         # Controle do tremor da câmera
         self.shake_magnitude = 5  # Intensidade do tremor
@@ -48,7 +47,8 @@ class AllSprites(pygame.sprite.Group):
             self.offset.y += uniform(-self.shake_magnitude, self.shake_magnitude)
             
     def draw_sky(self):
-        self.display_surface.fill('#181818')
+        self.display_surface.fill(self.bg_color)
+        # self.display_surface.fill('#181818')
 
     def draw(self, target_pos, delta_time):
         # Movimentação da camera do jogador
@@ -60,8 +60,7 @@ class AllSprites(pygame.sprite.Group):
         self.apply_shake()
 
         # Desenho do céu
-        if self.sky:
-            self.draw_sky()
+        self.draw_sky()
 
         for sprite in sorted(self, key = lambda sprite: sprite.z):
             # Desenha os elementos com base na ordem em Z_LAYER

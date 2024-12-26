@@ -52,19 +52,13 @@ class Game:
             7: load_pygame(join('..', 'data', 'levels', '7.tmx')),
             8: load_pygame(join('..', 'data', 'levels', '8.tmx')),
             9: load_pygame(join('..', 'data', 'levels', '9.tmx')),
-            10: load_pygame(join('..', 'data', 'levels', '10.tmx')),
         }
 
         self.level_frames = {
             # Adição dos sprites animados
-            'flag': import_folder('..', 'graphics', 'level', 'flag'),
             'saw': import_folder('..', 'graphics', 'enemies', 'saw', 'animation'),
             'floor_spike': import_sub_folders('..', 'graphics','enemies', 'floor_spikes'),
             'chest': import_folder('..', 'graphics', 'level', 'chest'),
-            'window': import_folder('..', 'graphics','level', 'window'),
-            'big_chain': import_folder('..', 'graphics','level', 'big_chains'),
-            'small_chain': import_folder('..', 'graphics','level', 'small_chains'),
-            'candle_light': import_folder('..', 'graphics','level', 'candle light'),
             'player': import_sub_folders('..', 'graphics', 'player'),
             'saw_chain': import_image('..',  'graphics', 'enemies', 'saw', 'saw_chain'),
             'helicopter': import_folder('..', 'graphics', 'level', 'helicopter'),
@@ -83,9 +77,6 @@ class Game:
             'particle': import_folder('..', 'graphics', 'effects', 'particle'),
             'water_top': import_folder('..', 'graphics', 'level', 'water', 'top'),
             'water_body': import_image('..', 'graphics', 'level', 'water', 'body'),
-            'bg_tiles': import_folder_dict('..', 'graphics', 'level', 'bg', 'tiles'),
-            'cloud_small': import_folder('..', 'graphics','level', 'clouds', 'small'),
-            'cloud_large': import_image('..', 'graphics','level', 'clouds', 'large_cloud'),
             'player_neutral_attack': import_sub_folders('..', 'graphics', 'player', 'attack_animation'),
             'player_throw_attack': import_image('..', 'graphics', 'player', 'throw_attack', '0'),
             'player_spin_attack': import_folder('..', 'graphics', 'player', 'spin_attack'),
@@ -149,7 +140,6 @@ class Game:
                 self.controller_type = 'Unknown'
 
     def switch_screen(self, target, player_spawn):
-        print(len(self.tmx_maps))
         if target >= len(self.tmx_maps):
             target = 0
         self.current_stage = Level(self.tmx_maps[target], self.level_frames, self.audio_files, self.data, self.switch_screen, target, player_spawn)
