@@ -6,7 +6,7 @@ from timecount import Timer
 from support import *
 from data import Data
 from ui import UI
-from menu import Menu
+from menu import Menu, Final_screen
 
 class Game:
     def __init__(self):
@@ -20,6 +20,7 @@ class Game:
         self.ui = UI(self.font, self.ui_frames)
         self.data = Data(self.ui)
         self.menu = Menu(self.display_surface, self.font)
+        self.final_screen_menu = Final_screen(self.display_surface, self.font)
         self.state = "game"
         self.should_show_fps = False
 
@@ -38,8 +39,11 @@ class Game:
         # Detectando os joysticks conectados
         self.init_joysticks()
 
-        # Animação final
-        self.final_animation_timer = Timer(5000)
+        # Animação final    
+        self.final_animation_timer = Timer(6000)
+        self.slow_motion_active = False
+        self.slow_motion_factor = 1.0  # Fator padrão (1.0 = normal, menor que 1 = mais lento)
+        self.final_screen_ended = False
 
     def import_assets(self):
         # Icone do jogo
@@ -172,34 +176,86 @@ class Game:
                     if joystick.get_button(9):
                         return True
         return False
+    
+    def set_slow_motion(self, factor):
+        # Ativa o slow motion com o fator especificado (1.0 = normal, <1 = lento)
+        if factor < 1.0:  # Slow motion
+            self.slow_motion_active = True
+            self.slow_motion_factor = factor
+        else:  # Voltar ao normal
+            self.slow_motion_active = False
+            self.slow_motion_factor = 1.0
 
-    def final_screen(self):
-        self.final_animation_timer.update()
-        lace = self.current_stage.lace
-        player = self.current_stage.player
-        if lace.on_final_animation:
-            if self.current_stage.collision_sprites:
-                collision_sprites = self.current_stage.collision_sprites.sprites() + self.current_stage.semi_collision_sprites.sprites()
-                for sprite in collision_sprites:
-                    sprite.kill()
-                lace.collision_rects = None
-                lace.can_move = False
-                player.on_final_animation = True
-                self.current_stage.player.throw_attacking = False
-                self.current_stage.during_throw_attack = False
-                self.current_stage.player.spin_attacking = False
-                self.current_stage.during_spin_attack = False
-                self.current_stage.player.using_weapon = False
-                player.state = 'idle'
-                player.direction.x = 0
-                player.direction.y = 0
-                player.dash_progress = player.dash_distance
-                lace.direction.x = 0
-                lace.direction.y = 0
+    def final_screen(self, dt):
+        if not self.final_screen_ended:
+            self.final_animation_timer.update()
+            lace = self.current_stage.lace
+            player = self.current_stage.player
+            if lace.on_final_animation:
+                if self.current_stage.collision_sprites:
+                    level = self.current_stage
+                    collision_sprites = self.current_stage.collision_sprites.sprites() + self.current_stage.semi_collision_sprites.sprites()
+                    for sprite in collision_sprites:
+                        sprite.kill()
+                    # Free level
+                    level.player.throw_attacking = False
+                    level.during_throw_attack = False
+                    level.during_spin_attack = False
+                    if level.player_neutral_attack_sprite != None:
+                        level.player_neutral_attack_sprite.kill()
+                    if level.player_throw_attack_sprite != None:
+                        level.player_throw_attack_sprite.kill()
+                    if level.player_throw_attack_sprite != None:
+                        level.player_throw_attack_sprite.kill()
+                    for sprite in level.weapon_sprites:
+                        sprite.free()
+                    # Free Player
+                    player.on_final_animation = True
+                    player.spin_attacking = False
+                    player.using_weapon = False
+                    player.state = 'idle'
+                    player.direction.x = 0
+                    player.direction.y = 0
+                    player.dash_progress = player.dash_distance
+                    # Free lace
+                    lace.can_move = False
+                    lace.direction.x = 0
+                    lace.direction.y = 0
+                    lace.state = 'dash'
+                    self.final_animation_timer.activate()
+
+                    # Player surf
+                    white_mask = pygame.mask.from_surface(player.image)
+                    white_surf = white_mask.to_surface()
+                    white_surf.set_colorkey('black')
+                    player.image = white_surf
+
+                    # Lace surf
+                    white_mask = pygame.mask.from_surface(lace.image)
+                    white_surf = white_mask.to_surface()
+                    white_surf.set_colorkey('black')
+                    lace.image = white_surf
+                    
+                    # Efeitos
+                    level.fade_alpha = 0
+                    level.fade_out = True
+                    self.set_slow_motion(0.1)
+
+            if not self.final_animation_timer.active and lace.on_final_animation:
+                self.set_slow_motion(1)
+                self.state = 'final_screen'
+                self.final_screen_ended = True
+
+            if player.hitbox_rect.x > lace.hitbox_rect.x and lace.on_final_animation:
+                player.hitbox_rect.x += 50 * dt
+                lace.hitbox_rect.x -= 50 * dt
+            elif lace.on_final_animation:
+                player.hitbox_rect.x -= 50 * dt
+                lace.hitbox_rect.x += 50 * dt
 
     def run(self):
         while True:
-            delta_time = self.clock.tick() / 1000 # Delta time para normalizar o fps, o fps não é travado
+            delta_time = self.clock.tick() / 1000 * self.slow_motion_factor # Delta time para normalizar o fps, o fps não é travado
             # Verificação dos eventos do jogo
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -208,7 +264,7 @@ class Game:
                 elif event.type == pygame.KEYDOWN:  # Verifica se uma tecla foi pressionada
                     if event.key == pygame.K_F3:  # Verifica se a tecla é F3
                         self.should_show_fps = not self.should_show_fps  # Alterna o estado de exibição de FPS
-                if self.detect_pause_button(event):
+                if self.detect_pause_button(event) and not self.state == 'final_screen':
                     self.state = 'menu'
 
             # Menu
@@ -222,7 +278,7 @@ class Game:
             elif self.state == 'game':
                 self.current_stage.run(delta_time) # Atualização dos sprites do jogo a partir do arquivo "Level"
     
-                if not self.current_stage.timers['loading_time'].active:
+                if not self.current_stage.timers['loading_time'].active and not self.final_animation_timer.active:
                     self.ui.update(delta_time) # HUD do jogo
                 if self.should_show_fps:
                     self.show_fps()
@@ -230,8 +286,9 @@ class Game:
 
             # Final Screen
             if hasattr(self.current_stage, 'lace'):
-                self.final_screen()
-            """ elif self.state == 'final_screen': """
+                self.final_screen(delta_time)
+                if self.state == 'final_screen':
+                    next_state = self.final_screen_menu.display_menu()
 
 if __name__ == '__main__': # Verifica se o script está sendo executado diretamente (exemplo: python main.py)
     # Inicialização do jogo

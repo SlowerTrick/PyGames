@@ -593,5 +593,6 @@ class Player(pygame.sprite.Sprite):
 
         # Animação
         self.get_state()
-        self.animate(delta_time)
         self.flicker()
+        if not self.on_final_animation:
+            self.animate(delta_time)

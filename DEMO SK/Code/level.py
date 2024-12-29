@@ -95,12 +95,13 @@ class Level:
         }
         self.hit_stop_cooldown = Timer(100)
 
-        # Screen effects
+        # Efeitos da tela
         self.fade_alpha = 255  # Nível de opacidade inicial (0-255)
         self.damage_alpha = 0 # Nível de opacidade inicial (0-255)
         # Para tirar, os codigos estão em player_collisions e screen effects
         self.fade_speed = 5   # Velocidade do fade 
         self.damage_fade_speed = 3 # Velocidade do fade de dano
+        self.fade_out = False
 
     def setup(self, tmx_map, level_frames, audio_files):
         def get_layer(tmx_map, layer_name):
@@ -747,7 +748,8 @@ class Level:
             self.switch_screen(int(self.adjacent_stage['left']), 'right', self.last_bench)
 
     def screen_effects(self):
-        if self.fade_alpha > 0:
+        # Fade in
+        if self.fade_alpha > 0 and not self.fade_out:
             fade_surface = pygame.Surface(self.display_surface.get_size())
             fade_surface.fill((0, 0, 0))  # Preencher com preto
             fade_surface.set_alpha(self.fade_alpha)  # Definir opacidade
@@ -755,6 +757,8 @@ class Level:
             self.fade_alpha -= self.fade_speed  # Reduzir opacidade gradualmente
             if self.fade_alpha < 0:
                 self.fade_alpha = 0  # Garantir que a opacidade não fique negativa
+        
+        # Dano
         if self.damage_alpha > 0:
             damage_surface = pygame.Surface(self.display_surface.get_size())
             damage_surface.fill((10, 10, 10))  # Preencher com preto
@@ -763,6 +767,17 @@ class Level:
             self.damage_alpha -= self.damage_fade_speed  # Reduzir opacidade gradualmente
             if self.damage_alpha < 0:
                 self.damage_alpha = 0  # Garantir que a opacidade não fique negativa
+
+        # Fade Out
+        if self.fade_out:
+            fade_surface = pygame.Surface(self.display_surface.get_size())
+            fade_surface.fill((0, 0, 0))  # Preencher com preto
+            fade_surface.set_alpha(self.fade_alpha)  # Definir opacidade
+            self.display_surface.blit(fade_surface, (0, 0))  # Aplicar o fade na tela
+            self.fade_alpha += self.fade_speed / 30  # Aumentar opacidade gradualmente
+            if self.fade_alpha > 255:
+                self.fade_alpha = 255  # Garantir que a opacidade não passe de 255
+                self.fade_out = False  # Desativar o fade out após completar
 
     def run(self, delta_time):
         self.update_timers()

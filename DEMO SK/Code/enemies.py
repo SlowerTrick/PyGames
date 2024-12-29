@@ -1266,4 +1266,5 @@ class Lace(pygame.sprite.Sprite):
             self.move(dt)
         else:
             self.final_animation(dt)
+            self.animate
             self.move(dt)
