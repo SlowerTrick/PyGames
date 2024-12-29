@@ -8,6 +8,7 @@ WINDOW_WIDTH,WINDOW_HEIGHT = info.current_w,info.current_h
 TILE_SIZE = 64
 ANIMATION_SPEED = 6
 BASE_HEALTH = 5
+STRING_MAX = 6
 
 Z_LAYERS = {
 	'bg': 0,

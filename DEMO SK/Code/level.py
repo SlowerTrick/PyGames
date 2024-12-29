@@ -4,14 +4,14 @@ from timecount import Timer
 from player import Player
 from groups import AllSprites
 from debug import debug
-from enemies import Runner, Shell, Breakable_wall, Chest, Pearl, Slime, Fly, Ranged_Fly, Butterfly, Lace
+from enemies import Runner, Gulka, Fool_eater, Breakable_wall, Chest, Pearl, Slime, Fly, Ranged_Fly, Butterfly, Lace
 from attack import Neutral_Attack, Throw_Attack, Spin_Attack, Parry_Attack, Knive, Saw
 from random import uniform
 from os.path import join
 from audio import AudioManager
 
 class Level:
-    def __init__(self, tmx_map, level_frames, audio_files, data, switch_screen, current_stage, player_spawn):
+    def __init__(self, tmx_map, level_frames, audio_files, data, switch_screen, current_stage, player_spawn, last_bench):
         # Setup geral
         self.display_surface = pygame.display.get_surface() # Inicializa a partir da tela em main
         self.data = data
@@ -31,6 +31,7 @@ class Level:
         self.level_width = tmx_map.width * TILE_SIZE
         self.level_bottom = tmx_map.height * TILE_SIZE
         tmx_level_properties = tmx_map.get_layer_by_name('Data')[0].properties
+        self.last_bench = last_bench
 
         # Caso vc consiga implementar o banco, basta mudar player_spawn para "bench"
         self.current_stage = current_stage
@@ -60,7 +61,8 @@ class Level:
 
         # Inicialização do grupo de sprites dos inimigos que causam dano
         self.runner_sprites = pygame.sprite.Group()
-        self.shell_sprites = pygame.sprite.Group()
+        self.gulka_sprites = pygame.sprite.Group()
+        self.fool_eater_sprites = pygame.sprite.Group()
         self.pearl_sprites = pygame.sprite.Group()
         self.slime_sprites = pygame.sprite.Group()
         self.fly_sprites = pygame.sprite.Group()
@@ -274,30 +276,39 @@ class Level:
         enemies_layer = get_layer(tmx_map, 'Enemies')
         if enemies_layer:
             for obj in enemies_layer:
-                if obj.name == 'tooth':
+                if obj.name == 'runner':
                     Runner(
                         pos = (int(obj.x), int(obj.y)), 
                         frames = level_frames['runner'], 
                         groups = (self.all_sprites, self.damage_sprites, self.runner_sprites, self.all_enemies), 
                         collision_sprites = self.collision_sprites)
                     
-                if obj.name == 'shell':
-                    Shell(
+                elif obj.name == 'gulka':
+                    Gulka(
                         pos = (int(obj.x), int(obj.y)),
-                        frames = level_frames['shell'],
-                        groups = (self.all_sprites, self.collision_sprites, self.shell_sprites, self.all_enemies),
-                        reverse = obj.properties['reverse'],
+                        frames = level_frames['gulka'],
+                        groups = (self.all_sprites, self.damage_sprites, self.gulka_sprites, self.all_enemies),
                         player = self.player,
+                        facing_direction = obj.properties['facing_direction'],
                         create_pearl = self.create_pearl)
+                
+                elif obj.name == 'fool_eater':
+                    Fool_eater(
+                        pos = (int(obj.x), int(obj.y)),
+                        frames = level_frames['fool_eater'],
+                        groups = (self.all_sprites, self.damage_sprites, self.fool_eater_sprites, self.all_enemies),
+                        player = self.player,
+                        facing_direction = obj.properties['facing_direction']
+                    )
             
-                if obj.name == 'breakable_wall':
+                elif obj.name == 'breakable_wall':
                     Breakable_wall(
                         pos = (int(obj.x), int(obj.y)),
                         surf = level_frames['breakable_wall'],
                         groups = (self.all_sprites, self.collision_sprites, self.runner_sprites, self.all_enemies),
                     )
     
-                if obj.name == 'slime':
+                elif obj.name == 'slime':
                     Slime(
                         pos = (int(obj.x), int(obj.y)),
                         frames = level_frames['slime'],
@@ -305,7 +316,7 @@ class Level:
                         player = self.player,
                         collision_sprites = self.collision_sprites)
                 
-                if obj.name == 'fly':
+                elif obj.name == 'fly':
                     Fly(
                         pos = (int(obj.x), int(obj.y)),
                         frames = level_frames['fly'],
@@ -313,7 +324,7 @@ class Level:
                         player = self.player,
                         collision_sprites = self.collision_sprites)
                 
-                if obj.name == 'ranged_fly':
+                elif obj.name == 'ranged_fly':
                     Ranged_Fly(
                         pos = (int(obj.x), int(obj.y)),
                         frames = level_frames['fly'],
@@ -323,14 +334,14 @@ class Level:
                         create_pearl = self.create_pearl
                     )
 
-                if obj.name == 'butterfly':
+                elif obj.name == 'butterfly':
                     Butterfly(
                         pos = (int(obj.x), int(obj.y)), 
                         frames = level_frames['butterfly'], 
                         groups = (self.all_sprites),
                         player = self.player)
 
-                if obj.name == 'lace':
+                elif obj.name == 'lace':
                     self.lace = Lace(
                         pos = (int(obj.x), int(obj.y)),
                         frames = level_frames['lace'],
@@ -390,9 +401,9 @@ class Level:
     def pearl_collision(self):
         if self.pearl_sprites:
             for sprite in self.collision_sprites:
-                if not hasattr(sprite, 'is_shell'):
+                if not hasattr(sprite, 'is_gulka'):
                     sprite = pygame.sprite.spritecollide(sprite, self.pearl_sprites, True)
-                if sprite and not hasattr(sprite, 'is_shell'):
+                if sprite and not hasattr(sprite, 'is_gulka'):
                     ParticleEffectSprite((sprite[0].rect.center), self.particle_frames, self.all_sprites)
 
     def player_collisions(self, dt):
@@ -429,13 +440,15 @@ class Level:
                 if self.data.player_health <= 0:
                     self.data.player_health = BASE_HEALTH
                     self.data.string_bar = 0
-                    self.switch_screen(int(self.current_stage), self.player_spawn)
+                    self.switch_screen(int(self.last_bench), 'bench', self.last_bench)
         
         # Banco
         for sprite in self.bench_sprites:
             if sprite.rect.colliderect(self.player.hitbox_rect) and self.player.vertical_sight == 'up':
                 self.player.on_surface['bench'] = True
                 self.player.timers['sitting_down'].activate()
+                self.last_bench = self.current_stage
+                self.player_spawn = 'bench'
             
             if self.player.on_surface['bench']:
                 target_center = (sprite.rect.centerx, sprite.rect.centery - 15)
@@ -457,6 +470,7 @@ class Level:
                     # Verifica se o jogador está próximo o suficiente do centro ajustado
                     if abs(distance_x) < speed_x and abs(distance_y) < speed_y:
                         self.data.player_health = BASE_HEALTH
+                        self.data.string_bar = STRING_MAX
                         self.player.hitbox_rect.center = target_center
                         self.player.rect.center = target_center
                         self.audio_files['bench_rest'].play()
@@ -465,18 +479,20 @@ class Level:
     
     def item_collision(self):
         if self.item_sprites:
-            item_sprites = pygame.sprite.spritecollide(self.player, self.item_sprites, True)
+            item_sprites = pygame.sprite.spritecollide(self.player, self.item_sprites, False)
             if item_sprites:
-                item_sprites[0].activate()
-                ParticleEffectSprite((item_sprites[0].rect.center), self.particle_frames, self.all_sprites)
-                
-                # Utilizar um canal de som diferente para evitar a não reprodução do som por sobreposição
-                collision_channel = pygame.mixer.Channel(1)
-                
-                if item_sprites[0].item_type in ('throw_attack', 'wall_jump', 'dash'):
-                    collision_channel.play(self.audio_files['special_item_pickup'])
-                else:
-                    collision_channel.play(self.audio_files['geo'])
+                if not item_sprites[0].min_lifetime.active:
+                    item_sprites[0].activate()
+                    ParticleEffectSprite((item_sprites[0].rect.center), self.particle_frames, self.all_sprites)
+                    
+                    # Utilizar um canal de som diferente para evitar a não reprodução do som por sobreposição
+                    collision_channel = pygame.mixer.Channel(1)
+                    
+                    if item_sprites[0].item_type in ('throw_attack', 'wall_jump', 'dash'):
+                        collision_channel.play(self.audio_files['special_item_pickup'])
+                    else:
+                        collision_channel.play(self.audio_files['geo'])
+                    item_sprites[0].kill()
 
     def player_attack(self):
         # Ataque neutro
@@ -709,13 +725,26 @@ class Level:
         left_limit = 0
         # Logica para mudar a fase e posicionar o jogador na posição correta
         if self.player.hitbox_rect.top >= bottom_limit:
-            self.switch_screen(int(self.adjacent_stage['down']), 'top')
-        if self.player.hitbox_rect.bottom <= top_limit:
-            self.switch_screen(int(self.adjacent_stage['top']), 'down')
+            if self.adjacent_stage['down'] == 'death':
+                self.all_sprites.start_shaking(500, 2)
+                self.timers['hit_stop_long'].activate()
+                self.damage_alpha = 0
+                self.player.get_damage()
+                self.audio_files['damage'].play()
+                if self.data.player_health <= 0:
+                    self.data.player_health = BASE_HEALTH
+                    self.data.string_bar = 0
+                    self.switch_screen(int(self.last_bench), 'bench', self.last_bench)
+                else:
+                    self.switch_screen(int(self.current_stage), self.player_spawn, self.last_bench)
+            else:
+                self.switch_screen(int(self.adjacent_stage['down']), 'top', self.last_bench)
+        elif self.player.hitbox_rect.bottom <= top_limit:
+            self.switch_screen(int(self.adjacent_stage['top']), 'down', self.last_bench)
         elif self.player.hitbox_rect.left >= right_limit:
-            self.switch_screen(int(self.adjacent_stage['right']), 'left')
+            self.switch_screen(int(self.adjacent_stage['right']), 'left', self.last_bench)
         elif self.player.hitbox_rect.right <= left_limit:
-            self.switch_screen(int(self.adjacent_stage['left']), 'right')
+            self.switch_screen(int(self.adjacent_stage['left']), 'right', self.last_bench)
 
     def screen_effects(self):
         if self.fade_alpha > 0:

@@ -68,13 +68,13 @@
 </data>
  </layer>
  <objectgroup id="2" name="Data">
-  <object id="1" name="Data" x="7.39394" y="4.36364" width="64" height="64">
+  <object id="1" name="Data" x="7.39394" y="4.36364" width="64" height="64" visible="0">
    <properties>
     <property name="bg_color" value="#181818"/>
-    <property name="next_room_down" value="3"/>
-    <property name="next_room_left" value="0"/>
-    <property name="next_room_right" value="1"/>
-    <property name="next_room_up" value="0"/>
+    <property name="next_room_down" value="9"/>
+    <property name="next_room_left" value="2"/>
+    <property name="next_room_right" value="9"/>
+    <property name="next_room_up" value="9"/>
     <property name="top_limit" type="int" value="0"/>
    </properties>
   </object>

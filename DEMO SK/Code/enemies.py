@@ -8,14 +8,17 @@ class Runner(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, collision_sprites):
         super().__init__(groups)
         self.is_enemy = True
-        self.frames, self.frame_index = frames, 0
+
+        # Alteração inicial do tamanho dos sprites
+        self.frames = [pygame.transform.scale_by(frame, 1.2) for frame in frames]
+        self.frame_index = 0
         self.image = self.frames[self.frame_index]
-        self.image = pygame.transform.scale_by(self.image, 1.2)
-        self.rect = self.image.get_frect(topleft = pos)
+        self.rect = self.image.get_frect(topleft=pos)
+
         self.z = Z_LAYERS['main']
         self.runner_health = 3
 
-        self.direction = choice((-1,1))
+        self.direction = choice((-1, 1))
         self.collision_rects = [sprite.rect for sprite in collision_sprites]
         self.speed = 200
 
@@ -45,7 +48,6 @@ class Runner(pygame.sprite.Sprite):
         self.frame_index += ANIMATION_SPEED * dt
         self.image = self.frames[int(self.frame_index % len(self.frames))]
         self.image = pygame.transform.flip(self.image, True, False) if self.direction < 0 else self.image
-        self.image = pygame.transform.scale_by(self.image, 1.2)
         self.flicker()
 
         # movimento
@@ -61,53 +63,75 @@ class Runner(pygame.sprite.Sprite):
         wall_rect.collidelist(self.collision_rects) != -1:
             self.direction *= -1
 
-class Shell(pygame.sprite.Sprite):
-    def __init__(self, pos, frames, groups, reverse, player, create_pearl):
-        # self.pearl = True "Caso algo de errado, vc tirou isso"
+class Gulka(pygame.sprite.Sprite):
+    def __init__(self, pos, frames, groups, player, create_pearl, facing_direction):
         super().__init__(groups)
         self.is_enemy = True
-        self.is_shell = True
+        self.is_gulka = True
 
-        if reverse:
-            self.frames = {}
-            for key, surfs in frames.items():
-                self.frames[key] = [pygame.transform.flip(surf, True, False) for surf in surfs]
-            self.bullet_direction = -1
-        else:
-            self.frames = frames 
-            self.bullet_direction = 1
+        # Definição da direção dos sprites
+        self.frames = {}
+        for key, surfs in frames.items():
+            if facing_direction == 'up':
+                self.frames[key] = surfs
+            elif facing_direction == 'down':
+                self.frames[key] = [pygame.transform.rotate(surf, 180) for surf in surfs]
+            elif facing_direction == 'left':
+                self.frames[key] = [pygame.transform.rotate(surf, 90) for surf in surfs]
+            elif facing_direction == 'right':
+                self.frames[key] = [pygame.transform.rotate(surf, 270) for surf in surfs]
 
+        self.bullet_direction = facing_direction
         self.frame_index = 0
         self.state = 'idle'
         self.image = self.frames[self.state][self.frame_index]
-        self.rect = self.image.get_frect(topleft = pos)
+        self.rect = self.image.get_frect(topleft=pos)
         self.old_rect = self.rect.copy()
         self.z = Z_LAYERS['main']
         self.player = player
+        self.player_pos = None
         self.shoot_timer = Timer(3000)
         self.hit_timer = Timer(500)
         self.has_fired = False
         self.create_pearl = create_pearl
-        self.shell_health = 5
-    
+        self.gulka_health = 5
+        self.facing_direction = facing_direction
+
     def state_management(self):
-        player_pos, shell_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
-        player_near = shell_pos.distance_to(player_pos) < 750
-        player_front = shell_pos.x < player_pos.x if self.bullet_direction > 0 else shell_pos.x > player_pos.x
-        player_level = abs(shell_pos.y - player_pos.y) < 30
+        player_pos, gulka_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
+        player_near = gulka_pos.distance_to(player_pos) < 750
+
+        if self.bullet_direction in ['left', 'right']:
+            player_front = (gulka_pos.x < player_pos.x if self.bullet_direction == 'right' else gulka_pos.x > player_pos.x)
+            player_level = abs(gulka_pos.y - player_pos.y) < 30
+        else:
+            player_front = (gulka_pos.y > player_pos.y if self.bullet_direction == 'up' else gulka_pos.y < player_pos.y)
+            player_level = abs(gulka_pos.x - player_pos.x) < 30
 
         if player_near and player_front and player_level and not self.shoot_timer.active:
             self.state = 'fire'
             self.frame_index = 0
             self.shoot_timer.activate()
 
+    def shoot(self):
+        # Dispara uma pérola na direção apropriada
+        if self.player_pos is None:
+            if self.bullet_direction in ['up', 'down']:
+                self.player_pos = (self.rect.centerx, self.player.rect.centery)
+            else:
+                self.player_pos = (self.player.rect.centerx, self.rect.centery)
+
+        self.create_pearl((self.rect.center), self.player_pos)
+        self.has_fired = True
+        self.player_pos = None
+
     def get_damage(self):
         if not self.hit_timer.active:
             self.hit_timer.activate()
-            self.shell_health -= 1
+            self.gulka_health -= 1
 
     def is_alive(self):
-        if self.shell_health <= 0:
+        if self.gulka_health <= 0:
             self.kill()
 
     def flicker(self):
@@ -117,26 +141,25 @@ class Shell(pygame.sprite.Sprite):
             white_surf.set_colorkey('black')
             self.image = white_surf
 
-    def update(self, dt):
-        self.shoot_timer.update()
-        self.hit_timer.update()
-        self.state_management()
-
-        # Animação e Ataque
+    def animate(self, dt):
         self.frame_index += ANIMATION_SPEED * dt
         if self.frame_index < len(self.frames[self.state]):
             self.image = self.frames[self.state][int(self.frame_index)]
 
-            # Disparo do projetil no frame exato desejado
+            # Disparo no momento certo da animação
             if self.state == 'fire' and int(self.frame_index) == 3 and not self.has_fired:
-                self.create_pearl((self.rect.center), (self.player.rect.centerx, self.rect.centery))
-                self.has_fired = True 
-
+                self.shoot()
         else:
             self.frame_index = 0
             if self.state == 'fire':
                 self.state = 'idle'
                 self.has_fired = False
+
+    def update(self, dt):
+        self.shoot_timer.update()
+        self.hit_timer.update()
+        self.state_management()
+        self.animate(dt)
         self.flicker()
 
 class Pearl(pygame.sprite.Sprite):
@@ -234,14 +257,15 @@ class Chest(pygame.sprite.Sprite):
         self.open_chest = True
         self.is_enemy = True
 
-        # Sprite
-        self.frames, self.frame_index = frames, 0
+        # Alteração inicial do tamanho dos sprites
+        self.frames = [
+            pygame.transform.scale_by(pygame.transform.flip(frame, True, False) if reverse else frame, 2.5)
+            for frame in frames
+        ]
+        # Setup dos frames
+        self.frame_index = 0
         self.image = self.frames[self.frame_index]
-        self.image = pygame.transform.scale_by(self.image, 2.5)
-        self.reverse = reverse
-        self.all_sprites = all_sprites
-        self.image = pygame.transform.flip(self.image, True, False) if self.reverse else self.image
-        self.rect = self.image.get_frect(topleft = pos)
+        self.rect = self.image.get_frect(topleft=pos)
         self.old_rect = self.rect
 
         # Item do baú
@@ -259,7 +283,7 @@ class Chest(pygame.sprite.Sprite):
 
         # Controle do tremor
         self.shake_magnitude = 60  # Intensidade do tremor
-        self.shake_timer = Timer(500, self.stop_shaking, repeat=False)   # Duração do tremor
+        self.shake_timer = Timer(500, self.stop_shaking, repeat=False)  # Duração do tremor
         self.original_x = self.rect.x
     
     def start_shaking(self):
@@ -314,8 +338,6 @@ class Chest(pygame.sprite.Sprite):
             self.image = self.frames[int(self.frame_index % len(self.frames))]
             if self.frame_index >= len(self.frames) - 1:
                 self.open_chest = False
-            self.image = pygame.transform.scale_by(self.image, 2.5)
-            self.image = pygame.transform.flip(self.image, True, False) if self.reverse else self.image
 
     def update(self, dt):
         self.hit_timer.update()
@@ -499,6 +521,101 @@ class Slime(pygame.sprite.Sprite):
             self.move(dt)
         else:
             self.death_animation(dt)
+
+class Fool_eater(pygame.sprite.Sprite):
+    def __init__(self, pos, frames, groups, player, facing_direction):
+        super().__init__(groups)
+        self.is_enemy = True
+        self.frame_index = 0
+
+        # Definição da direção dos sprites
+        self.frames = {}
+        for key, surfs in frames.items():
+            if facing_direction in ('left', 'right'):
+                self.frames[key] = [pygame.transform.rotate(surf, 90) for surf in surfs]
+            elif facing_direction == 'down':
+                self.frames[key] = [pygame.transform.rotate(surf, 180) for surf in surfs]
+            else:
+                self.frames[key] = surfs
+
+        if facing_direction == 'right':
+            for key, surfs in self.frames.items():
+                self.frames[key] = [pygame.transform.flip(surf, True, False) for surf in surfs]
+
+        self.state = 'idle'
+        self.image = self.frames[self.state][self.frame_index]
+        self.rect = self.image.get_frect(topleft=pos)
+        self.z = Z_LAYERS['main']
+        self.player = player
+
+        # Status
+        self.player_near = False
+        self.facing_direction = facing_direction
+        self.soul_eater_health = 3
+        self.gravity = 1300
+
+        # Colisões e timers
+        self.hit_timer = Timer(500)
+        self.cooldown_timer = Timer(500)
+        self.death_animation_timer = Timer(3000)
+
+        # Death animation
+        self.is_dead = False
+
+    def state_management(self, dt):
+        player_collide = self.rect.colliderect(self.player.hitbox_rect)
+        if player_collide and not self.cooldown_timer.active:
+            self.state = 'attack'
+            self.cooldown_timer.activate()
+        elif not player_collide and not self.cooldown_timer.active:
+            self.state = 'idle'
+
+        if self.frame_index == 1:
+            self.is_dead = False
+        else:
+            self.is_dead = True
+
+    def get_damage(self):
+        if not self.hit_timer.active:
+            self.hit_timer.activate()
+            self.soul_eater_health -= 1
+
+    def is_alive(self):
+        if self.soul_eater_health <= 0:
+            self.kill()
+
+    def flicker(self):
+        if self.hit_timer.active and sin(pygame.time.get_ticks() * 100) >= 0:
+            white_mask = pygame.mask.from_surface(self.image)
+            white_surf = white_mask.to_surface()
+            white_surf.set_colorkey('black')
+            self.image = white_surf
+
+    def animate(self, dt):
+        if self.state == 'attack':
+            self.frame_index += ANIMATION_SPEED * dt
+            if self.frame_index < len(self.frames[self.state]):
+                self.image = self.frames[self.state][int(self.frame_index)]
+            else:
+                self.frame_index = len(self.frames[self.state]) - 1
+        else:
+            self.frame_index -= ANIMATION_SPEED * dt
+            if self.frame_index > 0:
+                self.image = self.frames['attack'][int(self.frame_index)]
+            else:
+                self.frame_index = 0
+                self.image = self.frames['idle'][int(self.frame_index)]
+
+    def update_timers(self):
+        self.hit_timer.update()
+        self.death_animation_timer.update()
+        self.cooldown_timer.update()
+
+    def update(self, dt):
+        self.update_timers()
+        self.state_management(dt)
+        self.animate(dt)
+        self.flicker()
 
 class Fly(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, player, collision_sprites):
@@ -938,6 +1055,8 @@ class Lace(pygame.sprite.Sprite):
         # Setup geral
         super().__init__(groups)
         self.is_enemy = True
+        self.is_dead = False
+        self.on_final_animation = False
         self.frame_index = 0
         self.frames = frames 
         self.state = 'idle'
@@ -953,7 +1072,7 @@ class Lace(pygame.sprite.Sprite):
         # Status
         self.direction = vector()
         self.facing_side = 'none'
-        self.lace_heath = 99
+        self.lace_heath = 1
         self.gravity = 1300
         self.on_ground = False
         self.player_near = False
@@ -984,38 +1103,39 @@ class Lace(pygame.sprite.Sprite):
         }
 
     def collisions(self, axis):
-        top_rect = pygame.FRect(self.hitbox_rect.midtop, (1, 1))
-        floor_rect = pygame.FRect(self.hitbox_rect.midbottom, (1, 1))
-        right_rect = pygame.FRect(self.hitbox_rect.midleft, (1, 1))
-        left_rect = pygame.FRect(self.hitbox_rect.midright, (1, 1))
+        if self.collision_rects:
+            top_rect = pygame.FRect(self.hitbox_rect.midtop, (1, 1))
+            floor_rect = pygame.FRect(self.hitbox_rect.midbottom, (1, 1))
+            right_rect = pygame.FRect(self.hitbox_rect.midleft, (1, 1))
+            left_rect = pygame.FRect(self.hitbox_rect.midright, (1, 1))
 
-        if axis == 'horizontal':
-            for sprite in self.collision_rects:
-                if right_rect.colliderect(sprite) or left_rect.colliderect(sprite):
-                    if right_rect.x < sprite.x:
-                        self.hitbox_rect.right = sprite.left - 1
+            if axis == 'horizontal':
+                for sprite in self.collision_rects:
+                    if right_rect.colliderect(sprite) or left_rect.colliderect(sprite):
+                        if right_rect.x < sprite.x:
+                            self.hitbox_rect.right = sprite.left - 1
+                        else:
+                            self.hitbox_rect.left = sprite.right + 1
+
+            if axis == 'vertical':
+                for sprite in self.collision_rects:
+                    if floor_rect.colliderect(sprite):
+                        self.hitbox_rect.bottom = sprite.top
+                        self.on_ground = True
+                        break
                     else:
-                        self.hitbox_rect.left = sprite.right + 1
+                        self.on_ground = False
 
-        if axis == 'vertical':
-            for sprite in self.collision_rects:
-                if floor_rect.colliderect(sprite):
-                    self.hitbox_rect.bottom = sprite.top
-                    self.on_ground = True
-                    break
-                else:
-                    self.on_ground = False
-
-                if top_rect.colliderect(sprite):
-                    self.hitbox_rect.top = sprite.bottom
-                    self.direction.y = 0
-                    self.on_ground = False
-                    break
+                    if top_rect.colliderect(sprite):
+                        self.hitbox_rect.top = sprite.bottom
+                        self.direction.y = 0
+                        self.on_ground = False
+                        break
 
     def move(self, dt):
         if self.can_move:
             # Movimentação Vertical
-            if not self.on_ground and not self.active_attack == 'air':
+            if not self.on_ground and not self.active_attack == 'air' and not self.on_final_animation:
                 self.direction.y += self.gravity / 1.5 * dt
                 self.hitbox_rect.y += self.direction.y * dt
                 self.direction.y += self.gravity / 1.5 * dt
@@ -1104,7 +1224,8 @@ class Lace(pygame.sprite.Sprite):
 
     def is_alive(self):
         if self.lace_heath <= 0:
-            self.kill()
+            self.on_final_animation = True
+            self.is_dead = True
 
     def flicker(self):
         if self.hit_timer.active and sin(pygame.time.get_ticks() * 100) >= 0:
@@ -1125,13 +1246,24 @@ class Lace(pygame.sprite.Sprite):
         self.image = self.frames[self.state][int(self.frame_index % len(self.frames[self.state]))]
         self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
 
+    def final_animation(self, dt):
+        self.direction.y += self.gravity / 2 * dt
+        if self.direction.y > 800:
+            self.direction.y = 800
+        self.hitbox_rect.y += self.direction.y * dt
+        self.direction.y += self.gravity / 2 * dt
+
     def update(self, dt):
-        self.update_timers()
-        self.state_management()
-        self.attack(dt)
-        self.knockback(dt)
+        if not self.on_final_animation:
+            self.update_timers()
+            self.state_management()
+            self.attack(dt)
+            self.knockback(dt)
 
-        self.animate(dt)
-        self.flicker()
+            self.animate(dt)
+            self.flicker()
 
-        self.move(dt)
+            self.move(dt)
+        else:
+            self.final_animation(dt)
+            self.move(dt)

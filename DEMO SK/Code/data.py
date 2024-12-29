@@ -4,7 +4,7 @@ class Data:
         self._coins = 0
         self._player_health = 5
         self._max_player_heath = 5
-        self._health_regen = True
+        self._health_regen = False
         self._string_bar = 6
         self._max_string_bar = 6
         self._actual_weapon = 0 # Voltar para o valor 0 no estado inicial do jogo e liberar outros valores 
@@ -18,10 +18,10 @@ class Data:
         self.ui.create_weapons_frame(0)
 
         # Habilidades desbloqueaveis
-        self.unlocked_wall_jump = False
-        self.unlocked_dash = False
-        self.unlocked_throw_attack = False
-        self.unlocked_weapons = False
+        self.unlocked_wall_jump = True
+        self.unlocked_dash = True
+        self.unlocked_throw_attack = True
+        self.unlocked_weapons = True
     @property
     def coins(self):
         return self._coins

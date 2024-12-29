@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.0" name="objects" tilewidth="96" tileheight="96" tilecount="12" columns="0">
+<tileset version="1.10" tiledversion="1.11.0" name="objects" tilewidth="96" tileheight="96" tilecount="13" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="2">
   <image source="../../graphics/level/chest/0.png" width="22" height="32"/>
  </tile>
  <tile id="8">
-  <image source="../../graphics/enemies/shell/idle/0.png" width="76" height="46"/>
+  <image source="../../graphics/enemies/gulka/idle/0.png" width="46" height="48"/>
  </tile>
  <tile id="9">
   <image source="../../graphics/enemies/runner/run/0.png" width="24" height="50"/>
@@ -36,5 +36,8 @@
  </tile>
  <tile id="36">
   <image source="../../graphics/level/bench/bench.png" width="70" height="38"/>
+ </tile>
+ <tile id="37">
+  <image source="../../graphics/enemies/fool_eater/idle/0.png" width="60" height="60"/>
  </tile>
 </tileset>

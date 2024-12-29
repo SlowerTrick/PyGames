@@ -2,6 +2,7 @@ from settings import *
 from level import Level
 from pytmx.util_pygame import load_pygame
 from os.path import join
+from timecount import Timer
 from support import *
 from data import Data
 from ui import UI
@@ -20,11 +21,13 @@ class Game:
         self.data = Data(self.ui)
         self.menu = Menu(self.display_surface, self.font)
         self.state = "game"
+        self.should_show_fps = False
 
         # Level
-        self.start_stage = 0 # 8 para lace
+        self.start_stage = 9 # 8 para lace
+        self.last_bench = 0
         self.player_spawn = 'left'
-        self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn)
+        self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn, self.last_bench)
         self.current_stage.timers['loading_time'].activate()
         self.bg_music.play(-1)
 
@@ -34,6 +37,9 @@ class Game:
 
         # Detectando os joysticks conectados
         self.init_joysticks()
+
+        # Animação final
+        self.final_animation_timer = Timer(5000)
 
     def import_assets(self):
         # Icone do jogo
@@ -65,7 +71,8 @@ class Game:
             'spike': import_image('..',  'graphics', 'enemies', 'spike_ball', 'Spiked Ball'),
             'spike_chain': import_image('..',  'graphics', 'enemies', 'spike_ball', 'spiked_chain'),
             'runner': import_folder('..', 'graphics', 'enemies', 'runner', 'run'),
-            'shell': import_sub_folders('..', 'graphics', 'enemies', 'shell'),
+            'gulka': import_sub_folders('..', 'graphics', 'enemies', 'gulka'),
+            'fool_eater': import_sub_folders('..', 'graphics', 'enemies', 'fool_eater'),
             'breakable_wall': import_image('..',  'graphics', 'enemies', 'breakable_wall', 'wall'),
             'slime': import_sub_folders('..', 'graphics', 'enemies', 'slime'),
             'butterfly': import_folder('..', 'graphics', 'enemies', 'butterfly'),
@@ -139,17 +146,19 @@ class Game:
             else:
                 self.controller_type = 'Unknown'
 
-    def switch_screen(self, target, player_spawn):
+    def switch_screen(self, target, player_spawn, last_bench):
         if target >= len(self.tmx_maps):
             target = 0
-        self.current_stage = Level(self.tmx_maps[target], self.level_frames, self.audio_files, self.data, self.switch_screen, target, player_spawn)
+        self.last_bench = last_bench
+        self.current_stage = Level(self.tmx_maps[target], self.level_frames, self.audio_files, self.data, self.switch_screen, target, player_spawn, self.last_bench)
         self.current_stage.timers['loading_time'].activate()
 
     def show_fps(self):
-        fps = self.clock.get_fps()
-        font = pygame.font.SysFont(None, 24)
-        fps_text = font.render(f"FPS: {int(fps)}", True, pygame.Color('white'))
-        self.display_surface.blit(fps_text, (10, 10))
+        if self.should_show_fps:
+            fps = self.clock.get_fps()
+            font = pygame.font.SysFont(None, 24)
+            fps_text = font.render(f"FPS: {int(fps)}", True, pygame.Color('white'))
+            self.display_surface.blit(fps_text, (10, 10))
 
     def detect_pause_button(self, event):
         if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
@@ -164,6 +173,30 @@ class Game:
                         return True
         return False
 
+    def final_screen(self):
+        self.final_animation_timer.update()
+        lace = self.current_stage.lace
+        player = self.current_stage.player
+        if lace.on_final_animation:
+            if self.current_stage.collision_sprites:
+                collision_sprites = self.current_stage.collision_sprites.sprites() + self.current_stage.semi_collision_sprites.sprites()
+                for sprite in collision_sprites:
+                    sprite.kill()
+                lace.collision_rects = None
+                lace.can_move = False
+                player.on_final_animation = True
+                self.current_stage.player.throw_attacking = False
+                self.current_stage.during_throw_attack = False
+                self.current_stage.player.spin_attacking = False
+                self.current_stage.during_spin_attack = False
+                self.current_stage.player.using_weapon = False
+                player.state = 'idle'
+                player.direction.x = 0
+                player.direction.y = 0
+                player.dash_progress = player.dash_distance
+                lace.direction.x = 0
+                lace.direction.y = 0
+
     def run(self):
         while True:
             delta_time = self.clock.tick() / 1000 # Delta time para normalizar o fps, o fps não é travado
@@ -172,8 +205,11 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+                elif event.type == pygame.KEYDOWN:  # Verifica se uma tecla foi pressionada
+                    if event.key == pygame.K_F3:  # Verifica se a tecla é F3
+                        self.should_show_fps = not self.should_show_fps  # Alterna o estado de exibição de FPS
                 if self.detect_pause_button(event):
-                        self.state = 'menu'
+                    self.state = 'menu'
 
             # Menu
             if self.state == 'menu':
@@ -181,14 +217,21 @@ class Game:
                 if next_state == 'play':
                     self.state = 'game'
                     self.current_stage.timers['loading_time'].activate()
-            # Jogo
+
+            # Game
             elif self.state == 'game':
                 self.current_stage.run(delta_time) # Atualização dos sprites do jogo a partir do arquivo "Level"
     
                 if not self.current_stage.timers['loading_time'].active:
                     self.ui.update(delta_time) # HUD do jogo
-                self.show_fps()
+                if self.should_show_fps:
+                    self.show_fps()
                 pygame.display.update() # Atualização da tela
+
+            # Final Screen
+            if hasattr(self.current_stage, 'lace'):
+                self.final_screen()
+            """ elif self.state == 'final_screen': """
 
 if __name__ == '__main__': # Verifica se o script está sendo executado diretamente (exemplo: python main.py)
     # Inicialização do jogo

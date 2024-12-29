@@ -16,6 +16,7 @@ class Player(pygame.sprite.Sprite):
         self.vertical_sight = 'none'
         self.image = self.frames[self.state][self.frame_index]
         self.neutral_attack_direction = 'none'
+        self.on_final_animation = False
 
         # Retângulos
         self.rect = self.image.get_frect(topleft = pos)
@@ -188,16 +189,17 @@ class Player(pygame.sprite.Sprite):
                         self.parry()
 
             # Botões das Ferramentas
-            if (keys[pygame.K_u] or self.get_input_action("switch_weapons")):
+            if (keys[pygame.K_y] or self.get_input_action("switch_weapons")):
                 if not self.keys_pressed['switch_weapons'] and self.data.unlocked_weapons:
                     self.keys_pressed['switch_weapons'] = True
                     self.switch_weapon()
             else:
                 self.keys_pressed['switch_weapons'] = False
             
-            if (keys[pygame.K_y] or self.get_input_action("use_weapon")):
+            if (keys[pygame.K_u] or self.get_input_action("use_weapon")):
                 if not self.keys_pressed['use_weapon'] and self.data.string_bar >= 1 and self.data.unlocked_weapons:
                     self.keys_pressed['use_weapon'] = True
+                    self.on_surface['bench'] = False
                     self.use_weapon()
             else:
                 self.keys_pressed['use_weapon'] = False
@@ -579,7 +581,8 @@ class Player(pygame.sprite.Sprite):
         self.update_timers()
 
         # Movimento do jogo e colisão
-        self.input()
+        if not self.on_final_animation:
+            self.input()
         if not self.throw_attacking and not self.healing and not self.spin_attacking and not self.timers['parry'].active and not self.timers['parry_attack'].active and not self.on_surface['bench']:
             self.move(delta_time)
         self.platform_move(delta_time)

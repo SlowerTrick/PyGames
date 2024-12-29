@@ -1,6 +1,7 @@
 from typing import Any
 from settings import * 
 from math import sin, cos, radians
+from timecount import Timer
 from random import randint
 
 # Pegando atributos da classe sprite do pygame
@@ -36,19 +37,11 @@ class Item(AnimatedSprite):
         self.rect.center = pos
         self.item_type = item_type
         self.data = data
+        self.min_lifetime = Timer(1500)
+        self.min_lifetime.activate()
     
     def activate(self):
-        if self.item_type == 'gold':
-            self.data.coins += 5
-        elif self.item_type == 'silver':
-            self.data.coins += 1
-        elif self.item_type == 'diamond':
-            self.data.coins += 20
-        elif self.item_type == 'skull':
-            self.data.coins += 50
-        elif self.item_type == 'potion':
-            self.data.player_health += 1
-        elif self.item_type == 'wall_jump':
+        if self.item_type == 'wall_jump':
             self.data.unlocked_wall_jump = True
         elif self.item_type == 'dash':
             self.data.unlocked_dash = True
@@ -58,7 +51,8 @@ class Item(AnimatedSprite):
             self.data.unlocked_weapons = True
     
     def update(self, delta_time):
-        if self.item_type in ('wall_jump', 'dash', 'throw_attack') :
+        self.min_lifetime.update()
+        if self.item_type in ('wall_jump', 'dash', 'throw_attack', 'weapons') :
             if self.pos[1] >= self.initial_pos[1] or self.pos[1] <= self.initial_pos[1] - 100:
                 self.direction *= -1
             self.pos[1] += self.direction / 3
@@ -71,17 +65,19 @@ class Item(AnimatedSprite):
 class Door(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, reverse, mode, player, enemies, properties, door_sounds):
         super().__init__(groups)
-        # Sprite
-        self.frames = frames
+        # Alteração inicial do tamanho dos sprites
+        self.frames = [
+            pygame.transform.scale_by(pygame.transform.flip(frame, True, False) if reverse else frame, (3, 4))
+            for frame in frames
+        ]
+        # Setup dos frames
         self.frame_index = len(self.frames) - 1
         self.image = self.frames[self.frame_index]
-        self.image = pygame.transform.scale_by(self.image, (3, 4))
-        self.reverse = reverse
-        self.image = pygame.transform.flip(self.image, True, False) if self.reverse else self.image
-        self.rect = self.image.get_frect(topleft = pos)
+        self.rect = self.image.get_frect(topleft=pos)
         self.old_rect = self.rect
 
         # Setup geral
+        self.reverse = reverse
         self.z = Z_LAYERS['main']
         self.open_door = False
         self.close_door = False
@@ -99,8 +95,6 @@ class Door(pygame.sprite.Sprite):
             self.image = self.frames[int(self.frame_index % len(self.frames))]
             if self.frame_index <= 1:
                 self.frame_index = 1
-            self.image = pygame.transform.scale_by(self.image, (3, 4))
-            self.image = pygame.transform.flip(self.image, True, False) if self.reverse else self.image
 
             # Colisão à esquerda
             if self.reverse:
@@ -119,8 +113,6 @@ class Door(pygame.sprite.Sprite):
             if self.frame_index >= len(self.frames) - 1:
                 self.sounds['close_door'].play()
                 self.kill()
-            self.image = pygame.transform.scale_by(self.image, (3, 4))
-            self.image = pygame.transform.flip(self.image, True, False) if self.reverse else self.image
     
     def manage_enemies(self):
         if not self.enemies and self.should_close:
