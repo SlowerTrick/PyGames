@@ -288,3 +288,46 @@ class Saw(pygame.sprite.Sprite):
 
         self.move(dt)
         self.is_alive()
+
+class Lace_shockwave(pygame.sprite.Sprite):
+    def __init__(self, pos, groups, frames, facing_side, speed, collision_sprites):
+        #Setup geral
+        super().__init__(groups)
+        self.is_saw = True
+        self.image = frames
+        self.facing_side = facing_side
+        self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
+        self.direction = 1 if self.facing_side == 'right' else -1
+        self.rect = self.image.get_frect(center = pos + vector(50 * self.direction, 8))
+        self.rect.y += 45
+        self.collision_rects = collision_sprites
+        self.z = Z_LAYERS['main']
+
+        # Movimento
+        self.speed = speed
+
+        # Timers
+        self.timers = {'lifetime': Timer(10000)}
+        self.timers['lifetime'].activate()
+    
+    def move(self, dt):
+        if self.facing_side == 'left':
+            self.rect.x += self.direction * self.speed * dt
+        elif self.facing_side == 'right':
+            self.rect.x += self.direction * self.speed * dt
+
+    def is_alive(self):
+        if self.facing_side == 'right':
+            hit_box = pygame.FRect((self.rect.right, self.rect.centery), (1, 1))
+        else:
+            hit_box = pygame.FRect((self.rect.left - 1, self.rect.centery), (1, 1))
+        if not self.timers['lifetime'].active or\
+        hit_box.collidelist(self.collision_rects) > 0:
+            self.kill()
+
+    def update(self, dt):
+        for timer in self.timers.values():
+            timer.update()
+
+        self.move(dt)
+        self.is_alive()

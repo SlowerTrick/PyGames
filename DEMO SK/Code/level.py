@@ -173,10 +173,6 @@ class Level:
                         bench_image = pygame.transform.scale_by(bench_image, (1.2, 1.3))
                         Sprite((int(obj.x), int(obj.y)), bench_image, (self.all_sprites, self.bench_sprites), z = Z_LAYERS['bg details'])
                     elif obj.name == 'door':
-                        if obj.properties['mode'] == 'cross':
-                            for i in range(3):
-                                Slime(pos = (int(obj.x + 800 + uniform(-200, 200)), int(obj.y)), frames = level_frames['slime'], groups = (self.all_sprites, self.damage_sprites, self.slime_sprites, self.all_enemies, self.door_enemies), player = self.player, collision_sprites = self.collision_sprites)
-                        
                         door_sounds = {
                             'open_door': self.audio_files['door_open'],
                             'close_door': self.audio_files['door_close'],
@@ -188,7 +184,7 @@ class Level:
                             reverse = obj.properties['reverse'],
                             mode = obj.properties['mode'],
                             player = self.player,
-                            enemies = self.door_enemies,
+                            enemies = self.all_enemies,
                             properties = obj.properties,
                             door_sounds = door_sounds
                         )
@@ -328,7 +324,7 @@ class Level:
                 elif obj.name == 'ranged_fly':
                     Ranged_Fly(
                         pos = (int(obj.x), int(obj.y)),
-                        frames = level_frames['fly'],
+                        frames = level_frames['ranged_fly'],
                         groups = (self.all_sprites, self.damage_sprites, self.fly_sprites, self.all_enemies),
                         player = self.player,
                         collision_sprites = self.collision_sprites,
@@ -348,7 +344,10 @@ class Level:
                         frames = level_frames['lace'],
                         groups = (self.all_sprites, self.damage_sprites, self.lace_sprites, self.all_enemies),
                         player = self.player,
-                        collision_sprites = self.collision_sprites.sprites() + self.semi_collision_sprites.sprites())
+                        collision_sprites = self.collision_sprites.sprites() + self.semi_collision_sprites.sprites(),
+                        screen_shake = self.all_sprites.start_shaking,
+                        shockwave_groups = (self.all_sprites, self.damage_sprites),
+                    )
                     
         # Espinhos Normais
         thorns_layer = get_layer(tmx_map, 'Thorns')

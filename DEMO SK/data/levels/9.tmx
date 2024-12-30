@@ -68,7 +68,7 @@
 </data>
  </layer>
  <objectgroup id="2" name="Data">
-  <object id="1" name="Data" x="7.39394" y="4.36364" width="64" height="64" visible="0">
+  <object id="1" name="Data" x="7.39394" y="4.36364" width="64" height="64">
    <properties>
     <property name="bg_color" value="#181818"/>
     <property name="next_room_down" value="death"/>

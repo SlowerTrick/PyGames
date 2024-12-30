@@ -2,6 +2,7 @@ from settings import *
 from timecount import Timer
 from random import choice, randint, uniform
 from sprites import Item 
+from attack import Lace_shockwave
 from math import sin
 
 class Runner(pygame.sprite.Sprite):
@@ -1051,7 +1052,7 @@ class Butterfly(pygame.sprite.Sprite):
                 self.kill()
 
 class Lace(pygame.sprite.Sprite):
-    def __init__(self, pos, frames, groups, player, collision_sprites):
+    def __init__(self, pos, frames, groups, player, collision_sprites, screen_shake, shockwave_groups):
         # Setup geral
         super().__init__(groups)
         self.is_enemy = True
@@ -1060,6 +1061,8 @@ class Lace(pygame.sprite.Sprite):
         self.frame_index = 0
         self.frames = frames 
         self.state = 'idle'
+        self.screen_shake = screen_shake
+        self.shockwave_groups = shockwave_groups
 
         # Frames 
         self.image = self.frames[self.state][self.frame_index]
@@ -1072,15 +1075,18 @@ class Lace(pygame.sprite.Sprite):
         # Status
         self.direction = vector()
         self.facing_side = 'none'
-        self.lace_heath = 1
+        self.lace_heath = 4
+        self.max_health = self.lace_heath
         self.gravity = 1300
         self.on_ground = False
         self.player_near = False
         self.active_attack = 'cooldown'
         self.can_move = True
         self.can_attack = True
+        self.last_attack = None
         self.knockback_value = 700
         self.knockback_direction = 'none'
+        self.showckwave_created = False
 
         # Dash Vertical
         self.dash_speed = 650
@@ -1100,6 +1106,8 @@ class Lace(pygame.sprite.Sprite):
         self.cycle = 1300
         self.timers = {
             'cycle_attacks': Timer(self.cycle),
+            'ultimate': Timer(2500),
+            'ultimate_cooldown': Timer(10000)
         }
 
     def collisions(self, axis):
@@ -1135,7 +1143,7 @@ class Lace(pygame.sprite.Sprite):
     def move(self, dt):
         if self.can_move:
             # Movimentação Vertical
-            if not self.on_ground and not self.active_attack == 'air' and not self.on_final_animation:
+            if not self.on_ground and not self.active_attack == 'air' and not self.on_final_animation and not self.timers['ultimate'].active:
                 self.direction.y += self.gravity / 1.5 * dt
                 self.hitbox_rect.y += self.direction.y * dt
                 self.direction.y += self.gravity / 1.5 * dt
@@ -1151,7 +1159,7 @@ class Lace(pygame.sprite.Sprite):
         self.rect.center = self.hitbox_rect.center
 
     def knockback(self, delta_time):
-        if self.during_knockback.active:
+        if self.during_knockback.active and not self.timers['ultimate'].active:
             if self.knockback_direction == 'left':
                 self.hitbox_rect.x += -1 * self.knockback_value * delta_time
                 self.collisions('horizontal')
@@ -1162,12 +1170,17 @@ class Lace(pygame.sprite.Sprite):
                 self.hitbox_rect.y += 1 * self.knockback_value * delta_time
                 self.collisions('vertical')
 
-    def attack(self, dt):
+    def attack(self):
         if self.state != 'idle':
-            if not self.timers['cycle_attacks'].active:
+            if not self.timers['cycle_attacks'].active and not self.timers['ultimate'].active:
                 self.timers['cycle_attacks'].activate()
                 attack = randint(0, 2)
-                self.active_attack = ['dash', 'multi', 'air'][attack]
+                if self.lace_heath < self.max_health / 2 and not self.timers['ultimate_cooldown'].active:
+                    attack = randint(0, 3)
+                self.active_attack = ['multi', 'dash', 'air', 'ultimate'][attack]
+                if self.active_attack == self.last_attack and self.active_attack == 'multi':
+                    attack = randint(0, 1)
+                    self.active_attack = ['dash', 'air'][attack]
                 self.can_attack = True
             elif self.timers['cycle_attacks'].time_passed() > self.cycle - 200:
                 self.active_attack = 'cooldown'
@@ -1175,15 +1188,64 @@ class Lace(pygame.sprite.Sprite):
             # Atualizar estado baseado no ataque ativo
             if self.active_attack != 'cooldown' and self.can_attack:
                 self.can_attack = False
+                self.last_attack = self.active_attack
                 self.state = self.active_attack
                 if self.active_attack == 'dash':
                     self.dash_progress = 0
                 elif self.active_attack == 'air':
                     self.jump_progress = 0
+                if self.active_attack == 'ultimate':
+                    self.timers['ultimate'].activate()
+                    self.timers['ultimate_cooldown'].activate()
+                    self.showckwave_created = False
+
+    def ultimate(self, dt):
+        if self.timers['ultimate'].active:
+            if self.on_ground:
+                self.hitbox_rect.y -= 150
+            
+            time_elapsed = self.timers['ultimate'].time_passed()
+
+            if time_elapsed > 2000:
+                self.frame_index += ANIMATION_SPEED * dt
+                if self.frame_index < 6:
+                    self.frame_index = 6
+                elif self.frame_index > 8: 
+                    self.frame_index = 8
+
+                self.image = self.frames[self.state][int(self.frame_index)]
+                self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
+
+                self.hitbox_rect.y += 250 * dt
+            else:
+                self.frame_index += ANIMATION_SPEED * dt
+                if int(self.frame_index % len(self.frames[self.state])) > len(self.frames[self.state]) - 4:
+                    self.frame_index = 0
+                self.image = self.frames[self.state][int(self.frame_index % len(self.frames[self.state]))]
+                self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
+
+            if time_elapsed > 2400 and not self.showckwave_created:
+                self.showckwave_created = True
+                Lace_shockwave(
+                    pos = self.rect.center, 
+                    groups = self.shockwave_groups, 
+                    frames = self.frames['shockwave'][0],
+                    facing_side = 'right', 
+                    speed = 900,
+                    collision_sprites = self.collision_rects
+                )
+                Lace_shockwave(
+                    pos = self.rect.center, 
+                    groups = self.shockwave_groups, 
+                    frames = self.frames['shockwave'][0],
+                    facing_side = 'left', 
+                    speed = 900,
+                    collision_sprites = self.collision_rects
+                )
 
     def state_management(self):
         player_pos, lace_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
-        player_near = lace_pos.distance_to(player_pos) < 500
+        player_near = lace_pos.distance_to(player_pos) < 900
         player_level = abs(lace_pos.y - player_pos.y) < 200
 
         if player_near and player_level and self.active_attack == 'cooldown' and self.on_ground:
@@ -1257,11 +1319,13 @@ class Lace(pygame.sprite.Sprite):
         if not self.on_final_animation:
             self.update_timers()
             self.state_management()
-            self.attack(dt)
+            self.attack()
+            self.ultimate(dt)
             self.knockback(dt)
 
-            self.animate(dt)
-            self.flicker()
+            if not self.timers['ultimate'].active:
+                self.animate(dt)
+                self.flicker()
 
             self.move(dt)
         else:

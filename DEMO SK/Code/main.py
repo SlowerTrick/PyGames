@@ -82,6 +82,7 @@ class Game:
             'butterfly': import_folder('..', 'graphics', 'enemies', 'butterfly'),
             'lace': import_sub_folders('..', 'graphics', 'enemies', 'lace'),
             'fly': import_sub_folders('..', 'graphics', 'enemies', 'fly'),
+            'ranged_fly': import_sub_folders('..', 'graphics', 'enemies', 'ranged_fly'),
             'pearl': import_image('..',  'graphics', 'enemies', 'bullets', 'pearl'),
             'items': import_sub_folders('..', 'graphics', 'items'),
             'kurisu': import_image('..',  'graphics', 'icon', 'chibi'),
