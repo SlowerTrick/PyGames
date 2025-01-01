@@ -7,11 +7,9 @@ class Data:
         self._health_regen = False
         self._string_bar = 6
         self._max_string_bar = 6
-        self._actual_weapon = 0 # Voltar para o valor 0 no estado inicial do jogo e liberar outros valores 
-        self._max_actual_weapon = 2 # Valor que diz respeito ao valor máximo desbloqueado (talvez colocar id depois)
-                                    # Ou criar uma loja que libera todos os weapons de uma vez, assim criando uma
-                                    # variavel "available" para weapons 
-        self._max_weapon = 2 # Alterar caso mais sejam adicionados, mas nunca deixar voltar pra 0
+        self._actual_weapon = 0
+        self._max_actual_weapon = 2
+        self._max_weapon = 2
         self.ui.create_ui_bar(self._health_regen)
         self.ui.create_hearts(self._player_health, self._max_player_heath)
         self.ui.create_string_bar(self._string_bar)

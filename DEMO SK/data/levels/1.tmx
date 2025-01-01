@@ -19,6 +19,7 @@
   <object id="4" name="Data" x="0" y="64" width="64" height="64">
    <properties>
     <property name="bg_color" value="#181818"/>
+    <property name="insta_death" type="bool" value="true"/>
     <property name="next_room_down" value="3"/>
     <property name="next_room_left" value="0"/>
     <property name="next_room_right" value="2"/>

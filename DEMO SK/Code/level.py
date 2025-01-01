@@ -42,7 +42,9 @@ class Level:
             'right': tmx_level_properties['next_room_right'], 
             'down': tmx_level_properties['next_room_down']
         }
-
+        self.insta_death = False
+        if "insta_death" in tmx_level_properties:
+            self.insta_death = True
         # Grupos
         self.all_sprites = AllSprites(
             width = tmx_map.width, 
@@ -68,6 +70,7 @@ class Level:
         self.fly_sprites = pygame.sprite.Group()
         self.lace_sprites = pygame.sprite.Group()
         self.thorn_sprites = pygame.sprite.Group()
+        self.spike_sprites = pygame.sprite.Group()
         self.door_enemies = pygame.sprite.Group()
         self.all_enemies = pygame.sprite.Group()
 
@@ -230,7 +233,7 @@ class Level:
                         speed=obj.properties['speed'],
                         start_angle=obj.properties['start_angle'],
                         end_angle=obj.properties['end_angle'],
-                        groups=(self.all_sprites, self.damage_sprites))
+                        groups=(self.all_sprites, self.damage_sprites, self.spike_sprites))
                     for radius in range(0, obj.properties['radius'], 20):
                         Spike(
                             pos=(int(obj.x) + int(obj.width) / 2, int(obj.y) + int(obj.height) / 2),
@@ -441,6 +444,8 @@ class Level:
                     self.data.player_health = BASE_HEALTH
                     self.data.string_bar = 0
                     self.switch_screen(int(self.last_bench), 'bench', self.last_bench)
+                elif sprite in self.thorn_sprites or sprite in self.spike_sprites and self.insta_death:
+                    self.switch_screen(int(self.last_bench), 'bench', self.last_bench)
         
         # Banco
         for sprite in self.bench_sprites:
@@ -486,7 +491,7 @@ class Level:
                     ParticleEffectSprite((item_sprites[0].rect.center), self.particle_frames, self.all_sprites)
                     
                     # Utilizar um canal de som diferente para evitar a não reprodução do som por sobreposição
-                    collision_channel = pygame.mixer.Channel(1)
+                    collision_channel = pygame.mixer.Channel(7)
                     
                     if item_sprites[0].item_type in ('throw_attack', 'wall_jump', 'dash'):
                         collision_channel.play(self.audio_files['special_item_pickup'])
@@ -773,7 +778,7 @@ class Level:
             fade_surface.fill((0, 0, 0))  # Preencher com preto
             fade_surface.set_alpha(self.fade_alpha)  # Definir opacidade
             self.display_surface.blit(fade_surface, (0, 0))  # Aplicar o fade na tela
-            self.fade_alpha += self.fade_speed / 30  # Aumentar opacidade gradualmente
+            self.fade_alpha += self.fade_speed / 40  # Aumentar opacidade gradualmente
             if self.fade_alpha > 255:
                 self.fade_alpha = 255  # Garantir que a opacidade não passe de 255
                 self.fade_out = False  # Desativar o fade out após completar

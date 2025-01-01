@@ -208,6 +208,7 @@
   <object id="4" name="Data" x="0" y="0" width="64" height="64">
    <properties>
     <property name="bg_color" value="#181818"/>
+    <property name="insta_death" type="bool" value="true"/>
     <property name="next_room_down" value="1"/>
     <property name="next_room_left" value="6"/>
     <property name="next_room_right" value="7"/>
@@ -221,9 +222,9 @@
   <object id="50" name="slime" gid="29" x="1234" y="577.33" width="36" height="32"/>
   <object id="51" name="slime" gid="29" x="1772.67" y="564" width="36" height="32"/>
   <object id="52" name="slime" gid="29" x="1965.33" y="562.67" width="36" height="32"/>
-  <object id="53" name="fly" gid="30" x="3533.58" y="488.09" width="48" height="42"/>
-  <object id="54" name="fly" gid="30" x="3027.52" y="548.7" width="48" height="42"/>
-  <object id="55" name="fly" gid="30" x="2466.42" y="517.54" width="48" height="42"/>
-  <object id="56" name="fly" gid="30" x="1865.33" y="440.33" width="48" height="42"/>
+  <object id="53" name="ranged_fly" gid="30" x="3533.58" y="488.09" width="48" height="42"/>
+  <object id="54" name="ranged_fly" gid="30" x="3027.52" y="548.7" width="48" height="42"/>
+  <object id="55" name="ranged_fly" gid="30" x="2466.42" y="517.54" width="48" height="42"/>
+  <object id="56" name="ranged_fly" gid="30" x="1865.33" y="440.33" width="48" height="42"/>
  </objectgroup>
 </map>

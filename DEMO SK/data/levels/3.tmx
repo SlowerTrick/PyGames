@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="30" height="40" tilewidth="64" tileheight="64" infinite="0" nextlayerid="21" nextobjectid="55">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="30" height="40" tilewidth="64" tileheight="64" infinite="0" nextlayerid="21" nextobjectid="59">
  <tileset firstgid="1" source="../tilesets/objects.tsx"/>
  <tileset firstgid="39" source="../tilesets/tileset2.tsx"/>
  <tileset firstgid="99" source="../tilesets/tileset3.tsx"/>
@@ -41,9 +41,9 @@
 67,67,68,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,66,67,67,
 70,70,71,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,69,70,70,
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-0,0,0,0,51,102,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,103,102,0,0,0,0,
-0,0,0,0,66,107,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,108,107,0,0,0,0,
-52,52,52,52,100,58,40,0,0,0,39,40,40,40,40,40,40,40,40,41,0,0,0,39,59,58,40,40,40,40,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+52,52,52,52,52,52,53,0,0,0,39,40,40,40,40,40,40,40,40,41,0,0,0,39,40,40,40,40,40,40,
 55,55,55,55,55,55,56,0,0,0,69,70,70,70,70,70,70,70,70,71,0,0,0,54,55,55,55,55,55,55,
 55,55,55,55,55,55,56,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,66,55,55,55,55,55,55
 </data>
@@ -99,36 +99,6 @@
   <object id="29" name="fly" gid="30" x="1101.33" y="2274.33" width="48" height="42"/>
   <object id="30" name="fly" gid="30" x="934.667" y="2262.33" width="48" height="42"/>
   <object id="31" name="fly" gid="30" x="781.333" y="2274.33" width="48" height="42"/>
-  <object id="47" name="gulka" gid="9" x="383" y="2282" width="46" height="48">
-   <properties>
-    <property name="facing_direction" value="right"/>
-   </properties>
-  </object>
-  <object id="48" name="gulka" gid="9" x="383" y="2327" width="46" height="48">
-   <properties>
-    <property name="facing_direction" value="right"/>
-   </properties>
-  </object>
-  <object id="49" name="gulka" gid="9" x="383" y="2372" width="46" height="48">
-   <properties>
-    <property name="facing_direction" value="right"/>
-   </properties>
-  </object>
-  <object id="50" name="gulka" gid="9" x="1489" y="2282" width="46" height="48">
-   <properties>
-    <property name="facing_direction" value="left"/>
-   </properties>
-  </object>
-  <object id="51" name="gulka" gid="9" x="1489" y="2327" width="46" height="48">
-   <properties>
-    <property name="facing_direction" value="left"/>
-   </properties>
-  </object>
-  <object id="52" name="gulka" gid="9" x="1489" y="2372" width="46" height="48">
-   <properties>
-    <property name="facing_direction" value="left"/>
-   </properties>
-  </object>
   <object id="53" name="gulka" gid="9" x="1683.29" y="831.864" width="46" height="48">
    <properties>
     <property name="facing_direction" value="left"/>

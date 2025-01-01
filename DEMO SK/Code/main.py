@@ -19,8 +19,8 @@ class Game:
         # Carregamento das informações do jogo
         self.ui = UI(self.font, self.ui_frames)
         self.data = Data(self.ui)
-        self.menu = Menu(self.display_surface, self.font)
-        self.final_screen_menu = Final_screen(self.display_surface, self.font)
+        self.menu = Menu(self.display_surface, self.font, self.audio_files['ui_button'])
+        self.final_screen_menu = Final_screen(self.display_surface, self.font, self.audio_files['ui_button'])
         self.state = "game"
         self.should_show_fps = False
 
@@ -30,7 +30,11 @@ class Game:
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn, self.last_bench)
         self.current_stage.timers['loading_time'].activate()
-        self.bg_music.play(-1)
+
+        # Musicas
+        self.music_channel = pygame.mixer.Channel(1)
+        self.actual_bg_music = 'main'
+        self.music_channel.play(self.audio_files['main_ost'], loops=-1)
 
         # Inicializando os joysticks
         self.joysticks = []
@@ -131,9 +135,13 @@ class Game:
             'special_item_pickup': pygame.mixer.Sound(join('..', 'audio', 'special_item_pickup.wav')),
             'chest_open': pygame.mixer.Sound(join('..', 'audio', 'chest_open.wav')),
             'breakable_wall_hit': pygame.mixer.Sound(join('..', 'audio', 'breakable_wall_hit.wav')),
+            'ui_button': pygame.mixer.Sound(join('..', 'audio', 'ui_button_confirm.ogg')),
+            'main_ost': pygame.mixer.Sound(join('..', 'audio', 'main_ost.ogg')),
+            'lace_ost': pygame.mixer.Sound(join('..', 'audio', 'lace_ost.ogg')),
+            'ending_ost': pygame.mixer.Sound(join('..', 'audio', 'ending_ost.ogg')),
         }
-        self.bg_music = pygame.mixer.Sound(join('..', 'audio', 'noragami.mp3'))
-        self.bg_music.set_volume(0.5)
+        self.audio_files['ending_ost'].set_volume(0.5)
+        self.audio_files['main_ost'].set_volume(0.6)
 
     def init_joysticks(self):
         joystick_count = pygame.joystick.get_count()
@@ -187,6 +195,20 @@ class Game:
             self.slow_motion_active = False
             self.slow_motion_factor = 1.0
 
+    def handle_music(self, next_music=None, volume=-1):
+        if self.actual_bg_music != next_music and next_music != None:
+            # Pausar a música atual, se estiver tocando
+            if self.music_channel.get_busy():
+                self.music_channel.pause()
+                self.music_channel.fadeout(500)  # Fade out da música atual
+
+            # Atualizar a música atual
+            self.actual_bg_music = next_music
+            bg_music = self.audio_files[f'{next_music}_ost']
+            self.music_channel.play(bg_music, loops=-1)
+        if volume != -1:
+            self.music_channel.set_volume(volume)
+        
     def final_screen(self, dt):
         if not self.final_screen_ended:
             self.final_animation_timer.update()
@@ -214,7 +236,6 @@ class Game:
                     player.on_final_animation = True
                     player.spin_attacking = False
                     player.using_weapon = False
-                    player.state = 'idle'
                     player.direction.x = 0
                     player.direction.y = 0
                     player.dash_progress = player.dash_distance
@@ -267,16 +288,21 @@ class Game:
                         self.should_show_fps = not self.should_show_fps  # Alterna o estado de exibição de FPS
                 if self.detect_pause_button(event) and not self.state == 'final_screen':
                     self.state = 'menu'
+                    self.menu.fade_alpha = 255
 
             # Menu
             if self.state == 'menu':
+                self.handle_music(volume=0.5)
                 next_state = self.menu.display_menu()
                 if next_state == 'play':
+                    self.handle_music(volume=1)
                     self.state = 'game'
                     self.current_stage.timers['loading_time'].activate()
 
             # Game
             elif self.state == 'game':
+                if not hasattr(self.current_stage, 'lace'):
+                    self.handle_music('main')
                 self.current_stage.run(delta_time) # Atualização dos sprites do jogo a partir do arquivo "Level"
     
                 if not self.current_stage.timers['loading_time'].active and not self.final_animation_timer.active:
@@ -287,6 +313,11 @@ class Game:
 
             # Final Screen
             if hasattr(self.current_stage, 'lace'):
+                lace = self.current_stage.lace
+                if lace.state != 'idle' and not lace.on_final_animation:
+                    self.handle_music('lace')
+                elif lace.on_final_animation:
+                    self.handle_music('ending')
                 self.final_screen(delta_time)
                 if self.state == 'final_screen':
                     next_state = self.final_screen_menu.display_menu()

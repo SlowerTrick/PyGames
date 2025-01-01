@@ -131,11 +131,7 @@
    </properties>
   </object>
  </objectgroup>
- <objectgroup id="18" name="Items">
-  <object id="25" name="dash" gid="117" x="1376.24" y="1307.28" width="34.3063" height="34.3063"/>
-  <object id="26" name="throw_attack" gid="118" x="1508.46" y="1303.35" width="73.973" height="27.8739"/>
-  <object id="27" name="wall_jump" gid="119" x="1446.64" y="1310.5" width="27.8739" height="39.6667"/>
- </objectgroup>
+ <objectgroup id="18" name="Items"/>
  <objectgroup id="15" name="Enemies"/>
  <objectgroup id="13" name="Data">
   <properties>
@@ -148,7 +144,7 @@
   </properties>
   <object id="4" name="Data" x="2" y="2" width="64" height="64">
    <properties>
-    <property name="bg_color" value="#211f30"/>
+    <property name="bg_color" value="#181818"/>
     <property name="next_room_down" value="3"/>
     <property name="next_room_left" value="0"/>
     <property name="next_room_right" value="1"/>

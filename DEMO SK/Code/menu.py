@@ -28,9 +28,10 @@ class Button:
         self.text = self.font.render(self.text_input, True, color)
 
 class Menu:
-    def __init__(self, screen, font):
+    def __init__(self, screen, font, button_sound):
         self.screen = screen
         self.font = font
+        self.button_sound = button_sound
         self.buttons = [
             Button(None, (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2), "PLAY", self.get_font(45), "White", "Gray"),
             Button(None, (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 1.5), "QUIT", self.get_font(45), "White", "Gray"),
@@ -50,6 +51,10 @@ class Menu:
 
         # Detectando os joysticks conectados
         self.init_joysticks()
+
+        # Efeitos da tela
+        self.fade_alpha = 255  # Nível de opacidade inicial (0-255)
+        self.fade_speed = 5   # Velocidade do fade 
 
     def init_joysticks(self):
         joystick_count = pygame.joystick.get_count()
@@ -133,10 +138,23 @@ class Menu:
 
     def activate_button(self):
         if self.selected_button == 0:  # PLAY
+            self.button_sound.play()
             return "play"
         if self.selected_button == 1:  # QUIT
+            self.button_sound.play()
             pygame.quit()
             sys.exit()
+
+    def screen_effects(self):
+        # Fade in
+        if self.fade_alpha > 0:
+            fade_surface = pygame.Surface(self.screen.get_size())
+            fade_surface.fill((0, 0, 0))  # Preencher com preto
+            fade_surface.set_alpha(self.fade_alpha)  # Definir opacidade
+            self.screen.blit(fade_surface, (0, 0))  # Aplicar o fade na tela
+            self.fade_alpha -= self.fade_speed # Reduzir opacidade gradualmente
+            if self.fade_alpha < 0:
+                self.fade_alpha = 0  # Garantir que a opacidade não fique negativa
 
     def display_menu(self):
         menu_state = None  # Variável para armazenar o estado do menu
@@ -147,6 +165,9 @@ class Menu:
             menu_text = self.get_font(55).render("SILKSONG DEMAKE", True, "White")
             menu_rect = menu_text.get_rect(center=(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 3))
             self.screen.blit(menu_text, menu_rect)
+
+            # Efeitos
+            self.screen_effects()
 
             # Atualiza os botões
             for i, button in enumerate(self.buttons):
@@ -164,9 +185,10 @@ class Menu:
             pygame.display.update()
 
 class Final_screen:
-    def __init__(self, screen, font):
+    def __init__(self, screen, font, button_sound):
         self.screen = screen
         self.font = font
+        self.button_sound = button_sound
         self.buttons = [
             Button(None, (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 1.2), "QUIT", self.get_font(25), "White", "Gray"),
         ]
@@ -185,6 +207,10 @@ class Final_screen:
 
         # Detectando os joysticks conectados
         self.init_joysticks()
+
+        # Efeitos da tela
+        self.fade_alpha = 255  # Nível de opacidade inicial (0-255)
+        self.fade_speed = 5   # Velocidade do fade 
 
     def init_joysticks(self):
         joystick_count = pygame.joystick.get_count()
@@ -268,8 +294,20 @@ class Final_screen:
 
     def activate_button(self):
         if self.selected_button == 0:  # QUIT
+            self.button_sound.play()
             pygame.quit()
             sys.exit()
+
+    def screen_effects(self):
+        # Fade in
+        if self.fade_alpha > 0:
+            fade_surface = pygame.Surface(self.screen.get_size())
+            fade_surface.fill((0, 0, 0))  # Preencher com preto
+            fade_surface.set_alpha(self.fade_alpha)  # Definir opacidade
+            self.screen.blit(fade_surface, (0, 0))  # Aplicar o fade na tela
+            self.fade_alpha -= self.fade_speed / 5  # Reduzir opacidade gradualmente
+            if self.fade_alpha < 0:
+                self.fade_alpha = 0  # Garantir que a opacidade não fique negativa
 
     def display_menu(self):
         menu_state = None  # Variável para armazenar o estado do menu
@@ -285,6 +323,9 @@ class Final_screen:
             the_end_text = self.get_font(85).render("The End", True, "#800020")
             the_end_rect = the_end_text.get_rect(center=(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2))
             self.screen.blit(the_end_text, the_end_rect)
+
+            # Efeitos
+            self.screen_effects()
 
             # Atualiza os botões
             for i, button in enumerate(self.buttons):

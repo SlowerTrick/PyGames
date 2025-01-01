@@ -352,7 +352,7 @@ class Player(pygame.sprite.Sprite):
             self.start_dash_on_wall = any((self.on_surface['left_wall'], self.on_surface['right_wall']))
             self.dash_progress = 0
             self.timers['dash_block'].activate()
-            self.audio_files['dash'].play()
+            self.audio_manager.play_with_pitch(join('..', 'audio', 'hero_dash.wav'))
 
     def heal(self):
         self.audio_files['focus_heal'].play()
@@ -398,6 +398,7 @@ class Player(pygame.sprite.Sprite):
 
         # Gravidade Paredes
         if not self.on_surface['floor'] and any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active and self.data.unlocked_wall_jump:
+            self.throw_attack_is_available = True
             self.dash_is_available = True
             self.direction.y = 0
             self.hitbox_rect.y += self.gravity / 10 * delta_time
@@ -422,8 +423,8 @@ class Player(pygame.sprite.Sprite):
                 self.timers['wall_slide_block'].activate()
                 self.hitbox_rect.bottom -= 1
                 if not self.timers['jump_sound'].active:
-                    self.audio_files['jump'].play()
                     self.timers['jump_sound'].activate()
+                    self.audio_manager.play_with_pitch(join('..', 'audio', 'hornet_jump.wav'))
 
             # Pulo na parede
             elif any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active and self.data.unlocked_wall_jump:
