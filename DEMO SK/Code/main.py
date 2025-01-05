@@ -21,7 +21,7 @@ class Game:
         self.data = Data(self.ui)
         self.menu = Menu(self.display_surface, self.font, self.audio_files['ui_button'])
         self.final_screen_menu = Final_screen(self.display_surface, self.font, self.audio_files['ui_button'])
-        self.state = "game"
+        self.state = "menu"
         self.should_show_fps = False
 
         # Level
@@ -72,12 +72,14 @@ class Game:
             # Adição dos sprites animados
             'saw': import_folder('..', 'graphics', 'enemies', 'saw', 'animation'),
             'floor_spike': import_sub_folders('..', 'graphics','enemies', 'floor_spikes'),
+            'lace_spike': import_sub_folders('..', 'graphics','enemies', 'lace_spikes'),
             'chest': import_folder('..', 'graphics', 'level', 'chest'),
             'player': import_sub_folders('..', 'graphics', 'player'),
             'saw_chain': import_image('..',  'graphics', 'enemies', 'saw', 'saw_chain'),
             'helicopter': import_folder('..', 'graphics', 'level', 'helicopter'),
             'spike': import_image('..',  'graphics', 'enemies', 'spike_ball', 'Spiked Ball'),
             'spike_chain': import_image('..',  'graphics', 'enemies', 'spike_ball', 'spiked_chain'),
+            'gears': import_sub_folders('..', 'graphics','objects', 'gears'),
             'runner': import_folder('..', 'graphics', 'enemies', 'runner', 'run'),
             'gulka': import_sub_folders('..', 'graphics', 'enemies', 'gulka'),
             'fool_eater': import_sub_folders('..', 'graphics', 'enemies', 'fool_eater'),
@@ -217,7 +219,7 @@ class Game:
             if lace.on_final_animation:
                 if self.current_stage.collision_sprites:
                     level = self.current_stage
-                    collision_sprites = self.current_stage.collision_sprites.sprites() + self.current_stage.semi_collision_sprites.sprites()
+                    collision_sprites = self.current_stage.collision_sprites.sprites() + self.current_stage.semi_collision_sprites.sprites() + self.current_stage.bg_sprites.sprites()
                     for sprite in collision_sprites:
                         sprite.kill()
                     # Free level

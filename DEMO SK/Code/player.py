@@ -92,7 +92,6 @@ class Player(pygame.sprite.Sprite):
             'invincibility_frames': Timer(500),
             'jump_sound': Timer(100),
             'hit_knockback': Timer(150),
-            'attack_knockback': Timer(150),
             'heal_init': Timer(150),
             'healing': Timer(1400),
             'sitting_down': Timer(300),
@@ -316,6 +315,7 @@ class Player(pygame.sprite.Sprite):
     def knockback(self, delta_time):
         keys = pygame.key.get_pressed()
         if self.timers['hit_knockback'].active:
+
             # Horizontal
             if self.knockback_direction == 'left':
                 self.hitbox_rect.x += -1 * self.knockback_value * delta_time
@@ -332,15 +332,6 @@ class Player(pygame.sprite.Sprite):
             elif self.knockback_direction == 'down' and not self.on_surface['floor']:
                 self.hitbox_rect.y += 1 * self.knockback_value * delta_time
                 self.collision('vertical')
-            self.timers['attack_knockback'].deactivate()
-
-        if self.timers['attack_knockback'].active:
-            if self.knockback_direction == 'left' and keys[pygame.K_a]:
-                self.hitbox_rect.x += -1 * self.knockback_value * delta_time
-                self.collision('horizontal')
-            elif self.knockback_direction == 'right' and keys[pygame.K_d]:
-                self.hitbox_rect.x += 1 * self.knockback_value * delta_time
-                self.collision('horizontal')
 
     def dash(self):
         if not self.timers['dash_block'].active:

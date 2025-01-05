@@ -55,6 +55,7 @@ class Level:
         
         self.collision_sprites = pygame.sprite.Group()
         self.semi_collision_sprites = pygame.sprite.Group()
+        self.bg_sprites = pygame.sprite.Group()
         self.damage_sprites = pygame.sprite.Group()
         self.attack_sprites = pygame.sprite.Group()
         self.weapon_sprites = pygame.sprite.Group()
@@ -114,29 +115,25 @@ class Level:
                 return None
 
         # Tiles
-        for layer in ['BG', 'Terrain', 'FG', 'Platforms']:
+        for layer in ['BG', 'Terrain', 'FG', 'Platforms', 'BG details']:
             tile_layer = get_layer(tmx_map, layer)
             if tile_layer:
                 for x, y, surf in tile_layer.tiles():
+
+                    if layer == 'BG details':
+                        x += getattr(tile_layer, 'offsetx', 0) / TILE_SIZE
+                        y += getattr(tile_layer, 'offsety', 0) / TILE_SIZE
+
                     groups = [self.all_sprites]
                     if layer == 'Terrain': groups.append(self.collision_sprites)
                     if layer == 'Platforms': groups.append(self.semi_collision_sprites)
+                    if layer == 'BG details': groups.append(self.bg_sprites)
                     match layer:
                         case 'BG': z = Z_LAYERS['bg tiles']
                         case 'FG': z = Z_LAYERS['bg tiles']
+                        case 'BG details': z = Z_LAYERS['bg details']
                         case _: z = Z_LAYERS['main']  # Default
                     Sprite((x * TILE_SIZE, y * TILE_SIZE), surf, groups, z)
-
-        # Detalhes do background
-        bg_details_layer = get_layer(tmx_map, 'BG details')
-        if bg_details_layer:
-            for obj in bg_details_layer:
-                if obj.name == 'static':
-                    Sprite((int(obj.x), int(obj.y)), obj.image, self.all_sprites, z=Z_LAYERS['bg tiles'])
-                else:
-                    AnimatedSprite((int(obj.x), int(obj.y)), level_frames[obj.name], self.all_sprites, Z_LAYERS['bg tiles'])
-                    if obj.name == 'candle':
-                        AnimatedSprite((int(obj.x), int(obj.y)) + vector(-20, -20), level_frames['candle_light'], self.all_sprites, Z_LAYERS['bg tiles'])
 
         # Player e objetos normais
         objects_layer = get_layer(tmx_map, 'Objects')
@@ -207,13 +204,16 @@ class Level:
                             frames = level_frames[obj.name] if not 'palm' in obj.name else level_frames['palms'][obj.name]
                             if obj.name == 'floor_spike':
                                 frames = level_frames['floor_spike'][obj.properties['direction']]
+                            elif obj.name == 'lace_spike':
+                                frames = level_frames['lace_spike'][obj.properties['direction']]
 
                             groups = [self.all_sprites]
-                            if obj.name in ('palm_small', 'palm_large'): groups.append(self.semi_collision_sprites)
-                            if obj.name in ('saw'): groups.append(self.damage_sprites)
-                            if obj.name in ('floor_spike'): 
+                            if obj.name in ('floor_spike', 'lace_spike'): 
                                 groups.append(self.damage_sprites)
                                 groups.append(self.thorn_sprites)
+                            
+                            if obj.name in ('single', 'double'):
+                                frames = level_frames['gears'][obj.name]
 
                             z = Z_LAYERS['main'] if not 'bg' in obj.name else Z_LAYERS['bg details']
 
@@ -698,10 +698,6 @@ class Level:
         if (self.during_neutral_attack and self.player_neutral_attack_sprite) or (self.during_throw_attack and self.player_throw_attack_sprite) or (self.during_spin_attack and self.player_spin_attack_sprite) or self.player.parrying or self.weapon_sprites:
             if self.during_neutral_attack and self.player_neutral_attack_sprite:
                 self.player_neutral_attack_sprite.update_position((self.player.hitbox_rect.x, self.player.hitbox_rect.y))
-                """ if self.player_neutral_attack_sprite.facing_side in {'right', 'left'} and not self.player_neutral_attack_sprite.knockback_applied:
-                    self.player_neutral_attack_sprite.knockback_applied = True
-                    self.player.knockback_direction = 'right' if self.player_neutral_attack_sprite.facing_side == 'right' else 'left'
-                    self.player.timers['attack_knockback'].activate() """
                 
             elif self.during_throw_attack and self.player_throw_attack_sprite.on_wall:
                 self.throw_attack_movement(delta_time)

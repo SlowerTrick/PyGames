@@ -96,7 +96,7 @@ class Throw_Attack(pygame.sprite.Sprite):
 
         # Posição na tela e temporizadores
         self.z = Z_LAYERS['main']
-        self.timers = {'travel_time': Timer(500), 'max_time': Timer(2000)}
+        self.timers = {'travel_time': Timer(500), 'max_time': Timer(1500)}
         self.timers['travel_time'].activate()
         self.timers['max_time'].activate()
         self.audio_files = audio_files

@@ -145,8 +145,6 @@ class Door(pygame.sprite.Sprite):
                     self.sounds['open_door'].play()
     
     def update(self, dt):
-        for enemy in self.enemies:
-            print(enemy)
         self.manage_enemies()
         self.manage_state()
         self.opened_door_logic(dt)

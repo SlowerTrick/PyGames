@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<tileset version="1.10" tiledversion="1.11.0" name="objects" tilewidth="96" tileheight="96" tilecount="13" columns="0">
+<tileset version="1.10" tiledversion="1.11.0" name="objects" tilewidth="154" tileheight="140" tilecount="16" columns="0">
  <grid orientation="orthogonal" width="1" height="1"/>
  <tile id="2">
   <image source="../../graphics/level/chest/0.png" width="22" height="32"/>
@@ -38,6 +38,15 @@
   <image source="../../graphics/level/bench/bench.png" width="70" height="38"/>
  </tile>
  <tile id="37">
-  <image source="../../graphics/enemies/fool_eater/idle/0.png" width="60" height="60"/>
+  <image source="../../graphics/enemies/fool_eater/idle/0.png" width="90" height="90"/>
+ </tile>
+ <tile id="38">
+  <image source="../../graphics/objects/Cage.png" width="154" height="140"/>
+ </tile>
+ <tile id="39">
+  <image source="../../graphics/objects/gears/single/0.png" width="56" height="54"/>
+ </tile>
+ <tile id="40">
+  <image source="../../graphics/objects/gears/double/0.png" width="88" height="54"/>
  </tile>
 </tileset>

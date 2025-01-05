@@ -9,6 +9,7 @@ class Runner(pygame.sprite.Sprite):
     def __init__(self, pos, frames, groups, collision_sprites):
         super().__init__(groups)
         self.is_enemy = True
+        self.is_dead = False
 
         # Alteração inicial do tamanho dos sprites
         self.frames = [pygame.transform.scale_by(frame, 1.2) for frame in frames]
@@ -21,9 +22,15 @@ class Runner(pygame.sprite.Sprite):
 
         self.direction = choice((-1, 1))
         self.collision_rects = [sprite.rect for sprite in collision_sprites]
-        self.speed = 200
+        self.speed = 300
 
         self.hit_timer = Timer(600)
+        self.death_animation_timer = Timer(3000)
+
+        # Death animation
+        self.angle = 0
+        self.is_dead = False
+        self.death_animation_timer.activate()
 
     def get_damage(self):
         if not self.hit_timer.active:
@@ -41,7 +48,7 @@ class Runner(pygame.sprite.Sprite):
             white_surf = white_mask.to_surface()
             white_surf.set_colorkey('black')
             self.image = white_surf
-
+            
     def update(self, dt):
         self.hit_timer.update()
 
@@ -1075,7 +1082,7 @@ class Lace(pygame.sprite.Sprite):
         # Status
         self.direction = vector()
         self.facing_side = 'none'
-        self.lace_heath = 3
+        self.lace_heath = 35
         self.max_health = self.lace_heath
         self.gravity = 1300
         self.on_ground = False
