@@ -75,6 +75,8 @@ class Player(pygame.sprite.Sprite):
         # Colisão
         self.collision_sprites = collision_sprites
         self.semi_collision_sprites = semi_collision_sprites
+        self.collide_rects = [sprite.rect for sprite in self.collision_sprites]
+        self.semi_collide_rects = [sprite.rect for sprite in self.semi_collision_sprites]
         self.on_surface = {'floor': False, 'left_wall': False, 'right_wall': False, 'bench': False}
         self.platform = None
 
@@ -457,19 +459,28 @@ class Player(pygame.sprite.Sprite):
         floor_rect = pygame.Rect(self.hitbox_rect.bottomleft,(self.hitbox_rect.width,2))
         right_rect = pygame.Rect(self.hitbox_rect.topright + vector(0, self.hitbox_rect.height / 4),(2,self.hitbox_rect.height / wall_rect_size))
         left_rect = pygame.Rect(self.hitbox_rect.topleft + vector(-2, self.hitbox_rect.height / 4),(2,self.hitbox_rect.height / wall_rect_size))
-        collide_rects = [sprite.rect for sprite in self.collision_sprites]
-        semi_collide_rects = [sprite.rect for sprite in self.semi_collision_sprites]
 
         # collisions
-        self.on_surface['floor'] = True if floor_rect.collidelist(collide_rects) >= 0 or floor_rect.collidelist(semi_collide_rects) >= 0 and self.direction.y >= 0 else False
-        self.on_surface['right_wall'] = True if right_rect.collidelist(collide_rects) >= 0 else False
-        self.on_surface['left_wall']  = True if left_rect.collidelist(collide_rects) >= 0 else False
+        self.on_surface['floor'] = True if floor_rect.collidelist(self.collide_rects) >= 0 or floor_rect.collidelist(self.semi_collide_rects) >= 0 and self.direction.y >= 0 else False
+        self.on_surface['right_wall'] = True if right_rect.collidelist(self.collide_rects) >= 0 else False
+        self.on_surface['left_wall']  = True if left_rect.collidelist(self.collide_rects) >= 0 else False
 
         self.platform = None
         sprites = self.collision_sprites.sprites() + self.semi_collision_sprites.sprites()
         for sprite in [sprite for sprite in sprites if hasattr(sprite, 'moving')]:
             if sprite.rect.colliderect(floor_rect):
                 self.platform = sprite
+
+        # Evitar que o player fique preso durante o ataque de lançar
+        if self.throw_attacking:
+            top_left_square = pygame.Rect(self.hitbox_rect.topleft + vector(-2, 0), (2, 2))
+            top_right_square = pygame.Rect(self.hitbox_rect.topright, (2, 2))
+
+            if top_right_square.collidelist(self.collide_rects) >= 0 and not self.on_surface['right_wall']:
+                self.hitbox_rect.y += 1
+
+            if top_left_square.collidelist(self.collide_rects) >= 0 and not self.on_surface['left_wall']:
+                self.hitbox_rect.y += 1
     
     def collision(self, axis):
         for sprite in self.collision_sprites:
