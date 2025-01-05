@@ -1,5 +1,5 @@
 from settings import *
-from sprites import Sprite, AnimatedSprite, MovingSprite, Kurisu, Spike, Door, Item, ParticleEffectSprite
+from sprites import Sprite, AnimatedSprite, MovingSprite, Thorn, Kurisu, Spike, Door, Item, ParticleEffectSprite
 from timecount import Timer
 from player import Player
 from groups import AllSprites
@@ -199,26 +199,27 @@ class Level:
                             item_frames = level_frames['items'][obj.properties['item']],
                             data = self.data
                         )
+                    elif obj.name in ('floor_spike', 'lace_spike'):
+                        groups = [self.all_sprites]
+                        groups.append(self.damage_sprites)
+                        groups.append(self.thorn_sprites)
+                        if obj.name == 'floor_spike':
+                            frames = level_frames['floor_spike'][obj.properties['direction']]
+                        elif obj.name == 'lace_spike':
+                            frames = level_frames['lace_spike'][obj.properties['direction']]
+                        z = Z_LAYERS['main']
+                        Thorn((int(obj.x), int(obj.y)), frames[0], groups, obj.name, obj.properties['direction'])              
                     else:
                         if obj.name in level_frames and obj.name != 'player':
-                            frames = level_frames[obj.name] if not 'palm' in obj.name else level_frames['palms'][obj.name]
+                            frames = level_frames[obj.name]
                             if obj.name == 'floor_spike':
                                 frames = level_frames['floor_spike'][obj.properties['direction']]
                             elif obj.name == 'lace_spike':
                                 frames = level_frames['lace_spike'][obj.properties['direction']]
 
                             groups = [self.all_sprites]
-                            if obj.name in ('floor_spike', 'lace_spike'): 
-                                groups.append(self.damage_sprites)
-                                groups.append(self.thorn_sprites)
-                            
-                            if obj.name in ('single', 'double'):
-                                frames = level_frames['gears'][obj.name]
-
-                            z = Z_LAYERS['main'] if not 'bg' in obj.name else Z_LAYERS['bg details']
-
-                            animation_speed = ANIMATION_SPEED if not 'palm' in obj.name else ANIMATION_SPEED + uniform(-1, 1)
-
+                            z = Z_LAYERS['main']
+                            animation_speed = ANIMATION_SPEED
                             AnimatedSprite((int(obj.x), int(obj.y)), frames, groups, z, animation_speed)
 
         # Objetos moveis / Objetos com dano
@@ -352,24 +353,6 @@ class Level:
                         shockwave_groups = (self.all_sprites, self.damage_sprites),
                     )
                     
-        # Espinhos Normais
-        thorns_layer = get_layer(tmx_map, 'Thorns')
-        if thorns_layer:
-            for x, y, surf in thorns_layer.tiles():
-                frames = level_frames['floor_spike']['up']
-                groups = [self.all_sprites, self.damage_sprites, self.thorn_sprites]
-                z = Z_LAYERS['main']
-                AnimatedSprite((x * TILE_SIZE, (y+0.8) * TILE_SIZE), frames, groups, z, ANIMATION_SPEED)
-        
-        # Espinhos Reversos
-        reverse_thorns_layer = get_layer(tmx_map, 'Reverse Thorns')
-        if reverse_thorns_layer:
-            for x, y, surf in reverse_thorns_layer.tiles():
-                frames = level_frames['floor_spike']['down']
-                groups = [self.all_sprites, self.damage_sprites, self.thorn_sprites]
-                z = Z_LAYERS['main']
-                AnimatedSprite((x * TILE_SIZE, (y) * TILE_SIZE), frames, groups, z, ANIMATION_SPEED)
-
         # Itens
         items_layer = get_layer(tmx_map, 'Items')
         if items_layer:

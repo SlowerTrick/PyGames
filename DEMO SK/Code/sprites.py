@@ -9,7 +9,6 @@ class Sprite(pygame.sprite.Sprite):
     def __init__(self, pos, surface = pygame.Surface((TILE_SIZE, TILE_SIZE)), groups = None, z = Z_LAYERS['main']):
         super().__init__(groups)
         self.image = surface
-        # self.image.fill('white')
         self.rect = self.image.get_frect(topleft = pos)
         self.old_rect = self.rect.copy()
         self.z = z
@@ -255,6 +254,24 @@ class MovingSprite(AnimatedSprite):
         self.animate(delta_time)
         if self.flip:
             self.image = pygame.transform.flip(self.image, self.reverse['x'], self.reverse['y'])
+
+class Thorn(pygame.sprite.Sprite):
+    def __init__(self, pos, surf, groups, name, direction):
+        super().__init__(groups)
+        surf = surf
+        self.image = surf
+        self.rect = self.image.get_frect(topleft = pos)
+        if direction == 'left':
+            if name == 'floor_spike':
+                self.rect.x += 38
+            elif name == 'lace_spike':
+                self.rect.x += 28
+        elif direction == 'up':
+            if name == 'floor_spike':
+                self.rect.y += 38
+            elif name == 'lace_spike':
+                self.rect.y += 28
+        self.z = Z_LAYERS['main']
 
 class Spike(Sprite):
     def __init__(self, pos, surface, groups, radius, speed, start_angle, end_angle, z = Z_LAYERS['main']):
