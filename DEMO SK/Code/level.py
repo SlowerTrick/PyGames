@@ -135,7 +135,7 @@ class Level:
                         case _: z = Z_LAYERS['main']  # Default
                     Sprite((x * TILE_SIZE, y * TILE_SIZE), surf, groups, z)
 
-        # Player e objetos normais
+        # Player / objetos normais / Espinhos
         objects_layer = get_layer(tmx_map, 'Objects')
         if objects_layer:
             for obj in objects_layer:
