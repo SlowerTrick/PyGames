@@ -7,7 +7,6 @@ from debug import debug
 from enemies import Runner, Gulka, Fool_eater, Breakable_wall, Chest, Pearl, Slime, Fly, Ranged_Fly, Butterfly, Lace
 from attack import Neutral_Attack, Throw_Attack, Spin_Attack, Parry_Attack, Knive, Saw
 from random import uniform
-from os.path import join
 from audio import AudioManager
 
 class Level:
@@ -120,7 +119,7 @@ class Level:
             if tile_layer:
                 for x, y, surf in tile_layer.tiles():
 
-                    if layer == 'BG details':
+                    if layer in ('BG details', 'FG'):
                         x += getattr(tile_layer, 'offsetx', 0) / TILE_SIZE
                         y += getattr(tile_layer, 'offsety', 0) / TILE_SIZE
 
@@ -130,7 +129,7 @@ class Level:
                     if layer == 'BG details': groups.append(self.bg_sprites)
                     match layer:
                         case 'BG': z = Z_LAYERS['bg tiles']
-                        case 'FG': z = Z_LAYERS['bg tiles']
+                        case 'FG': z = Z_LAYERS['fg']
                         case 'BG details': z = Z_LAYERS['bg details']
                         case _: z = Z_LAYERS['main']  # Default
                     Sprite((x * TILE_SIZE, y * TILE_SIZE), surf, groups, z)
@@ -149,6 +148,11 @@ class Level:
                         data = self.data,
                         audio_files = audio_files,
                         screen_shake = self.all_sprites.start_shaking)
+                    
+                    # Verificar se é possivel atrevassar as plataformas
+                    platforms = get_layer(tmx_map, 'Platforms')
+                    if hasattr(platforms, 'unskippable'):
+                        self.player.skippable_platform = False
                 else:
                     if obj.name == 'chest':
                         chest_sounds = {
@@ -282,8 +286,7 @@ class Level:
                         pos = (int(obj.x), int(obj.y)), 
                         frames = level_frames['runner'], 
                         groups = (self.all_sprites, self.damage_sprites, self.runner_sprites, self.all_enemies), 
-                        collision_sprites = self.collision_sprites)
-                    
+                        collision_sprites = self.collision_sprites)         
                 elif obj.name == 'gulka':
                     Gulka(
                         pos = (int(obj.x), int(obj.y)),
@@ -292,23 +295,24 @@ class Level:
                         player = self.player,
                         facing_direction = obj.properties['facing_direction'],
                         create_pearl = self.create_pearl)
-                
                 elif obj.name == 'fool_eater':
+                    fool_eater_sounds = {
+                        'bite': self.audio_files['fool_eater_bite']
+                    }
                     Fool_eater(
                         pos = (int(obj.x), int(obj.y)),
                         frames = level_frames['fool_eater'],
                         groups = (self.all_sprites, self.damage_sprites, self.fool_eater_sprites, self.all_enemies),
                         player = self.player,
+                        sounds = fool_eater_sounds,
                         facing_direction = obj.properties['facing_direction']
                     )
-            
                 elif obj.name == 'breakable_wall':
                     Breakable_wall(
                         pos = (int(obj.x), int(obj.y)),
                         surf = level_frames['breakable_wall'],
                         groups = (self.all_sprites, self.collision_sprites, self.runner_sprites, self.all_enemies),
                     )
-    
                 elif obj.name == 'slime':
                     Slime(
                         pos = (int(obj.x), int(obj.y)),
@@ -316,7 +320,6 @@ class Level:
                         groups = (self.all_sprites, self.damage_sprites, self.slime_sprites, self.all_enemies),
                         player = self.player,
                         collision_sprites = self.collision_sprites)
-                
                 elif obj.name == 'fly':
                     Fly(
                         pos = (int(obj.x), int(obj.y)),
@@ -324,7 +327,6 @@ class Level:
                         groups = (self.all_sprites, self.damage_sprites, self.fly_sprites, self.all_enemies),
                         player = self.player,
                         collision_sprites = self.collision_sprites)
-                
                 elif obj.name == 'ranged_fly':
                     Ranged_Fly(
                         pos = (int(obj.x), int(obj.y)),
@@ -334,15 +336,18 @@ class Level:
                         collision_sprites = self.collision_sprites,
                         create_pearl = self.create_pearl
                     )
-
                 elif obj.name == 'butterfly':
                     Butterfly(
                         pos = (int(obj.x), int(obj.y)), 
                         frames = level_frames['butterfly'], 
                         groups = (self.all_sprites),
                         player = self.player)
-
                 elif obj.name == 'lace':
+                    lace_sounds = {
+                        'parry': self.audio_files['parry_prepare'],
+                        'attack': self.audio_files['lace_attack'],
+                        'ultimate': self.audio_files['lace_ultimate'],
+                    }
                     self.lace = Lace(
                         pos = (int(obj.x), int(obj.y)),
                         frames = level_frames['lace'],
@@ -351,6 +356,7 @@ class Level:
                         collision_sprites = self.collision_sprites.sprites() + self.semi_collision_sprites.sprites(),
                         screen_shake = self.all_sprites.start_shaking,
                         shockwave_groups = (self.all_sprites, self.damage_sprites),
+                        sounds = lace_sounds
                     )
                     
         # Itens
@@ -374,7 +380,7 @@ class Level:
                             AnimatedSprite((x, y), level_frames['water_top'], self.all_sprites, Z_LAYERS['water'])
                         else:
                             Sprite((x, y), level_frames['water_body'], self.all_sprites, Z_LAYERS['water'])
-    
+
     def update_timers(self):
         # Atualiza todos os temporizadores estabelicidos
         for timer in self.timers.values():
@@ -559,7 +565,7 @@ class Level:
                     
                     if is_enemy and not is_pearl:
                         if not target.hit_timer.active:
-                            self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
+                            self.audio_manager.play_with_pitch(self.audio_files['enemy_damage'], volume_change=-2.0)
                             if not self.timers['hit_stop_short'].active and not self.hit_stop_cooldown.active:
                                 self.timers['hit_stop_short'].activate()
                                 self.hit_stop_cooldown.activate()
@@ -597,7 +603,7 @@ class Level:
                     is_pearl = hasattr(target, 'pearl')
                     if hasattr(target, 'is_enemy'):
                         if not target.hit_timer.active and not is_pearl:
-                            self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
+                            self.audio_manager.play_with_pitch(self.audio_files['enemy_damage'], volume_change=-2.0)
                             if not self.timers['hit_stop_short'].active:
                                 self.timers['hit_stop_short'].activate()
                         target.get_damage()
@@ -615,7 +621,7 @@ class Level:
                     
                     if is_enemy and not is_pearl:
                         if not target.hit_timer.active:
-                            self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
+                            self.audio_manager.play_with_pitch(self.audio_files['enemy_damage'], volume_change=-2.0)
                             if not self.timers['hit_stop_short'].active:
                                 self.timers['hit_stop_short'].activate()
                         target.get_damage()
@@ -641,7 +647,7 @@ class Level:
                         target.during_knockback.activate()
                     if is_enemy:
                         if not target.hit_timer.active and not is_pearl:
-                                self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
+                                self.audio_manager.play_with_pitch(self.audio_files['enemy_damage'], volume_change=-2.0)
                                 if not self.timers['hit_stop_short'].active:
                                     self.timers['hit_stop_short'].activate()
                         target.get_damage()
@@ -665,7 +671,7 @@ class Level:
                         
                         if is_enemy and not is_pearl:
                             if not target.hit_timer.active:
-                                self.audio_manager.play_with_pitch(join('..', 'audio', 'enemy_damage.wav'), volume_change=-2.0)
+                                self.audio_manager.play_with_pitch(self.audio_files['enemy_damage'], volume_change=-2.0)
                                 if not self.timers['hit_stop_short'].active:
                                     self.timers['hit_stop_short'].activate()
                             target.get_damage()
@@ -757,10 +763,10 @@ class Level:
             fade_surface.fill((0, 0, 0))  # Preencher com preto
             fade_surface.set_alpha(self.fade_alpha)  # Definir opacidade
             self.display_surface.blit(fade_surface, (0, 0))  # Aplicar o fade na tela
-            self.fade_alpha += self.fade_speed / 40  # Aumentar opacidade gradualmente
+            self.fade_alpha += self.fade_speed / 30  # Aumentar opacidade gradualmente
             if self.fade_alpha > 255:
                 self.fade_alpha = 255  # Garantir que a opacidade não passe de 255
-                self.fade_out = False  # Desativar o fade out após completar
+                #self.fade_out = False  # Desativar o fade out após completar
 
     def run(self, delta_time):
         self.update_timers()

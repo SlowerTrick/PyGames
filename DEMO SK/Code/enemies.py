@@ -1,8 +1,9 @@
 from settings import *
 from timecount import Timer
 from random import choice, randint, uniform
-from sprites import Item 
-from attack import Lace_shockwave
+from sprites import Item, ParticleEffectSprite
+from attack import Lace_shockwave, Lace_parry
+from audio import AudioManager
 from math import sin
 
 class Runner(pygame.sprite.Sprite):
@@ -212,33 +213,37 @@ class Breakable_wall(pygame.sprite.Sprite):
         self.is_breakable_wall = True
         super().__init__(groups)
         self.image = surf
-        self.rect = self.image.get_frect(topleft = pos)
+        self.rect = self.image.get_frect(topleft=pos)
         self.old_rect = self.rect
         self.z = Z_LAYERS['main']
         self.wall_health = 3
         self.hit_timer = Timer(1000)
 
         # Controle do tremor
-        self.shake_magnitude = 60  # Intensidade do tremor
-        self.shake_timer = Timer(500, self.stop_shaking, repeat=False)   # Duração do tremor
+        self.shake_magnitude = 1.25  # Intensidade do tremor (distância máxima para os lados)
+        self.shake_speed = 3  # Velocidade do tremor (quantidade de oscilações por segundo)
+        self.shake_timer = Timer(500, self.stop_shaking, repeat=False)  # Duração do tremor
         self.original_x = self.rect.x
-    
+        self.time_elapsed = 0  # Tempo acumulado para cálculo do tremor
+
     def start_shaking(self):
         self.shake_timer.activate()
         self.original_x = self.rect.x
         self.original_y = self.rect.y
-    
+        self.time_elapsed = 0
+
     def stop_shaking(self):
         self.shake_timer.deactivate()
 
     def apply_shake(self, dt):
         if self.shake_timer.active:
-            self.rect.x += uniform(-self.shake_magnitude, self.shake_magnitude) * dt
+            self.time_elapsed += dt
+            # Cálculo do deslocamento como uma senoide
+            offset = self.shake_magnitude * sin(2 * 3.14 * self.shake_speed * self.time_elapsed)
+            self.rect.x = self.original_x + offset
         else:
-            if abs(self.rect.x - self.original_x) > self.shake_magnitude:
-                self.rect.x = (self.original_x + (self.rect.x - self.original_x) / abs(self.rect.x - self.original_x) * self.shake_magnitude) * dt
-            else:
-                self.rect.x = self.original_x 
+            # Retorna ao centro quando o tremor para
+            self.rect.x = self.original_x
 
     def is_alive(self):
         if self.wall_health <= 0:
@@ -268,13 +273,18 @@ class Chest(pygame.sprite.Sprite):
         # Alteração inicial do tamanho dos sprites
         self.frames = [
             pygame.transform.scale_by(pygame.transform.flip(frame, True, False) if reverse else frame, 2.5)
-            for frame in frames
+            for frame in frames['chest']
+        ]
+        self.particle_frames = [
+            pygame.transform.scale_by(pygame.transform.flip(frame, True, False) if reverse else frame, 2.5)
+            for frame in frames['particle']
         ]
         # Setup dos frames
         self.frame_index = 0
         self.image = self.frames[self.frame_index]
         self.rect = self.image.get_frect(topleft=pos)
         self.old_rect = self.rect
+        self.all_sprites = all_sprites
 
         # Item do baú
         self.item_name = item_name
@@ -311,20 +321,29 @@ class Chest(pygame.sprite.Sprite):
             else:
                 self.rect.x = self.original_x 
     
-    def is_alive(self):
-        if self.chest_health <= 0 and not self.is_dead:
-            self.is_dead = True
-            self.create_item()
-    
+    def create_particle(self):
+        ParticleEffectSprite(
+            pos = self.rect.center + vector(0, -30),
+            frames = self.particle_frames,
+            groups = self.all_sprites
+        )
+
     def create_item(self):
         self.sounds['chest_open'].play()
         self.item_sprite = Item(
             item_type = self.item_name, 
-            pos = (self.rect.centerx, self.rect.centery), 
+            pos = self.rect.center + + vector(0, -20), 
             frames = self.item_frames, 
             groups = self.item_group, 
             data = self.data,
         )
+
+    def is_alive(self):
+        if self.chest_health <= 0 and not self.is_dead:
+            self.is_dead = True
+            self.create_particle()
+            self.create_item()
+    
     
     def manage_item(self):
         # Verifica se o item foi criado e ainda existe
@@ -531,10 +550,11 @@ class Slime(pygame.sprite.Sprite):
             self.death_animation(dt)
 
 class Fool_eater(pygame.sprite.Sprite):
-    def __init__(self, pos, frames, groups, player, facing_direction):
+    def __init__(self, pos, frames, groups, player, facing_direction, sounds):
         super().__init__(groups)
         self.is_enemy = True
         self.frame_index = 0
+        self.audio_files = sounds
 
         # Definição da direção dos sprites
         self.frames = {}
@@ -561,11 +581,13 @@ class Fool_eater(pygame.sprite.Sprite):
         self.facing_direction = facing_direction
         self.soul_eater_health = 3
         self.gravity = 1300
+        self.sound_played = False
 
         # Colisões e timers
         self.hit_timer = Timer(500)
         self.cooldown_timer = Timer(500)
         self.death_animation_timer = Timer(3000)
+        self.sound_cooldown = Timer(200)
 
         # Death animation
         self.is_dead = False
@@ -575,6 +597,9 @@ class Fool_eater(pygame.sprite.Sprite):
         if player_collide and not self.cooldown_timer.active:
             self.state = 'attack'
             self.cooldown_timer.activate()
+            if not self.sound_cooldown.active:
+                self.sound_cooldown.activate()
+                self.audio_files['bite'].play()
         elif not player_collide and not self.cooldown_timer.active:
             self.state = 'idle'
 
@@ -618,6 +643,7 @@ class Fool_eater(pygame.sprite.Sprite):
         self.hit_timer.update()
         self.death_animation_timer.update()
         self.cooldown_timer.update()
+        self.sound_cooldown.update()
 
     def update(self, dt):
         self.update_timers()
@@ -1037,8 +1063,8 @@ class Butterfly(pygame.sprite.Sprite):
     
     def state_management(self):
         player_pos, butterfly_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
-        player_near = butterfly_pos.distance_to(player_pos) < 500
-        player_level = abs(butterfly_pos.y - player_pos.y) < 200
+        player_near = butterfly_pos.distance_to(player_pos) < 700
+        player_level = abs(butterfly_pos.y - player_pos.y) < 100
 
         if player_near and player_level:
             self.flee_active = True
@@ -1059,7 +1085,7 @@ class Butterfly(pygame.sprite.Sprite):
                 self.kill()
 
 class Lace(pygame.sprite.Sprite):
-    def __init__(self, pos, frames, groups, player, collision_sprites, screen_shake, shockwave_groups):
+    def __init__(self, pos, frames, groups, player, collision_sprites, screen_shake, shockwave_groups, sounds):
         # Setup geral
         super().__init__(groups)
         self.is_enemy = True
@@ -1070,6 +1096,8 @@ class Lace(pygame.sprite.Sprite):
         self.state = 'idle'
         self.screen_shake = screen_shake
         self.shockwave_groups = shockwave_groups
+        self.audio_files = sounds
+        self.audio_manager = AudioManager()
 
         # Frames 
         self.image = self.frames[self.state][self.frame_index]
@@ -1082,7 +1110,7 @@ class Lace(pygame.sprite.Sprite):
         # Status
         self.direction = vector()
         self.facing_side = 'none'
-        self.lace_heath = 35
+        self.lace_heath = 5
         self.max_health = self.lace_heath
         self.gravity = 1300
         self.on_ground = False
@@ -1093,11 +1121,13 @@ class Lace(pygame.sprite.Sprite):
         self.last_attack = None
         self.knockback_value = 700
         self.knockback_direction = 'none'
-        self.showckwave_created = False
+        self.shockwave_created = False
+        self.parry_created = False
+        self.spike_sound_played = False
 
         # Dash Vertical
-        self.dash_speed = 650
-        self.dash_distance = 400
+        self.dash_speed = 700
+        self.dash_distance = 480
         self.dash_progress = self.dash_distance
 
         # Jump
@@ -1114,7 +1144,11 @@ class Lace(pygame.sprite.Sprite):
         self.timers = {
             'cycle_attacks': Timer(self.cycle),
             'ultimate': Timer(2500),
-            'ultimate_cooldown': Timer(10000)
+            'ultimate_cooldown': Timer(10000),
+            'spike': Timer(2500),
+            'spike_cooldown': Timer(4000),
+            'parry': Timer(2000),
+            'parry_cooldown': Timer(8000),
         }
 
     def collisions(self, axis):
@@ -1150,7 +1184,7 @@ class Lace(pygame.sprite.Sprite):
     def move(self, dt):
         if self.can_move:
             # Movimentação Vertical
-            if not self.on_ground and not self.active_attack == 'air' and not self.on_final_animation and not self.timers['ultimate'].active:
+            if not self.on_ground and not self.active_attack == 'air' and not self.on_final_animation and not self.timers['ultimate'].active and not self.timers['spike'].active:
                 self.direction.y += self.gravity / 1.5 * dt
                 self.hitbox_rect.y += self.direction.y * dt
                 self.direction.y += self.gravity / 1.5 * dt
@@ -1166,7 +1200,8 @@ class Lace(pygame.sprite.Sprite):
         self.rect.center = self.hitbox_rect.center
 
     def knockback(self, delta_time):
-        if self.during_knockback.active and not self.timers['ultimate'].active:
+        knockback_block = self.timers['ultimate'].active or self.timers['parry'].active
+        if self.during_knockback.active and not knockback_block:
             if self.knockback_direction == 'left':
                 self.hitbox_rect.x += -1 * self.knockback_value * delta_time
                 self.collisions('horizontal')
@@ -1177,20 +1212,52 @@ class Lace(pygame.sprite.Sprite):
                 self.hitbox_rect.y += 1 * self.knockback_value * delta_time
                 self.collisions('vertical')
 
-    def attack(self):
+    def attack(self, dt):
         if self.state != 'idle':
-            if not self.timers['cycle_attacks'].active and not self.timers['ultimate'].active:
+            special_attack = self.timers['ultimate'].active or self.timers['spike'].active or self.timers['parry'].active
+            if not self.timers['cycle_attacks'].active and not special_attack:
                 self.timers['cycle_attacks'].activate()
-                attack = randint(0, 2)
+
+                # Sorteio inicial
+                player_pos, lace_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
+                player_ran_away = lace_pos.distance_to(player_pos) > 600
+                attack = randint(0, 3)
+
+                # Sorteio completo
                 if self.lace_heath < self.max_health / 2 and not self.timers['ultimate_cooldown'].active:
-                    attack = randint(0, 3)
-                self.active_attack = ['multi', 'dash', 'air', 'ultimate'][attack]
-                if self.active_attack == self.last_attack and self.active_attack == 'multi':
+                    attack = randint(0, 4) 
+
+                # Evita o uso de ataques em cooldown
+                if attack == 2 and self.timers['parry_cooldown'].active:
                     attack = randint(0, 1)
+                elif attack == 3 and self.timers['spike_cooldown'].active:
+                    attack = randint(0, 2)
+                elif attack == 4 and self.timers['ultimate_cooldown'].active:
+                    attack = randint(0, 3)
+                
+                # Definição arbitraria do ataque
+                self.active_attack = ['dash', 'air', 'parry', 'spike', 'ultimate'][attack]
+                
+                # Evitar ultimate e spike sequenciais
+                if self.active_attack == 'spike' and self.last_attack == 'ultimate':
+                    attack = randint(0, 2)  
+                    self.active_attack = ['parry', 'dash', 'air'][attack]
+                
+                # Dash obrigatório após o spike
+                if self.last_attack == 'spike':
+                    attack = randint(0, 1)  
                     self.active_attack = ['dash', 'air'][attack]
+                
+                # Spike obrigatório caso o player fuja
+                if player_ran_away and not self.last_attack == 'ultimate' :
+                    self.active_attack = 'spike'
+
                 self.can_attack = True
             elif self.timers['cycle_attacks'].time_passed() > self.cycle - 200:
-                self.active_attack = 'cooldown'
+                if not special_attack:
+                    self.active_attack = 'cooldown'
+                    self.state = 'cooldown'
+
             
             # Atualizar estado baseado no ataque ativo
             if self.active_attack != 'cooldown' and self.can_attack:
@@ -1198,19 +1265,82 @@ class Lace(pygame.sprite.Sprite):
                 self.last_attack = self.active_attack
                 self.state = self.active_attack
                 if self.active_attack == 'dash':
+                    self.audio_manager.play_with_pitch(self.audio_files['attack'], min_pitch=70, max_pitch=130)
                     self.dash_progress = 0
                 elif self.active_attack == 'air':
+                    self.audio_manager.play_with_pitch(self.audio_files['attack'], min_pitch=70, max_pitch=130)
                     self.jump_progress = 0
-                if self.active_attack == 'ultimate':
+                elif self.active_attack == 'spike':
+                    self.timers['spike'].activate()
+                    self.timers['spike_cooldown'].activate()
+                    self.frame_index = 0
+                    self.spike_sound_played = False
+                elif self.active_attack == 'parry':
+                    self.audio_files['parry'].play()
+                    self.timers['parry_cooldown'].activate()
+                    self.frame_index = 0
+                    self.parry_created = False
+                elif self.active_attack == 'ultimate':
                     self.timers['ultimate'].activate()
                     self.timers['ultimate_cooldown'].activate()
-                    self.showckwave_created = False
+                    self.shockwave_created = False
+
+        self.spike(dt)
+        self.ultimate(dt)
+        self.parry(dt)
+
+    def parry(self, dt):
+        if self.active_attack == 'parry' and not self.timers['parry'].active:
+            self.frame_index = 0
+            player_pos, lace_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
+            self.facing_side = 'left' if player_pos.x <= lace_pos.x else 'right'
+        if self.timers['parry'].active:
+            self.audio_manager.play_with_pitch(self.audio_files['attack'], min_pitch=50, max_pitch=90)
+            self.frame_index += ANIMATION_SPEED * dt
+            if int(self.frame_index) == 4:
+                self.frame_index = 1
+            self.image = self.frames[self.state][int(self.frame_index % len(self.frames[self.state]))]
+            self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
+            if not self.parry_created:
+                self.parry_created = True
+                Lace_parry(
+                    pos = self.rect.center, 
+                    groups = self.shockwave_groups, 
+                    frames = self.frames['parry_attack'],
+                    facing_side = self.facing_side, 
+                )
+
+    def spike(self, dt):
+        if self.timers['spike'].active:
+            time_elapsed = self.timers['spike'].time_passed()
+
+            if time_elapsed <= 2000:
+                if self.frame_index == 5:
+                    if self.on_ground:
+                        self.hitbox_rect.y -= 350
+                    self.hitbox_rect.x = self.player.hitbox_rect.x
+                
+                self.frame_index += ANIMATION_SPEED * dt * 1.2
+                if self.frame_index > 5:
+                    self.frame_index = 5
+                self.image = self.frames[self.state][int(self.frame_index)]
+                self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
+            else:
+                if not self.spike_sound_played:
+                    self.spike_sound_played = True
+                    self.audio_manager.play_with_pitch(self.audio_files['attack'], min_pitch=70, max_pitch=130)
+                player_pos, lace_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
+                self.facing_side = 'left' if player_pos.x <= lace_pos.x else 'right'
+                if self.frame_index != 6:
+                    self.frame_index = 6
+                self.image = self.frames[self.state][int(self.frame_index)]
+                self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
+
+                # Objeto começa a descer
+                self.hitbox_rect.y += 1000 * dt
 
     def ultimate(self, dt):
         if self.timers['ultimate'].active:
-            if self.on_ground:
-                self.hitbox_rect.y -= 150
-            
             time_elapsed = self.timers['ultimate'].time_passed()
 
             if time_elapsed > 2000:
@@ -1225,14 +1355,19 @@ class Lace(pygame.sprite.Sprite):
 
                 self.hitbox_rect.y += 250 * dt
             else:
+                if self.on_ground:
+                    self.hitbox_rect.y -= 150
+                self.audio_manager.play_with_pitch(self.audio_files['attack'], min_pitch=100, max_pitch=130 , volume_change=-2.0)
                 self.frame_index += ANIMATION_SPEED * dt
                 if int(self.frame_index % len(self.frames[self.state])) > len(self.frames[self.state]) - 4:
                     self.frame_index = 0
                 self.image = self.frames[self.state][int(self.frame_index % len(self.frames[self.state]))]
                 self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
 
-            if time_elapsed > 2400 and not self.showckwave_created:
-                self.showckwave_created = True
+            if time_elapsed > 2400 and not self.shockwave_created:
+                self.shockwave_created = True
+                self.audio_files['ultimate'].play()
+                self.screen_shake(500, 5)
                 Lace_shockwave(
                     pos = self.rect.center, 
                     groups = self.shockwave_groups, 
@@ -1253,11 +1388,13 @@ class Lace(pygame.sprite.Sprite):
     def state_management(self):
         player_pos, lace_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
         player_near = lace_pos.distance_to(player_pos) < 900
-        player_level = abs(lace_pos.y - player_pos.y) < 200
+        player_level = abs(lace_pos.y - player_pos.y) < 200 if self.state != 'idle' else abs(lace_pos.y - player_pos.y) <= 20
 
         if player_near and player_level and self.active_attack == 'cooldown' and self.on_ground:
             self.facing_side = 'left' if player_pos.x <= lace_pos.x else 'right'
             if self.state == 'idle':
+                self.timers['spike_cooldown'].activate()
+                self.timers['parry_cooldown'].activate()
                 self.state = 'start_attacking'
 
     def dash(self, dt):
@@ -1289,7 +1426,11 @@ class Lace(pygame.sprite.Sprite):
     def get_damage(self):
         if not self.hit_timer.active:
             self.hit_timer.activate()
-            self.lace_heath -= 1
+            if self.active_attack == 'parry':
+                self.timers['parry'].activate()
+                self.timers['parry_cooldown'].activate()
+            elif not self.timers['ultimate'].active:
+                self.lace_heath -= 1
 
     def is_alive(self):
         if self.lace_heath <= 0:
@@ -1326,11 +1467,11 @@ class Lace(pygame.sprite.Sprite):
         if not self.on_final_animation:
             self.update_timers()
             self.state_management()
-            self.attack()
-            self.ultimate(dt)
+            self.attack(dt)
             self.knockback(dt)
 
-            if not self.timers['ultimate'].active:
+            animation_block = self.timers['ultimate'].active or self.timers['spike'].active or self.timers['parry'].active
+            if not animation_block:
                 self.animate(dt)
                 self.flicker()
 

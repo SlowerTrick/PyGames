@@ -289,6 +289,38 @@ class Saw(pygame.sprite.Sprite):
         self.move(dt)
         self.is_alive()
 
+class Lace_parry(pygame.sprite.Sprite):
+    def __init__(self, pos, groups, frames, facing_side):
+        #Setup geral
+        super().__init__(groups)
+        self.frames = frames
+        self.frame_index = 0
+        self.facing_side = facing_side
+        self.image = self.frames[int(self.frame_index)]
+        direction = 1 if self.facing_side == 'right' else -1
+        self.rect = self.image.get_frect(center = pos + vector(60 * direction, 0))
+        self.z = Z_LAYERS['main']
+
+        # Timers
+        self.timers = {'lifetime': Timer(2000)}
+        self.timers['lifetime'].activate()
+    
+    def animate(self, dt):
+        self.frame_index += ANIMATION_SPEED * dt
+        self.image = self.frames[int(self.frame_index % len(self.frames))]
+        self.image = self.image if self.facing_side == 'right' else pygame.transform.flip(self.image, True, False)
+
+    def is_alive(self):
+        if not self.timers['lifetime'].active:
+            self.kill()
+
+    def update(self, dt):
+        for timer in self.timers.values():
+            timer.update()
+
+        self.animate(dt)
+        self.is_alive()
+
 class Lace_shockwave(pygame.sprite.Sprite):
     def __init__(self, pos, groups, frames, facing_side, speed, collision_sprites):
         #Setup geral
@@ -331,3 +363,4 @@ class Lace_shockwave(pygame.sprite.Sprite):
 
         self.move(dt)
         self.is_alive()
+

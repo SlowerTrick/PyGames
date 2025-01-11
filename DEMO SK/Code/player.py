@@ -1,7 +1,6 @@
 from settings import *
 from timecount import Timer
 from math import sin
-from os.path import join
 from audio import AudioManager
 
 class Player(pygame.sprite.Sprite):
@@ -79,6 +78,7 @@ class Player(pygame.sprite.Sprite):
         self.semi_collide_rects = [sprite.rect for sprite in self.semi_collision_sprites]
         self.on_surface = {'floor': False, 'left_wall': False, 'right_wall': False, 'bench': False}
         self.platform = None
+        self.skippable_platform = True
 
         # Temporizadores
         self.timers = {
@@ -285,7 +285,7 @@ class Player(pygame.sprite.Sprite):
             self.frame_index = 0 # Reseta os frames para dar prioridade ao ataque
             self.timers['neutral_attack_block'].activate()
             #self.audio_files['neutral_attack'].play()
-            self.audio_manager.play_with_pitch(join('..', 'audio', 'hornet_sword.wav'), volume_change=-6.0)
+            self.audio_manager.play_with_pitch(self.audio_files['neutral_attack'], volume_change=-6.0)
     
     def throw_attack(self):
         if not self.throw_attacking:
@@ -345,7 +345,7 @@ class Player(pygame.sprite.Sprite):
             self.start_dash_on_wall = any((self.on_surface['left_wall'], self.on_surface['right_wall']))
             self.dash_progress = 0
             self.timers['dash_block'].activate()
-            self.audio_manager.play_with_pitch(join('..', 'audio', 'hero_dash.wav'))
+            self.audio_manager.play_with_pitch(self.audio_files['dash'])
 
     def heal(self):
         self.audio_files['focus_heal'].play()
@@ -360,9 +360,11 @@ class Player(pygame.sprite.Sprite):
 
     def use_weapon(self):
         if self.data.actual_weapon == 1:
+            self.audio_manager.play_with_pitch(self.audio_files['use_weapon'], min_pitch=90, max_pitch=110, volume_change=-3.0)
             self.using_weapon = True
             self.data.string_bar -= 1
         elif self.data.actual_weapon == 2 and self.on_surface['floor']:
+            self.audio_manager.play_with_pitch(self.audio_files['use_weapon'], min_pitch=90, max_pitch=110, volume_change=-3.0)
             self.using_weapon = True
             self.data.string_bar -= 2
 
@@ -417,7 +419,7 @@ class Player(pygame.sprite.Sprite):
                 self.hitbox_rect.bottom -= 1
                 if not self.timers['jump_sound'].active:
                     self.timers['jump_sound'].activate()
-                    self.audio_manager.play_with_pitch(join('..', 'audio', 'hornet_jump.wav'))
+                    self.audio_manager.play_with_pitch(self.audio_files['jump'])
 
             # Pulo na parede
             elif any((self.on_surface['left_wall'], self.on_surface['right_wall'])) and not self.timers['wall_slide_block'].active and self.data.unlocked_wall_jump:
@@ -509,13 +511,18 @@ class Player(pygame.sprite.Sprite):
                     break
 
     def semi_collision(self):
-        if not self.timers['platform_skip'].active:
+        check_collision = (
+            not self.timers['platform_skip'].active or 
+            (self.timers['platform_skip'].active and not self.skippable_platform)
+        )
+
+        if check_collision:
             for sprite in self.semi_collision_sprites:
                 if sprite.rect.colliderect(self.hitbox_rect):
                     if self.hitbox_rect.bottom >= sprite.rect.top and int(self.old_rect.bottom) <= sprite.old_rect.top:
-                            self.hitbox_rect.bottom = sprite.rect.top
-                            if self.direction.y > 0:
-                                self.direction.y = 0
+                        self.hitbox_rect.bottom = sprite.rect.top
+                        if self.direction.y > 0:
+                            self.direction.y = 0
 
     def update_timers(self):
         # Atualiza todos os temporizadores estabelicidos

@@ -25,7 +25,7 @@ class Game:
         self.should_show_fps = False
 
         # Level
-        self.start_stage = 0 # 8 para lace
+        self.start_stage = 4 # 8 para lace
         self.last_bench = 0
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn, self.last_bench)
@@ -44,7 +44,7 @@ class Game:
         self.init_joysticks()
 
         # Animação final    
-        self.final_animation_timer = Timer(6000)
+        self.final_animation_timer = Timer(5500)
         self.slow_motion_active = False
         self.slow_motion_factor = 1.0  # Fator padrão (1.0 = normal, menor que 1 = mais lento)
         self.final_screen_ended = False
@@ -73,7 +73,7 @@ class Game:
             'saw': import_folder('..', 'graphics', 'enemies', 'saw', 'animation'),
             'floor_spike': import_sub_folders('..', 'graphics','enemies', 'floor_spikes'),
             'lace_spike': import_sub_folders('..', 'graphics','enemies', 'lace_spikes'),
-            'chest': import_folder('..', 'graphics', 'level', 'chest'),
+            'chest': import_sub_folders('..', 'graphics', 'level', 'chest'),
             'player': import_sub_folders('..', 'graphics', 'player'),
             'saw_chain': import_image('..',  'graphics', 'enemies', 'saw', 'saw_chain'),
             'helicopter': import_folder('..', 'graphics', 'level', 'helicopter'),
@@ -120,6 +120,7 @@ class Game:
             'jump': pygame.mixer.Sound(join('..', 'audio', 'hornet_jump.wav')), 
             'damage': pygame.mixer.Sound(join('..', 'audio', 'hero_damage.wav')),
             'pearl': pygame.mixer.Sound(join('..', 'audio', 'pearl.wav')),
+            'fool_eater_bite': pygame.mixer.Sound(join('..', 'audio', 'fool_eater_bite.ogg')),
             'wall_jump': pygame.mixer.Sound(join('..', 'audio', 'hero_mantis_claw.wav')),
             'dash': pygame.mixer.Sound(join('..', 'audio', 'hero_dash.wav')),
             'throw': pygame.mixer.Sound(join('..', 'audio', 'hornet_needle_thow.wav')),
@@ -130,7 +131,10 @@ class Game:
             'parry_prepare': pygame.mixer.Sound(join('..', 'audio', 'hornet_parry_prepare.wav')),
             'parry': pygame.mixer.Sound(join('..', 'audio', 'hornet_parry.wav')),
             'enemy_damage': pygame.mixer.Sound(join('..', 'audio', 'enemy_damage.wav')),
+            'lace_attack': pygame.mixer.Sound(join('..', 'audio', 'lace_attack.ogg')),
+            'lace_ultimate': pygame.mixer.Sound(join('..', 'audio', 'lace_ultimate.ogg')),
             'switch_weapons': pygame.mixer.Sound(join('..', 'audio', 'switch_weapons.wav')),
+            'use_weapon': pygame.mixer.Sound(join('..', 'audio', 'use_weapon.ogg')),
             'door_open': pygame.mixer.Sound(join('..', 'audio', 'door_open.wav')),
             'door_close': pygame.mixer.Sound(join('..', 'audio', 'door_close.wav')),
             'special_item_loop': pygame.mixer.Sound(join('..', 'audio', 'special_item_loop.wav')),

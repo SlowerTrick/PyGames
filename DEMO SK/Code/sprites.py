@@ -4,7 +4,6 @@ from math import sin, cos, radians
 from timecount import Timer
 from random import randint
 
-# Pegando atributos da classe sprite do pygame
 class Sprite(pygame.sprite.Sprite):
     def __init__(self, pos, surface = pygame.Surface((TILE_SIZE, TILE_SIZE)), groups = None, z = Z_LAYERS['main']):
         super().__init__(groups)
@@ -282,6 +281,7 @@ class Spike(Sprite):
         self.end_angle = end_angle
         self.angle = self.start_angle
         self.direction = 1
+        self.is_spike = True
         self.full_circle = True if self.end_angle == -1 else False
 
         # Trigonometria

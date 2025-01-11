@@ -17,6 +17,6 @@ Z_LAYERS = {
 	'path': 3,
 	'bg details': 4,
 	'main': 5,
-	'water': 6,
-	'fg': 7
+	'fg': 6,
+	'water': 7
 }
