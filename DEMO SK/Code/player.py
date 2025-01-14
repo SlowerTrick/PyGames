@@ -65,7 +65,8 @@ class Player(pygame.sprite.Sprite):
         self.throw_attack_is_available = True
         self.spin_attacking = False
         self.parrying = False
-        self.knockback_value = 350
+        self.vertical_knockback_value = 450
+        self.horizontal_knockback_value = 350
         self.knockback_direction = 'none'
         self.healing = False
         self.neutral_attack_direction = 'none'
@@ -320,19 +321,19 @@ class Player(pygame.sprite.Sprite):
 
             # Horizontal
             if self.knockback_direction == 'left':
-                self.hitbox_rect.x += -1 * self.knockback_value * delta_time
+                self.hitbox_rect.x += -1 * self.horizontal_knockback_value * delta_time
                 self.collision('horizontal')
             elif self.knockback_direction == 'right':
-                self.hitbox_rect.x += 1 * self.knockback_value * delta_time
+                self.hitbox_rect.x += 1 * self.horizontal_knockback_value * delta_time
                 self.collision('horizontal')
             
             # Vertical
             elif self.knockback_direction == 'up':
                 self.direction.y = 0
-                self.hitbox_rect.y += -1 * self.knockback_value * delta_time * 2
+                self.hitbox_rect.y += -1 * self.vertical_knockback_value * delta_time * 2
                 self.collision('vertical')
             elif self.knockback_direction == 'down' and not self.on_surface['floor']:
-                self.hitbox_rect.y += 1 * self.knockback_value * delta_time
+                self.hitbox_rect.y += 1 * self.vertical_knockback_value * delta_time
                 self.collision('vertical')
 
     def dash(self):

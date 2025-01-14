@@ -236,7 +236,7 @@
  </objectgroup>
  <objectgroup id="15" name="Enemies">
   <object id="63" name="fly" gid="54" x="1240" y="717" width="48" height="42"/>
-  <object id="64" name="fly" gid="54" x="772" y="873" width="48" height="42"/>
+  <object id="64" name="fly" gid="54" x="722" y="846" width="48" height="42"/>
  </objectgroup>
  <objectgroup id="17" name="Items"/>
 </map>

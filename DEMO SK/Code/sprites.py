@@ -149,11 +149,12 @@ class Door(pygame.sprite.Sprite):
         self.closed_door_logic(dt)
 
 class Kurisu(pygame.sprite.Sprite):
-    def __init__(self, pos, surf, groups, player, item_name, item_groups, item_frames, data):
+    def __init__(self, pos, surf, groups, player, item_name, item_groups, item_frames, data, sounds):
         super().__init__(groups)
         # Sprite
         self.image = pygame.transform.scale_by(surf, 0.25)
         self.rect = self.image.get_frect(topleft = pos)
+        self.audio_files = sounds
 
         # Setup geral
         self.z = Z_LAYERS['main']
@@ -164,6 +165,7 @@ class Kurisu(pygame.sprite.Sprite):
         self.data = data
         self.should_create_item = True
         self.should_flee = False
+        self.sound_played = False
     
     def create_item(self):
         if self.should_flee and self.should_create_item:
@@ -187,7 +189,9 @@ class Kurisu(pygame.sprite.Sprite):
     def flee(self, dt):
         if self.should_flee:
             self.rect.x -= 2
-
+            if not self.sound_played:
+                self.sound_played = True
+                self.audio_files['run'].play()
     
     def update(self, dt):
         self.manage_state()
@@ -282,7 +286,9 @@ class Spike(Sprite):
         self.angle = self.start_angle
         self.direction = 1
         self.is_spike = True
+        self.is_enemy = True
         self.full_circle = True if self.end_angle == -1 else False
+        self.hit_timer = Timer(400)
 
         # Trigonometria
         x = self.center[0] + cos(radians(self.angle)) * self.radius
@@ -290,7 +296,14 @@ class Spike(Sprite):
 
         super().__init__((x, y), surface, groups, z)
     
+    def get_damage(self):
+        self.hit_timer.activate()
+
+    def is_alive(self):
+        pass
+    
     def update(self, delta_time):
+        self.hit_timer.update()
         self.angle += self.direction * self.speed * delta_time
 
         if not self.full_circle:

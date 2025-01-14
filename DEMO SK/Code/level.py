@@ -126,7 +126,7 @@ class Level:
                     groups = [self.all_sprites]
                     if layer == 'Terrain': groups.append(self.collision_sprites)
                     if layer == 'Platforms': groups.append(self.semi_collision_sprites)
-                    if layer == 'BG details': groups.append(self.bg_sprites)
+                    if layer in ('BG details', 'BG', 'FG'): groups.append(self.bg_sprites)
                     match layer:
                         case 'BG': z = Z_LAYERS['bg tiles']
                         case 'FG': z = Z_LAYERS['fg']
@@ -193,6 +193,9 @@ class Level:
                             door_sounds = door_sounds
                         )
                     elif obj.name == 'kurisu':
+                        kurisu_sounds = {
+                            'run': self.audio_files['run']
+                        }
                         Kurisu(
                             pos = (int(obj.x), int(obj.y)), 
                             surf = level_frames['kurisu'], 
@@ -201,7 +204,8 @@ class Level:
                             item_name = obj.properties['item'],
                             item_groups = (self.all_sprites, self.item_sprites),
                             item_frames = level_frames['items'][obj.properties['item']],
-                            data = self.data
+                            data = self.data,
+                            sounds = kurisu_sounds,
                         )
                     elif obj.name in ('floor_spike', 'lace_spike'):
                         groups = [self.all_sprites]
@@ -347,6 +351,8 @@ class Level:
                         'parry': self.audio_files['parry_prepare'],
                         'attack': self.audio_files['lace_attack'],
                         'ultimate': self.audio_files['lace_ultimate'],
+                        'teleport_in': self.audio_files['lace_teleport_in'],
+                        'teleport_out': self.audio_files['lace_teleport_out'],
                     }
                     self.lace = Lace(
                         pos = (int(obj.x), int(obj.y)),
@@ -488,6 +494,14 @@ class Level:
                         collision_channel.play(self.audio_files['geo'])
                     item_sprites[0].kill()
 
+    def handle_enemy_sounds(self, enemy):
+        if hasattr(enemy, 'is_breakable_wall'):
+            self.audio_manager.play_with_pitch(self.audio_files['breakable_wall_hit'], volume_change=-2.0)
+        elif hasattr(enemy, 'is_spike'):
+            self.audio_manager.play_with_pitch(self.audio_files['spike_hit'], volume_change=-2.0)
+        else:
+            self.audio_manager.play_with_pitch(self.audio_files['enemy_damage'], volume_change=-2.0)
+
     def player_attack(self):
         # Ataque neutro
         if self.player.neutral_attacking and not self.during_neutral_attack:
@@ -565,12 +579,12 @@ class Level:
                     
                     if is_enemy and not is_pearl:
                         if not target.hit_timer.active:
-                            self.audio_manager.play_with_pitch(self.audio_files['enemy_damage'], volume_change=-2.0)
+                            self.handle_enemy_sounds(target)
                             if not self.timers['hit_stop_short'].active and not self.hit_stop_cooldown.active:
                                 self.timers['hit_stop_short'].activate()
                                 self.hit_stop_cooldown.activate()
+                                self.data.string_bar += 1
                             self.player_neutral_attack_sprite.frame_index = 1
-                            self.data.string_bar += 1
                         handle_knockback = not self.player.timers['hit_knockback'].active and not target.hit_timer.active
                     else:
                         handle_knockback = not self.player.timers['hit_knockback'].active
@@ -603,7 +617,7 @@ class Level:
                     is_pearl = hasattr(target, 'pearl')
                     if hasattr(target, 'is_enemy'):
                         if not target.hit_timer.active and not is_pearl:
-                            self.audio_manager.play_with_pitch(self.audio_files['enemy_damage'], volume_change=-2.0)
+                            self.handle_enemy_sounds(target)
                             if not self.timers['hit_stop_short'].active:
                                 self.timers['hit_stop_short'].activate()
                         target.get_damage()
@@ -621,7 +635,7 @@ class Level:
                     
                     if is_enemy and not is_pearl:
                         if not target.hit_timer.active:
-                            self.audio_manager.play_with_pitch(self.audio_files['enemy_damage'], volume_change=-2.0)
+                            self.handle_enemy_sounds(target)
                             if not self.timers['hit_stop_short'].active:
                                 self.timers['hit_stop_short'].activate()
                         target.get_damage()
@@ -647,9 +661,9 @@ class Level:
                         target.during_knockback.activate()
                     if is_enemy:
                         if not target.hit_timer.active and not is_pearl:
-                                self.audio_manager.play_with_pitch(self.audio_files['enemy_damage'], volume_change=-2.0)
-                                if not self.timers['hit_stop_short'].active:
-                                    self.timers['hit_stop_short'].activate()
+                            self.handle_enemy_sounds(target)
+                            if not self.timers['hit_stop_short'].active:
+                                self.timers['hit_stop_short'].activate()
                         target.get_damage()
                         if not is_pearl:
                             target.is_alive()
@@ -671,7 +685,7 @@ class Level:
                         
                         if is_enemy and not is_pearl:
                             if not target.hit_timer.active:
-                                self.audio_manager.play_with_pitch(self.audio_files['enemy_damage'], volume_change=-2.0)
+                                self.handle_enemy_sounds(target)
                                 if not self.timers['hit_stop_short'].active:
                                     self.timers['hit_stop_short'].activate()
                             target.get_damage()
@@ -766,7 +780,7 @@ class Level:
             self.fade_alpha += self.fade_speed / 30  # Aumentar opacidade gradualmente
             if self.fade_alpha > 255:
                 self.fade_alpha = 255  # Garantir que a opacidade não passe de 255
-                #self.fade_out = False  # Desativar o fade out após completar
+                self.fade_out = False  # Desativar o fade out após completar
 
     def run(self, delta_time):
         self.update_timers()

@@ -229,7 +229,6 @@ class Breakable_wall(pygame.sprite.Sprite):
     def start_shaking(self):
         self.shake_timer.activate()
         self.original_x = self.rect.x
-        self.original_y = self.rect.y
         self.time_elapsed = 0
 
     def stop_shaking(self):
@@ -238,6 +237,7 @@ class Breakable_wall(pygame.sprite.Sprite):
     def apply_shake(self, dt):
         if self.shake_timer.active:
             self.time_elapsed += dt
+            self.time_elapsed %= (1 / self.shake_speed)
             # Cálculo do deslocamento como uma senoide
             offset = self.shake_magnitude * sin(2 * 3.14 * self.shake_speed * self.time_elapsed)
             self.rect.x = self.original_x + offset
@@ -587,7 +587,6 @@ class Fool_eater(pygame.sprite.Sprite):
         self.hit_timer = Timer(500)
         self.cooldown_timer = Timer(500)
         self.death_animation_timer = Timer(3000)
-        self.sound_cooldown = Timer(200)
 
         # Death animation
         self.is_dead = False
@@ -597,15 +596,17 @@ class Fool_eater(pygame.sprite.Sprite):
         if player_collide and not self.cooldown_timer.active:
             self.state = 'attack'
             self.cooldown_timer.activate()
-            if not self.sound_cooldown.active:
-                self.sound_cooldown.activate()
-                self.audio_files['bite'].play()
         elif not player_collide and not self.cooldown_timer.active:
             self.state = 'idle'
 
         if self.frame_index == 1:
+            if not self.sound_played:
+                self.sound_played = True
+                self.audio_files['bite'].play()
             self.is_dead = False
         else:
+            if self.frame_index == 0:
+                self.sound_played = False
             self.is_dead = True
 
     def get_damage(self):
@@ -643,7 +644,6 @@ class Fool_eater(pygame.sprite.Sprite):
         self.hit_timer.update()
         self.death_animation_timer.update()
         self.cooldown_timer.update()
-        self.sound_cooldown.update()
 
     def update(self, dt):
         self.update_timers()
@@ -1110,7 +1110,7 @@ class Lace(pygame.sprite.Sprite):
         # Status
         self.direction = vector()
         self.facing_side = 'none'
-        self.lace_heath = 5
+        self.lace_heath = 35
         self.max_health = self.lace_heath
         self.gravity = 1300
         self.on_ground = False
@@ -1271,6 +1271,7 @@ class Lace(pygame.sprite.Sprite):
                     self.audio_manager.play_with_pitch(self.audio_files['attack'], min_pitch=70, max_pitch=130)
                     self.jump_progress = 0
                 elif self.active_attack == 'spike':
+                    self.audio_files['teleport_out'].play()
                     self.timers['spike'].activate()
                     self.timers['spike_cooldown'].activate()
                     self.frame_index = 0
@@ -1281,6 +1282,7 @@ class Lace(pygame.sprite.Sprite):
                     self.frame_index = 0
                     self.parry_created = False
                 elif self.active_attack == 'ultimate':
+                    self.audio_files['teleport_out'].play()
                     self.timers['ultimate'].activate()
                     self.timers['ultimate_cooldown'].activate()
                     self.shockwave_created = False
@@ -1328,6 +1330,7 @@ class Lace(pygame.sprite.Sprite):
             else:
                 if not self.spike_sound_played:
                     self.spike_sound_played = True
+                    self.audio_manager.play_with_pitch(self.audio_files['teleport_in'], volume_change=-3.0)
                     self.audio_manager.play_with_pitch(self.audio_files['attack'], min_pitch=70, max_pitch=130)
                 player_pos, lace_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
                 self.facing_side = 'left' if player_pos.x <= lace_pos.x else 'right'
