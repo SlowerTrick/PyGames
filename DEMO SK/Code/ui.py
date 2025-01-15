@@ -18,11 +18,6 @@ class UI:
         self.heart_surface_width = self.heart_frames[0].get_width()
         self.heart_padding = 6
 
-        # Moedas do jogador
-        self.coin_amount = 0
-        self.coin_timer = Timer(1000)
-        self.coin_surface = frames['coin']
-
     def create_hearts(self, amount, max):
         for sprite in self.sprites:
             if hasattr(sprite, 'is_heart'):
@@ -51,28 +46,13 @@ class UI:
                 sprite.kill()
         WeaponFrame((120, 90), self.weapons_frames['weapons'][weapon], self.sprites)
 
-    def display_text(self):
-        if self.coin_timer.active:
-            text_surface = self.font.render(str(self.coin_amount), False, '#33323d')
-            text_rect = text_surface.get_frect(topleft = (16,34))
-            self.display_surface.blit(text_surface, text_rect)
-
-            coin_rect = self.coin_surface.get_frect(center = text_rect.bottomleft).move(0,-2)
-            self.display_surface.blit(self.coin_surface, coin_rect)
-
-    def show_coins(self, amount):
-        self.coin_amount = amount
-        self.coin_timer.activate()
-
     def update(self, dt):
         if randint(0,1000) == 1:
             for animate in self.sprites:
                 animate.active = True
 
-        self.coin_timer.update()
         self.sprites.update(dt)
         self.sprites.draw(self.display_surface)
-        self.display_text()
 
 class Heart(AnimatedSprite):
     def __init__(self, pos, frames, groups):

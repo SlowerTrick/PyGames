@@ -25,7 +25,7 @@ class Game:
         self.should_show_fps = False
 
         # Level
-        self.start_stage = 0 # 8 para lace
+        self.start_stage = 0 # 9 para lace
         self.last_bench = 0
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn, self.last_bench)
@@ -70,16 +70,13 @@ class Game:
 
         self.level_frames = {
             # Adição dos sprites animados
-            'saw': import_folder('..', 'graphics', 'enemies', 'saw', 'animation'),
             'floor_spike': import_sub_folders('..', 'graphics','enemies', 'floor_spikes'),
             'lace_spike': import_sub_folders('..', 'graphics','enemies', 'lace_spikes'),
             'chest': import_sub_folders('..', 'graphics', 'level', 'chest'),
             'player': import_sub_folders('..', 'graphics', 'player'),
-            'saw_chain': import_image('..',  'graphics', 'enemies', 'saw', 'saw_chain'),
             'helicopter': import_folder('..', 'graphics', 'level', 'helicopter'),
             'spike': import_image('..',  'graphics', 'enemies', 'spike_ball', 'Spiked Ball'),
             'spike_chain': import_image('..',  'graphics', 'enemies', 'spike_ball', 'spiked_chain'),
-            'gears': import_sub_folders('..', 'graphics','objects', 'gears'),
             'runner': import_folder('..', 'graphics', 'enemies', 'runner', 'run'),
             'gulka': import_sub_folders('..', 'graphics', 'enemies', 'gulka'),
             'fool_eater': import_sub_folders('..', 'graphics', 'enemies', 'fool_eater'),
@@ -108,7 +105,6 @@ class Game:
         self.ui_frames = {
             'heart': import_folder('..', 'graphics', 'ui', 'heart'), 
             'heartless': import_image('..', 'graphics', 'ui', 'heartless', '0'), 
-            'coin':import_image('..', 'graphics', 'ui', 'coin'),
             'ui_bar': import_folder('..', 'graphics', 'ui', 'bar'), 
             'string_bar': import_folder('..', 'graphics', 'ui', 'string'), 
             'weapons': import_sub_folders('..', 'graphics', 'ui', 'weapons'), 
