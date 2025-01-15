@@ -99,16 +99,16 @@ class Gulka(pygame.sprite.Sprite):
         self.z = Z_LAYERS['main']
         self.player = player
         self.player_pos = None
-        self.shoot_timer = Timer(3000)
+        self.shoot_timer = Timer(2000)
         self.hit_timer = Timer(500)
         self.has_fired = False
         self.create_pearl = create_pearl
-        self.gulka_health = 5
+        self.gulka_health = 4
         self.facing_direction = facing_direction
 
     def state_management(self):
         player_pos, gulka_pos = vector(self.player.hitbox_rect.center), vector(self.rect.center)
-        player_near = gulka_pos.distance_to(player_pos) < 750
+        player_near = gulka_pos.distance_to(player_pos) < 1200
 
         if self.bullet_direction in ['left', 'right']:
             player_front = (gulka_pos.x < player_pos.x if self.bullet_direction == 'right' else gulka_pos.x > player_pos.x)
@@ -590,6 +590,10 @@ class Fool_eater(pygame.sprite.Sprite):
 
         # Death animation
         self.is_dead = False
+
+        # Ajuste da posição
+        if facing_direction == 'down':
+            self.rect.y += 80
 
     def state_management(self, dt):
         player_collide = self.rect.colliderect(self.player.hitbox_rect)
@@ -1110,7 +1114,7 @@ class Lace(pygame.sprite.Sprite):
         # Status
         self.direction = vector()
         self.facing_side = 'none'
-        self.lace_heath = 35
+        self.lace_heath = 50
         self.max_health = self.lace_heath
         self.gravity = 1300
         self.on_ground = False
@@ -1200,7 +1204,7 @@ class Lace(pygame.sprite.Sprite):
         self.rect.center = self.hitbox_rect.center
 
     def knockback(self, delta_time):
-        knockback_block = self.timers['ultimate'].active or self.timers['parry'].active
+        knockback_block = self.timers['ultimate'].active or self.timers['parry'].active or self.timers['spike'].active
         if self.during_knockback.active and not knockback_block:
             if self.knockback_direction == 'left':
                 self.hitbox_rect.x += -1 * self.knockback_value * delta_time

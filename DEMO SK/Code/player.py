@@ -360,11 +360,11 @@ class Player(pygame.sprite.Sprite):
         self.data.actual_weapon += 1
 
     def use_weapon(self):
-        if self.data.actual_weapon == 1:
+        if self.data.actual_weapon == 1 and self.data.string_bar >= 1:
             self.audio_manager.play_with_pitch(self.audio_files['use_weapon'], min_pitch=90, max_pitch=110, volume_change=-3.0)
             self.using_weapon = True
             self.data.string_bar -= 1
-        elif self.data.actual_weapon == 2 and self.on_surface['floor']:
+        elif self.data.actual_weapon == 2 and self.on_surface['floor'] and self.data.string_bar >= 2:
             self.audio_manager.play_with_pitch(self.audio_files['use_weapon'], min_pitch=90, max_pitch=110, volume_change=-3.0)
             self.using_weapon = True
             self.data.string_bar -= 2

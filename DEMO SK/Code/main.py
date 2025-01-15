@@ -25,7 +25,7 @@ class Game:
         self.should_show_fps = False
 
         # Level
-        self.start_stage = 4 # 8 para lace
+        self.start_stage = 0 # 8 para lace
         self.last_bench = 0
         self.player_spawn = 'left'
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn, self.last_bench)

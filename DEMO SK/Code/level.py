@@ -286,11 +286,12 @@ class Level:
         if enemies_layer:
             for obj in enemies_layer:
                 if obj.name == 'runner':
+                    collision_sprites = self.collision_sprites.sprites() + self.semi_collision_sprites.sprites()
                     Runner(
                         pos = (int(obj.x), int(obj.y)), 
                         frames = level_frames['runner'], 
                         groups = (self.all_sprites, self.damage_sprites, self.runner_sprites, self.all_enemies), 
-                        collision_sprites = self.collision_sprites)         
+                        collision_sprites = collision_sprites)         
                 elif obj.name == 'gulka':
                     Gulka(
                         pos = (int(obj.x), int(obj.y)),
@@ -318,12 +319,13 @@ class Level:
                         groups = (self.all_sprites, self.collision_sprites, self.runner_sprites, self.all_enemies),
                     )
                 elif obj.name == 'slime':
+                    collision_sprites = self.collision_sprites.sprites() + self.semi_collision_sprites.sprites()
                     Slime(
                         pos = (int(obj.x), int(obj.y)),
                         frames = level_frames['slime'],
                         groups = (self.all_sprites, self.damage_sprites, self.slime_sprites, self.all_enemies),
                         player = self.player,
-                        collision_sprites = self.collision_sprites)
+                        collision_sprites = collision_sprites)
                 elif obj.name == 'fly':
                     Fly(
                         pos = (int(obj.x), int(obj.y)),
@@ -393,7 +395,7 @@ class Level:
             timer.update()
 
     def create_pearl(self, pos, target_pos):
-        Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), self.pearl_surface, target_pos, 500)
+        Pearl(pos, (self.all_sprites, self.damage_sprites, self.pearl_sprites), self.pearl_surface, target_pos, 700)
         self.audio_files['pearl'].play()
 
     def pearl_collision(self):
@@ -500,6 +502,7 @@ class Level:
         elif hasattr(enemy, 'is_spike'):
             self.audio_manager.play_with_pitch(self.audio_files['spike_hit'], volume_change=-2.0)
         else:
+            self.data.string_bar += 1
             self.audio_manager.play_with_pitch(self.audio_files['enemy_damage'], volume_change=-2.0)
 
     def player_attack(self):
@@ -564,7 +567,7 @@ class Level:
                     frames = self.weapon_frames,
                     facing_side = self.player.facing_side,
                     speed = 450,
-                    collision_sprites = self.collision_sprites,
+                    collision_sprites = self.collision_sprites.sprites() + self.semi_collision_sprites.sprites(),
                     particle_frames = self.particle_frames,
                     all_sprites = self.all_sprites
                 )
@@ -583,7 +586,6 @@ class Level:
                             if not self.timers['hit_stop_short'].active and not self.hit_stop_cooldown.active:
                                 self.timers['hit_stop_short'].activate()
                                 self.hit_stop_cooldown.activate()
-                                self.data.string_bar += 1
                             self.player_neutral_attack_sprite.frame_index = 1
                         handle_knockback = not self.player.timers['hit_knockback'].active and not target.hit_timer.active
                     else:
