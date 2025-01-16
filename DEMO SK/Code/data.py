@@ -16,10 +16,10 @@ class Data:
         self.ui.create_weapons_frame(0)
 
         # Habilidades desbloqueaveis
-        self.unlocked_wall_jump = True
-        self.unlocked_dash = True
-        self.unlocked_throw_attack = True
-        self.unlocked_weapons = True
+        self.unlocked_wall_jump = False
+        self.unlocked_dash = False
+        self.unlocked_throw_attack = False
+        self.unlocked_weapons = False
     @property
     def coins(self):
         return self._coins

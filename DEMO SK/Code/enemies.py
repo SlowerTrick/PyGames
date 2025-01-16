@@ -755,12 +755,15 @@ class Fly(pygame.sprite.Sprite):
         player_level = abs(fly_pos.y - player_pos.y) < 450
 
         if self.player_near and player_level:
-            target_direction = (player_pos - fly_pos).normalize()
-            self.direction.x += target_direction.x * self.acceleration
-            self.direction.y += target_direction.y * self.acceleration
+            target_vector = player_pos - fly_pos
+        
+            if target_vector.length() > 0:  # Verifica se o vetor não é zero
+                target_direction = target_vector.normalize()
+                self.direction.x += target_direction.x * self.acceleration
+                self.direction.y += target_direction.y * self.acceleration
 
-            if self.direction.length() > 1:
-                self.direction = self.direction.normalize()
+                if self.direction.length() > 1:
+                    self.direction = self.direction.normalize()
         else:
             self.direction.x *= (1 - self.deceleration * dt)
             self.direction.y *= (1 - self.deceleration * dt)
@@ -944,11 +947,15 @@ class Ranged_Fly(pygame.sprite.Sprite):
             target_direction = vector(0, 0)
             if distance_to_player > self.stop_distance and (tolerance > 1 or tolerance < -1):
                 # Fly se move em direção ao player.
-                target_direction = (player_pos - fly_pos).normalize()
+                target_vector = player_pos - fly_pos
+                if target_vector.length() > 0:  # Verifica se o vetor não é zero
+                    target_direction = target_vector.normalize()
             elif distance_to_player < self.stop_distance and (tolerance > 1 or tolerance < -1):
                 # Fly foge do player
-                target_direction = (fly_pos - player_pos).normalize()
-                
+                target_vector = fly_pos - player_pos
+                if target_vector.length() > 0:  # Verifica se o vetor não é zero
+                    target_direction = target_vector.normalize()
+
                 # Atira enquanto corre
                 if not self.shoot_timer.active:
                     self.shoot_timer.activate()
@@ -1114,7 +1121,7 @@ class Lace(pygame.sprite.Sprite):
         # Status
         self.direction = vector()
         self.facing_side = 'none'
-        self.lace_heath = 50
+        self.lace_heath = 3 # 50
         self.max_health = self.lace_heath
         self.gravity = 1300
         self.on_ground = False
@@ -1434,8 +1441,9 @@ class Lace(pygame.sprite.Sprite):
         if not self.hit_timer.active:
             self.hit_timer.activate()
             if self.active_attack == 'parry':
-                self.timers['parry'].activate()
-                self.timers['parry_cooldown'].activate()
+                if not self.timers['parry'].active:
+                    self.timers['parry'].activate()
+                    self.timers['parry_cooldown'].activate()
             elif not self.timers['ultimate'].active:
                 self.lace_heath -= 1
 

@@ -446,8 +446,21 @@ class Level:
                     if self.insta_death:
                         self.switch_screen(int(self.last_bench), 'bench', self.last_bench)
                     else:
-                        self.switch_screen(int(self.current_stage), self.player_spawn, self.last_bench)
-        
+                        if sprite in self.thorn_sprites:
+                            self.switch_screen(int(self.current_stage), self.player_spawn, self.last_bench)
+                        else:
+                            if self.data.player_health <= 0:
+                                self.data.player_health = BASE_HEALTH
+                                self.data.string_bar = 0
+                                self.switch_screen(int(self.last_bench), 'bench', self.last_bench)
+                            else:
+                                if not self.player.timers['invincibility_frames'].active:
+                                    self.all_sprites.start_shaking(500, 2)
+                                    self.timers['hit_stop_long'].activate()
+                                    self.damage_alpha = 80
+                                    self.player.get_damage()
+                                    self.audio_files['damage'].play()
+                
         # Banco
         for sprite in self.bench_sprites:
             if sprite.rect.colliderect(self.player.hitbox_rect) and self.player.vertical_sight == 'up':
@@ -784,7 +797,7 @@ class Level:
             fade_surface.fill((0, 0, 0))  # Preencher com preto
             fade_surface.set_alpha(self.fade_alpha)  # Definir opacidade
             self.display_surface.blit(fade_surface, (0, 0))  # Aplicar o fade na tela
-            self.fade_alpha += self.fade_speed / 30  # Aumentar opacidade gradualmente
+            self.fade_alpha += self.fade_speed / 60  # Aumentar opacidade gradualmente
             if self.fade_alpha > 255:
                 self.fade_alpha = 255  # Garantir que a opacidade não passe de 255
                 self.fade_out = False  # Desativar o fade out após completar

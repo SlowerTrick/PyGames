@@ -203,7 +203,7 @@
    <properties>
     <property name="end_angle" type="int" value="90"/>
     <property name="platform" type="bool" value="false"/>
-    <property name="radius" type="int" value="100"/>
+    <property name="radius" type="int" value="115"/>
     <property name="speed" type="int" value="50"/>
     <property name="start_angle" type="int" value="-90"/>
    </properties>
@@ -212,7 +212,7 @@
    <properties>
     <property name="end_angle" type="int" value="90"/>
     <property name="platform" type="bool" value="false"/>
-    <property name="radius" type="int" value="100"/>
+    <property name="radius" type="int" value="115"/>
     <property name="speed" type="int" value="50"/>
     <property name="start_angle" type="int" value="-90"/>
    </properties>
@@ -221,7 +221,7 @@
    <properties>
     <property name="end_angle" type="int" value="90"/>
     <property name="platform" type="bool" value="false"/>
-    <property name="radius" type="int" value="100"/>
+    <property name="radius" type="int" value="115"/>
     <property name="speed" type="int" value="50"/>
     <property name="start_angle" type="int" value="-90"/>
    </properties>
@@ -230,7 +230,7 @@
    <properties>
     <property name="end_angle" type="int" value="270"/>
     <property name="platform" type="bool" value="false"/>
-    <property name="radius" type="int" value="100"/>
+    <property name="radius" type="int" value="115"/>
     <property name="speed" type="int" value="50"/>
     <property name="start_angle" type="int" value="90"/>
    </properties>
@@ -239,7 +239,7 @@
    <properties>
     <property name="end_angle" type="int" value="270"/>
     <property name="platform" type="bool" value="false"/>
-    <property name="radius" type="int" value="100"/>
+    <property name="radius" type="int" value="115"/>
     <property name="speed" type="int" value="50"/>
     <property name="start_angle" type="int" value="90"/>
    </properties>
@@ -248,7 +248,7 @@
    <properties>
     <property name="end_angle" type="int" value="270"/>
     <property name="platform" type="bool" value="false"/>
-    <property name="radius" type="int" value="100"/>
+    <property name="radius" type="int" value="115"/>
     <property name="speed" type="int" value="50"/>
     <property name="start_angle" type="int" value="90"/>
    </properties>

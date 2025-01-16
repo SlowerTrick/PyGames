@@ -28,14 +28,23 @@ class Button:
         self.text = self.font.render(self.text_input, True, color)
 
 class Menu:
-    def __init__(self, screen, font, button_sound):
+    def __init__(self, screen, font, button_sound, game_mode):
+        # Setup geral
         self.screen = screen
         self.font = font
         self.button_sound = button_sound
+        self.game_mode = game_mode
+        self.next_game_mode = "BOSS FIGHT MODE" if self.game_mode == 'normal' else "NORMAL MODE"
+        self.button_spacing = 150
+        self.title_spacing = 100 
+        self.base_y = WINDOW_HEIGHT / 2
+
         self.buttons = [
-            Button(None, (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2), "PLAY", self.get_font(45), "White", "Gray"),
-            Button(None, (WINDOW_WIDTH / 2, WINDOW_HEIGHT / 1.5), "QUIT", self.get_font(45), "White", "Gray"),
+            Button(None, (WINDOW_WIDTH / 2, self.base_y - self.button_spacing + self.title_spacing), "PLAY", self.get_font(42), "White", "#EEDC82"),
+            Button(None, (WINDOW_WIDTH / 2, self.base_y + self.title_spacing), self.next_game_mode, self.get_font(42), "White", "#EEDC82"),
+            Button(None, (WINDOW_WIDTH / 2, self.base_y + self.button_spacing + self.title_spacing), "QUIT", self.get_font(42), "White", "#EEDC82"),
         ]
+
         self.background_image = pygame.transform.scale(
             pygame.image.load(join('..', 'graphics', 'ui', 'Background.png')), 
             (WINDOW_WIDTH, WINDOW_HEIGHT)
@@ -147,6 +156,9 @@ class Menu:
             return "play"
         if self.selected_button == 1:  # QUIT
             self.button_sound.play()
+            return "new_mode"
+        if self.selected_button == 2:  # QUIT
+            self.button_sound.play()
             pygame.quit()
             sys.exit()
 
@@ -168,11 +180,9 @@ class Menu:
 
             # Renderiza texto principal
             menu_text = self.get_font(55).render("SILKSONG DEMAKE", True, "White")
-            menu_rect = menu_text.get_rect(center=(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 3))
+            menu_rect = menu_text.get_rect(center=(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 4))
             self.screen.blit(menu_text, menu_rect)
 
-            # Efeitos
-            self.screen_effects()
 
             # Atualiza os botões
             for i, button in enumerate(self.buttons):
@@ -180,6 +190,9 @@ class Menu:
                 button.update(self.screen)
                 if i == self.selected_button:
                     pygame.draw.rect(self.screen, "White", button.rect.inflate(10, 10), 3)
+
+            # Efeitos
+            self.screen_effects()
 
             mouse_pos = pygame.mouse.get_pos()
             menu_state = self.handle_events(mouse_pos)
@@ -191,6 +204,7 @@ class Menu:
 
 class Final_screen:
     def __init__(self, screen, font, button_sound):
+        # Setup geral
         self.screen = screen
         self.font = font
         self.button_sound = button_sound
@@ -330,7 +344,7 @@ class Final_screen:
             self.screen.blit(menu_text, menu_rect)
 
             # Renderiza o "The End"
-            the_end_text = self.get_font(85).render("The End", True, "#800020")
+            the_end_text = self.get_font(85).render("The End", True, "#EEDC82")
             the_end_rect = the_end_text.get_rect(center=(WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2))
             self.screen.blit(the_end_text, the_end_rect)
 

@@ -278,6 +278,7 @@ class Thorn(pygame.sprite.Sprite):
 
 class Spike(Sprite):
     def __init__(self, pos, surface, groups, radius, speed, start_angle, end_angle, z = Z_LAYERS['main']):
+        # Setup geral
         self.center = pos
         self.radius = radius
         self.speed = speed
@@ -295,6 +296,8 @@ class Spike(Sprite):
         y = self.center[1] + sin(radians(self.angle)) * self.radius
 
         super().__init__((x, y), surface, groups, z)
+        # Ajuste final
+        self.rect = self.rect.inflate(-10, 0)
     
     def get_damage(self):
         self.hit_timer.activate()

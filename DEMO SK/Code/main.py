@@ -6,7 +6,7 @@ from timecount import Timer
 from support import *
 from data import Data
 from ui import UI
-from menu import Menu, Final_screen
+from menu import Menu, Final_screen, Button
 
 class Game:
     def __init__(self):
@@ -17,12 +17,13 @@ class Game:
         self.import_assets()
 
         # Carregamento das informações do jogo
+        self.should_show_fps = False
+        self.actual_game_mode = 'normal'
         self.ui = UI(self.font, self.ui_frames)
         self.data = Data(self.ui)
-        self.menu = Menu(self.display_surface, self.font, self.audio_files['ui_button'])
+        self.menu = Menu(self.display_surface, self.font, self.audio_files['ui_button'], self.actual_game_mode)
         self.final_screen_menu = Final_screen(self.display_surface, self.font, self.audio_files['ui_button'])
         self.state = "menu"
-        self.should_show_fps = False
 
         # Level
         self.start_stage = 0 # 9 para lace
@@ -175,6 +176,32 @@ class Game:
         self.current_stage = Level(self.tmx_maps[target], self.level_frames, self.audio_files, self.data, self.switch_screen, target, player_spawn, self.last_bench)
         self.current_stage.timers['loading_time'].activate()
 
+    def switch_game_mode(self, game_mode):
+        if game_mode == 'normal':
+            self.data.actual_weapon = 0
+            self.data.string_bar = 0
+            self.data.health_regen = False
+            self.data.player_health = self.data._max_player_heath
+            self.data.unlocked_wall_jump = False
+            self.data.unlocked_dash = False
+            self.data.unlocked_throw_attack = False
+            self.data.unlocked_weapons = False
+            self.actual_game_mode = 'normal'
+            self.menu.buttons[1] = Button(None, (WINDOW_WIDTH / 2, self.menu.base_y + self.menu.title_spacing), "BOSS FIGHT MODE", self.menu.get_font(42), "White", "#EEDC82")
+            self.switch_screen(0, 'bench', 0)
+        elif game_mode == 'boss':
+            self.data.actual_weapon = 0
+            self.data.string_bar = 0
+            self.data.health_regen = False
+            self.data.player_health = self.data._max_player_heath
+            self.data.unlocked_wall_jump = True
+            self.data.unlocked_dash = True
+            self.data.unlocked_throw_attack = True
+            self.data.unlocked_weapons = True
+            self.actual_game_mode = 'boss'
+            self.menu.buttons[1] = Button(None, (WINDOW_WIDTH / 2, self.menu.base_y + self.menu.title_spacing), "NORMAL MODE", self.menu.get_font(42), "White", "#EEDC82")
+            self.switch_screen(8, 'bench', 8)
+
     def show_fps(self):
         if self.should_show_fps:
             fps = self.clock.get_fps()
@@ -226,7 +253,7 @@ class Game:
             if lace.on_final_animation:
                 if self.current_stage.collision_sprites:
                     level = self.current_stage
-                    collision_sprites = self.current_stage.collision_sprites.sprites() + self.current_stage.semi_collision_sprites.sprites() + self.current_stage.bg_sprites.sprites()
+                    collision_sprites = self.current_stage.collision_sprites.sprites() + self.current_stage.semi_collision_sprites.sprites() + self.current_stage.bg_sprites.sprites() + self.current_stage.bench_sprites.sprites()
                     for sprite in collision_sprites:
                         sprite.kill()
                     # Free level
@@ -307,6 +334,12 @@ class Game:
                     self.handle_music(volume=1)
                     self.state = 'game'
                     self.current_stage.timers['loading_time'].activate()
+                elif next_state == 'new_mode':
+                    self.state = 'game'
+                    if self.actual_game_mode == 'normal':
+                        self.switch_game_mode('boss')
+                    elif self.actual_game_mode == 'boss':
+                        self.switch_game_mode('normal')
 
             # Game
             elif self.state == 'game':
@@ -325,11 +358,18 @@ class Game:
                 lace = self.current_stage.lace
                 if lace.state != 'idle' and not lace.on_final_animation:
                     self.handle_music('lace')
+                elif lace.state == 'idle':
+                    self.handle_music('main')
                 elif lace.on_final_animation:
                     self.handle_music('ending')
                 self.final_screen(delta_time)
                 if self.state == 'final_screen':
-                    next_state = self.final_screen_menu.display_menu()
+                    if self.actual_game_mode == 'normal':
+                        next_state = self.final_screen_menu.display_menu()
+                    else:
+                        self.switch_game_mode('boss')
+                        self.state = 'game'
+                        self.final_screen_ended = False
 
 if __name__ == '__main__': # Verifica se o script está sendo executado diretamente (exemplo: python main.py)
     # Inicialização do jogo
