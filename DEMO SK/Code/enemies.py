@@ -755,7 +755,8 @@ class Fly(pygame.sprite.Sprite):
         player_level = abs(fly_pos.y - player_pos.y) < 450
 
         if self.player_near and player_level:
-            target_direction = (player_pos - fly_pos).normalize()
+            if player_pos - fly_pos != 0:
+                target_direction = (player_pos - fly_pos).normalize()
             self.direction.x += target_direction.x * self.acceleration
             self.direction.y += target_direction.y * self.acceleration
 
@@ -947,7 +948,7 @@ class Ranged_Fly(pygame.sprite.Sprite):
                 target_direction = (player_pos - fly_pos).normalize()
             elif distance_to_player < self.stop_distance and (tolerance > 1 or tolerance < -1):
                 # Fly foge do player
-                target_direction = (fly_pos - player_pos).normalize()
+                target_direction = (player_pos - fly_pos).normalize()
                 
                 # Atira enquanto corre
                 if not self.shoot_timer.active:
