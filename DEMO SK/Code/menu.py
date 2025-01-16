@@ -47,7 +47,7 @@ class Menu:
 
         # Inicializando os joysticks
         self.joysticks = []
-        self.controller_type = None  # Será 'Xbox 360' ou 'PS4' ou 'None'
+        self.controller_type = None  # Será 'Xbox' ou 'PS4' ou 'None'
 
         # Detectando os joysticks conectados
         self.init_joysticks()
@@ -64,10 +64,15 @@ class Menu:
                 joystick = pygame.joystick.Joystick(i)
                 self.joysticks.append(joystick)
 
-            # Identificar tipo de controle
-            if self.joysticks[0].get_name().lower().find("xbox") != -1:
-                self.controller_type = 'Xbox 360'
-            elif self.joysticks[0].get_name().lower().find("ps4") != -1:
+            joystick_name = self.joysticks[0].get_name().lower()
+            
+            xbox_keywords = ['xbox', '360', 'one', 'series']
+            ps_keywords = ['ps', 'play', 'ps4', 'ds', 'dualshock', 'wireless', 'controller']
+
+            # Verifica se qualquer palavra-chave está no nome do joystick
+            if any(keyword in joystick_name for keyword in xbox_keywords):
+                self.controller_type = 'Xbox'
+            elif any(keyword in joystick_name for keyword in ps_keywords):
                 self.controller_type = 'PS4'
             else:
                 self.controller_type = 'Unknown'
@@ -124,11 +129,11 @@ class Menu:
             return True
         elif event.type == pygame.JOYBUTTONDOWN: 
             for joystick in self.joysticks:
-                if self.controller_type == 'Xbox 360':
+                if self.controller_type == 'Xbox':
                     if joystick.get_button(7):
                         return True
                 elif self.controller_type == 'PS4':
-                    if joystick.get_button(9):
+                    if joystick.get_button(6):
                         return True
         return False
 
@@ -203,7 +208,7 @@ class Final_screen:
 
         # Inicializando os joysticks
         self.joysticks = []
-        self.controller_type = None  # Será 'Xbox 360' ou 'PS4' ou 'None'
+        self.controller_type = None  # Será 'Xbox' ou 'PS4' ou 'None'
 
         # Detectando os joysticks conectados
         self.init_joysticks()
@@ -220,10 +225,15 @@ class Final_screen:
                 joystick = pygame.joystick.Joystick(i)
                 self.joysticks.append(joystick)
 
-            # Identificar tipo de controle
-            if self.joysticks[0].get_name().lower().find("xbox") != -1:
-                self.controller_type = 'Xbox 360'
-            elif self.joysticks[0].get_name().lower().find("ps4") != -1:
+            joystick_name = self.joysticks[0].get_name().lower()
+            
+            xbox_keywords = ['xbox', '360', 'one', 'series']
+            ps_keywords = ['ps', 'play', 'ps4', 'ds', 'dualshock', 'wireless', 'controller']
+
+            # Verifica se qualquer palavra-chave está no nome do joystick
+            if any(keyword in joystick_name for keyword in xbox_keywords):
+                self.controller_type = 'Xbox'
+            elif any(keyword in joystick_name for keyword in ps_keywords):
                 self.controller_type = 'PS4'
             else:
                 self.controller_type = 'Unknown'
@@ -271,7 +281,7 @@ class Final_screen:
                 self.change_selection(1)
                 self.button_cooldown.activate()
 
-            # Botão de seleção (exemplo: botão "A" no controle Xbox)
+            # Botão de seleção
             if any(joystick.get_button(0) for joystick in self.joysticks):
                 return self.activate_button()
 
@@ -280,11 +290,11 @@ class Final_screen:
             return True
         elif event.type == pygame.JOYBUTTONDOWN: 
             for joystick in self.joysticks:
-                if self.controller_type == 'Xbox 360':
+                if self.controller_type == 'Xbox':
                     if joystick.get_button(7):
                         return True
                 elif self.controller_type == 'PS4':
-                    if joystick.get_button(9):
+                    if joystick.get_button(6):
                         return True
         return False
 

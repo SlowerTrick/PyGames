@@ -42,8 +42,9 @@ class Level:
             'down': tmx_level_properties['next_room_down']
         }
         self.insta_death = False
-        if "insta_death" in tmx_level_properties:
-            self.insta_death = True
+        if 'insta_death' in tmx_level_properties:
+            self.insta_death = tmx_level_properties['insta_death']
+
         # Grupos
         self.all_sprites = AllSprites(
             width = tmx_map.width, 
@@ -441,8 +442,11 @@ class Level:
                     self.data.player_health = BASE_HEALTH
                     self.data.string_bar = 0
                     self.switch_screen(int(self.last_bench), 'bench', self.last_bench)
-                elif sprite in self.thorn_sprites or sprite in self.spike_sprites and self.insta_death:
-                    self.switch_screen(int(self.last_bench), 'bench', self.last_bench)
+                elif sprite in self.thorn_sprites or sprite in self.spike_sprites:
+                    if self.insta_death:
+                        self.switch_screen(int(self.last_bench), 'bench', self.last_bench)
+                    else:
+                        self.switch_screen(int(self.current_stage), self.player_spawn, self.last_bench)
         
         # Banco
         for sprite in self.bench_sprites:
@@ -502,7 +506,6 @@ class Level:
         elif hasattr(enemy, 'is_spike'):
             self.audio_manager.play_with_pitch(self.audio_files['spike_hit'], volume_change=-2.0)
         else:
-            self.data.string_bar += 1
             self.audio_manager.play_with_pitch(self.audio_files['enemy_damage'], volume_change=-2.0)
 
     def player_attack(self):
@@ -583,6 +586,8 @@ class Level:
                     if is_enemy and not is_pearl:
                         if not target.hit_timer.active:
                             self.handle_enemy_sounds(target)
+                            if not hasattr(target, 'is_breakable_wall') and not hasattr(target, 'is_spike'):
+                                self.data.string_bar += 1
                             if not self.timers['hit_stop_short'].active and not self.hit_stop_cooldown.active:
                                 self.timers['hit_stop_short'].activate()
                                 self.hit_stop_cooldown.activate()

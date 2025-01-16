@@ -946,7 +946,7 @@
   <object id="4" name="Data" x="0" y="0" width="64" height="64">
    <properties>
     <property name="bg_color" value="#0a120f"/>
-    <property name="insta_death" type="bool" value="true"/>
+    <property name="insta_death" type="bool" value="false"/>
     <property name="next_room_down" value="1"/>
     <property name="next_room_left" value="6"/>
     <property name="next_room_right" value="7"/>

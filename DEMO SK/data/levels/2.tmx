@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="115" height="25" tilewidth="64" tileheight="64" infinite="0" nextlayerid="22" nextobjectid="176">
+<map version="1.10" tiledversion="1.11.0" orientation="orthogonal" renderorder="right-down" width="115" height="25" tilewidth="64" tileheight="64" infinite="0" nextlayerid="22" nextobjectid="178">
  <tileset firstgid="1" source="../tilesets/objects.tsx"/>
  <tileset firstgid="40" source="../tilesets/lace_tiles.tsx"/>
  <tileset firstgid="70" source="../tilesets/platforms.tsx"/>
@@ -170,17 +170,17 @@
     <property name="direction" value="up"/>
    </properties>
   </object>
-  <object id="85" name="lace_spike" gid="115" x="4224" y="1600" width="64" height="64">
+  <object id="85" name="lace_spike" gid="115" x="4224" y="1635" width="64" height="64">
    <properties>
     <property name="direction" value="left"/>
    </properties>
   </object>
-  <object id="86" name="lace_spike" gid="115" x="4224" y="1536" width="64" height="64">
+  <object id="86" name="lace_spike" gid="115" x="4224" y="1571" width="64" height="64">
    <properties>
     <property name="direction" value="left"/>
    </properties>
   </object>
-  <object id="87" name="lace_spike" gid="115" x="4224" y="1472" width="64" height="64">
+  <object id="87" name="lace_spike" gid="115" x="4224" y="1507" width="64" height="64">
    <properties>
     <property name="direction" value="left"/>
    </properties>
@@ -475,15 +475,15 @@
     <property name="direction" value="right"/>
    </properties>
   </object>
-  <object id="173" name="bench" gid="37" x="4347.5" y="307.793" width="70" height="38"/>
-  <object id="174" name="player" gid="31" x="4341.67" y="334.873" width="96" height="96">
-   <properties>
-    <property name="spawn" value="bench"/>
-   </properties>
-  </object>
-  <object id="175" name="player" gid="31" x="4342" y="335" width="96" height="96">
+  <object id="175" name="player" gid="31" x="-29.9697" y="1234.21" width="96" height="96">
    <properties>
     <property name="spawn" value="left"/>
+   </properties>
+  </object>
+  <object id="176" name="bench" gid="37" x="1148.5" y="1009.13" width="70" height="38"/>
+  <object id="177" name="player" gid="31" x="1142.67" y="1036.21" width="96" height="96">
+   <properties>
+    <property name="spawn" value="bench"/>
    </properties>
   </object>
  </objectgroup>

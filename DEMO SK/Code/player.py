@@ -26,11 +26,7 @@ class Player(pygame.sprite.Sprite):
         self.joysticks = []
         for joystick in range(pygame.joystick.get_count()):
             self.joysticks.append(pygame.joystick.Joystick(joystick))
-
-        # Detecta o tipo de controle
         self.controller_type = self.detect_controller_type()
-
-        # Mapeamento de controles baseado no tipo de controle
         self.control_mapping = self.get_control_mapping(self.controller_type)
 
         # Movimento
@@ -229,18 +225,23 @@ class Player(pygame.sprite.Sprite):
                 self.jump_key_held = False
     
     def detect_controller_type(self):
-        #Detecta se o controle é um Xbox 360 ou PS4 com base no nome do dispositivo.
+    # Detecta se o controle é um Xbox ou PS4 com base no nome do dispositivo.
         if pygame.joystick.get_count() > 0:
             joystick_name = self.joysticks[0].get_name().lower()
-            if 'xbox' in joystick_name:
-                return 'Xbox 360'
-            elif 'play' in joystick_name:
+            
+            xbox_keywords = ['xbox', '360', 'one', 'series']
+            ps_keywords = ['ps', 'play', 'ps4', 'ds', 'dualshock', 'wireless', 'controller']
+
+            # Verifica se qualquer palavra-chave está no nome do joystick
+            if any(keyword in joystick_name for keyword in xbox_keywords):
+                return 'Xbox'
+            elif any(keyword in joystick_name for keyword in ps_keywords):
                 return 'PS4'
         return 'Unknown'
 
     def get_control_mapping(self, controller_type):
-        # Retorna o mapeamento de controles com base no tipo de controle (Xbox 360 ou PS4).
-        if controller_type == 'Xbox 360':
+        # Retorna o mapeamento de controles com base no tipo de controle (Xbox ou PS4).
+        if controller_type == 'Xbox':
             return {
                 # Notação: ("Eixo, Direção, Botão")
                 "move_right": (0, 1),  # Eixo 0 positivo (Movimento para a direita no joystick esquerdo)

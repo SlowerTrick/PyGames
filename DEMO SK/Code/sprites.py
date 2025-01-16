@@ -35,7 +35,7 @@ class Item(AnimatedSprite):
         self.rect.center = pos
         self.item_type = item_type
         self.data = data
-        self.min_lifetime = Timer(1500)
+        self.min_lifetime = Timer(3000)
         self.min_lifetime.activate()
     
     def activate(self):

@@ -25,7 +25,7 @@ class Game:
         self.should_show_fps = False
 
         # Level
-        self.start_stage = 2 # 9 para lace
+        self.start_stage = 0 # 9 para lace
         self.last_bench = 0
         self.player_spawn = 'left' 
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn, self.last_bench)
@@ -38,9 +38,7 @@ class Game:
 
         # Inicializando os joysticks
         self.joysticks = []
-        self.controller_type = None  # Será 'Xbox 360' ou 'PS4' ou 'None'
-
-        # Detectando os joysticks conectados
+        self.controller_type = None  # Será 'Xbox' ou 'PS4' ou 'Unknown'
         self.init_joysticks()
 
         # Animação final    
@@ -157,10 +155,15 @@ class Game:
                 joystick = pygame.joystick.Joystick(i)
                 self.joysticks.append(joystick)
 
-            # Identificar tipo de controle
-            if self.joysticks[0].get_name().lower().find("xbox") != -1:
-                self.controller_type = 'Xbox 360'
-            elif self.joysticks[0].get_name().lower().find("ps4") != -1:
+            joystick_name = self.joysticks[0].get_name().lower()
+            
+            xbox_keywords = ['xbox', '360', 'one', 'series']
+            ps_keywords = ['ps', 'play', 'ps4', 'ds', 'dualshock', 'wireless', 'controller']
+
+            # Verifica se qualquer palavra-chave está no nome do joystick
+            if any(keyword in joystick_name for keyword in xbox_keywords):
+                self.controller_type = 'Xbox'
+            elif any(keyword in joystick_name for keyword in ps_keywords):
                 self.controller_type = 'PS4'
             else:
                 self.controller_type = 'Unknown'
@@ -184,11 +187,11 @@ class Game:
             return True
         elif event.type == pygame.JOYBUTTONDOWN: 
             for joystick in self.joysticks:
-                if self.controller_type == 'Xbox 360':
+                if self.controller_type == 'Xbox':
                     if joystick.get_button(7):
                         return True
                 elif self.controller_type == 'PS4':
-                    if joystick.get_button(9):
+                    if joystick.get_button(6):
                         return True
         return False
     
