@@ -1121,7 +1121,7 @@ class Lace(pygame.sprite.Sprite):
         # Status
         self.direction = vector()
         self.facing_side = 'none'
-        self.lace_heath = 3 # 50
+        self.lace_heath = 50 # 50
         self.max_health = self.lace_heath
         self.gravity = 1300
         self.on_ground = False
