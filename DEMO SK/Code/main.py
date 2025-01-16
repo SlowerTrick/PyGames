@@ -25,9 +25,9 @@ class Game:
         self.should_show_fps = False
 
         # Level
-        self.start_stage = 0 # 9 para lace
+        self.start_stage = 2 # 9 para lace
         self.last_bench = 0
-        self.player_spawn = 'left'
+        self.player_spawn = 'left' 
         self.current_stage = Level(self.tmx_maps[self.start_stage], self.level_frames, self.audio_files, self.data, self.switch_screen, self.start_stage, self.player_spawn, self.last_bench)
         self.current_stage.timers['loading_time'].activate()
 
