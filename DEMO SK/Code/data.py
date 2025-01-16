@@ -20,6 +20,7 @@ class Data:
         self.unlocked_dash = False
         self.unlocked_throw_attack = False
         self.unlocked_weapons = False
+
     @property
     def coins(self):
         return self._coins
