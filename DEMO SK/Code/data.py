@@ -19,7 +19,7 @@ class Data:
         self.unlocked_wall_jump = True
         self.unlocked_dash = True
         self.unlocked_throw_attack = True
-        self.unlocked_weapons = False
+        self.unlocked_weapons = True
 
     @property
     def coins(self):
