@@ -15,9 +15,8 @@ The player can **jump**, **dash**, **attack**, **heal**, and perform **special m
 - 🎮 Support for Xbox and PS4 controllers  
 
 ## 🎯 Purpose
-This project was created as a **personal challenge and learning exercise** to explore game development concepts,  
-physics simulation, and animation handling using pure Python.
+This project was created as a **personal challenge and learning exercise** to explore game development concepts, physics simulation, and animation handling using pure Python.
 
 ## 🚀 How to Run
 If on **Windows**, install the precompiled version. 
-Else clone the DEMO SK/ folder and compile the game starting at Code/ folder with pyinstaller or a similar tool
+Else clone the **DEMO SK/** folder and compile the game starting at the **Code/** folder with **pyinstaller** or a similar tool
