@@ -1,4 +1,4 @@
-# 🎮 Silksong Demake
+# 🪲 Silksong Demake
 
 **Silksong Demake** is a fan-made 2D action-platformer inspired by *Hollow Knight: Silksong*, built entirely with **Python** and **Pygame**.  
 All sprites and animations were created using **Aseprite**, giving the game a handcrafted pixel-art style faithful to the original.
